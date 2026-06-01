@@ -13,6 +13,9 @@ export function createSalt(): string {
 }
 
 export async function hashPassword(password: string, salt: string): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('crypto.subtle no está disponible en este entorno');
+  }
   const payload = new TextEncoder().encode(`${salt}:${password}`);
   const digest = await crypto.subtle.digest('SHA-256', payload);
   return toHex(digest);

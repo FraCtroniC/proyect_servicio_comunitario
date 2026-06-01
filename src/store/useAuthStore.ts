@@ -15,7 +15,7 @@ type AuthState = {
   isAuthenticated: boolean;
   signIn: (userName: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   signOut: () => void;
-  checkSession: () => boolean;
+  syncSession: () => void;
   touchSession: () => void;
 };
 
@@ -42,6 +42,11 @@ function readSession(): SessionPayload | null {
   }
 }
 
+/** Lectura pura: seguro llamar durante el render. */
+export function isSessionValid(): boolean {
+  return readSession() !== null;
+}
+
 function writeSession(data: SessionPayload) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
 }
@@ -59,7 +64,7 @@ function sessionToState(session: SessionPayload | null): Pick<AuthState, 'userNa
 
 const initialSession = readSession();
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   ...sessionToState(initialSession),
 
   signIn: async (userName, password) => {
@@ -85,16 +90,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ userName: null, displayName: null, isAuthenticated: false });
   },
 
-  checkSession: () => {
-    const session = readSession();
-    if (!session) {
-      if (get().isAuthenticated) {
-        set({ userName: null, displayName: null, isAuthenticated: false });
-      }
-      return false;
-    }
-    set(sessionToState(session));
-    return true;
+  syncSession: () => {
+    set(sessionToState(readSession()));
   },
 
   touchSession: () => {

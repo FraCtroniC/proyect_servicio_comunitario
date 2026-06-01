@@ -79,27 +79,32 @@ async function migrateLegacyUsers(raw: LegacyUser[]): Promise<StoredUser[]> {
 }
 
 export async function ensureDefaultUsers() {
-  let users = readUsers();
+  try {
+    let users = readUsers();
 
-  if (users.length === 0) {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const legacy = JSON.parse(raw) as LegacyUser[];
-        users = await migrateLegacyUsers(legacy);
-      } catch {
-        users = [];
+    if (users.length === 0) {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          const legacy = JSON.parse(raw) as LegacyUser[];
+          users = await migrateLegacyUsers(legacy);
+        } catch {
+          users = [];
+        }
       }
     }
-  }
 
-  for (const def of DEFAULT_USERS) {
-    if (!users.some((u) => u.userName === def.userName.toLowerCase())) {
-      users.push(await toSecureUser(def));
+    for (const def of DEFAULT_USERS) {
+      if (!users.some((u) => u.userName === def.userName.toLowerCase())) {
+        users.push(await toSecureUser(def));
+      }
     }
-  }
 
-  writeUsers(users);
+    writeUsers(users);
+  } catch (error) {
+    console.error('ensureDefaultUsers:', error);
+    writeUsers(await Promise.all(DEFAULT_USERS.map((def) => toSecureUser(def))));
+  }
 }
 
 export function findUser(userName: string): StoredUser | undefined {

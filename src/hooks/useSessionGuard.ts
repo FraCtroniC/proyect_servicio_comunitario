@@ -1,18 +1,17 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/useAuthStore';
+import { isSessionValid, useAuthStore } from '@/store/useAuthStore';
 
 export function useSessionGuard() {
   const navigate = useNavigate();
-  const checkSession = useAuthStore((s) => s.checkSession);
   const signOut = useAuthStore((s) => s.signOut);
+  const syncSession = useAuthStore((s) => s.syncSession);
 
   useEffect(() => {
-    const valid = checkSession();
-    if (!valid) return;
+    syncSession();
 
     const interval = window.setInterval(() => {
-      if (!checkSession()) {
+      if (!isSessionValid()) {
         signOut();
         navigate('/login', { replace: true, state: { reason: 'expired' } });
       }
@@ -28,5 +27,5 @@ export function useSessionGuard() {
       window.removeEventListener('click', onActivity);
       window.removeEventListener('keydown', onActivity);
     };
-  }, [checkSession, navigate, signOut]);
+  }, [navigate, signOut, syncSession]);
 }
