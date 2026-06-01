@@ -9,16 +9,21 @@ const safeUserName = z
   .regex(/^[a-zA-Z0-9._-]+$/, 'Caracteres no permitidos en el usuario')
   .refine((v) => !containsMaliciousPattern(v), 'Entrada no permitida');
 
-const safePassword = z
-  .string()
-  .min(1, 'La contraseña es requerida')
-  .max(PASSWORD_MAX, `Máximo ${PASSWORD_MAX} caracteres`)
-  .refine((v) => !/\s/.test(v), 'Sin espacios en la contraseña')
-  .refine((v) => !containsMaliciousPattern(v), 'Entrada no permitida');
+function buildPasswordSchema(minLength: number, minMessage: string) {
+  return z
+    .string()
+    .min(minLength, minMessage)
+    .max(PASSWORD_MAX, `Máximo ${PASSWORD_MAX} caracteres`)
+    .refine((v) => !/\s/.test(v), 'Sin espacios en la contraseña')
+    .refine((v) => !containsMaliciousPattern(v), 'Entrada no permitida');
+}
+
+const loginPassword = buildPasswordSchema(1, 'La contraseña es requerida');
+const recoveryPassword = buildPasswordSchema(4, 'Mínimo 4 caracteres');
 
 export const loginSchema = z.object({
   userName: safeUserName,
-  password: safePassword,
+  password: loginPassword,
   website: z.string().optional(),
 });
 
@@ -28,7 +33,7 @@ export const recoveryLookupSchema = z.object({
 
 export const recoveryResetSchema = z
   .object({
-    password: safePassword.min(4, 'Mínimo 4 caracteres'),
+    password: recoveryPassword,
     confirmPassword: z.string().min(4, 'Confirma la contraseña'),
   })
   .refine((data) => data.password === data.confirmPassword, {
