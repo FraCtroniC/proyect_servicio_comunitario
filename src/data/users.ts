@@ -1,9 +1,10 @@
 export type StoredUser = {
   userName: string;
-  password: string;
   displayName: string;
+  passwordHash: string;
+  salt: string;
 };
 
-export const DEFAULT_USERS: StoredUser[] = [
-  { userName: 'arturo', password: '1234', displayName: 'Arturo' },
+export const DEFAULT_USERS: Array<{ userName: string; displayName: string; plainPassword: string }> = [
+  { userName: 'arturo', displayName: 'Arturo', plainPassword: '1234' },
 ];

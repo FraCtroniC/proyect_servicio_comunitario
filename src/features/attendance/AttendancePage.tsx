@@ -16,70 +16,67 @@ export function AttendancePage() {
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-moss">Asistencia</p>
-          <h3 className="mt-2 font-display text-2xl font-semibold">Control diario</h3>
-          <p className="mt-2 text-sm text-slate-600">Marca presentes y guarda el registro del día.</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate">Registro diario</p>
+          <h3 className="mt-2 font-display text-2xl font-semibold text-ink">Lista de asistencia</h3>
+          <p className="mt-2 text-sm text-slate">Marque los estudiantes presentes y guarde el registro oficial.</p>
         </div>
-        <div className="rounded-xl border border-moss/25 bg-moss/10 px-4 py-2 text-sm font-bold text-moss">
+        <div className="badge border-accent/20 bg-accent/5 text-accent">
           {presentCount} / {students.length} presentes
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-[1.25rem] border border-slate-200/90 bg-sand/30 p-5">
-          <h4 className="text-sm font-bold uppercase tracking-wide text-slate-700">Lista de estudiantes</h4>
-          <ul className="mt-5 space-y-3">
+        <div className="rounded-xl border border-line bg-mist p-5">
+          <h4 className="text-sm font-semibold text-ink">Estudiantes</h4>
+          <ul className="mt-5 space-y-2">
             {students.map((name) => (
               <li
                 key={name}
-                className="flex items-center justify-between rounded-xl border border-white/80 bg-white px-4 py-3 shadow-sm"
+                className="flex items-center justify-between rounded-lg border border-line bg-paper px-4 py-3"
               >
-                <span className="font-semibold text-ink">{name}</span>
-                <label className="inline-flex cursor-pointer items-center gap-3">
+                <span className="text-sm font-medium text-charcoal">{name}</span>
+                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate">
                   <input
                     type="checkbox"
                     checked={!!presence[name]}
                     onChange={() => togglePresence(name)}
-                    className="h-4 w-4 accent-moss"
+                    className="h-4 w-4 accent-accent"
                   />
-                  <span className="text-sm font-medium text-slate-600">Presente</span>
+                  Presente
                 </label>
               </li>
             ))}
           </ul>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button onClick={() => saveRecord()} className="btn-primary">
+            <button type="button" onClick={() => saveRecord()} className="btn-primary">
               Guardar registro
             </button>
-            <button
-              onClick={() => clearPresence()}
-              className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-white"
-            >
-              Limpiar
+            <button type="button" onClick={() => clearPresence()} className="btn-secondary">
+              Limpiar selección
             </button>
           </div>
         </div>
 
-        <div className="rounded-[1.25rem] border border-slate-200/90 bg-white p-5">
-          <h4 className="text-sm font-bold uppercase tracking-wide text-slate-700">Registros recientes</h4>
-          <ul className="mt-5 space-y-4">
+        <div className="rounded-xl border border-line bg-paper p-5">
+          <h4 className="text-sm font-semibold text-ink">Historial reciente</h4>
+          <ul className="mt-5 space-y-3">
             {records.length === 0 && (
-              <li className="rounded-xl bg-sand/60 px-4 py-6 text-center text-sm text-slate-500">No hay registros guardados.</li>
+              <li className="rounded-lg bg-mist px-4 py-8 text-center text-sm text-slate">Sin registros guardados.</li>
             )}
             {records.map((r) => (
-              <li key={r.id} className="rounded-xl border border-slate-200/80 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-bold text-ink">{new Date(r.date).toLocaleString()}</div>
-                  <div className="stat-pill bg-moss/15 text-moss">
+              <li key={r.id} className="rounded-lg border border-line p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-ink">{new Date(r.date).toLocaleString()}</p>
+                  <span className="badge border-success/25 bg-success/10 text-success">
                     {r.entries.filter((e) => e.present).length} presentes
-                  </div>
+                  </span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {r.entries.map((e) => (
                     <span
                       key={e.name}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${e.present ? 'bg-moss text-white' : 'bg-sand text-slate-600'}`}
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium ${e.present ? 'bg-accent text-paper' : 'bg-mist text-charcoal'}`}
                     >
                       {e.name}
                     </span>

@@ -2,54 +2,42 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { AuthShell } from '@/components/auth/AuthShell';
-import { findUser, updatePassword } from '@/services/authCredentials';
-
-const lookupSchema = z.object({
-  userName: z.string().min(1, 'Indica tu usuario'),
-});
-
-const resetSchema = z
-  .object({
-    password: z.string().min(4, 'Mínimo 4 caracteres'),
-    confirmPassword: z.string().min(4, 'Confirma la contraseña'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contraseñas no coinciden',
-    path: ['confirmPassword'],
-  });
-
-type LookupData = z.infer<typeof lookupSchema>;
-type ResetData = z.infer<typeof resetSchema>;
+import { AlertBanner } from '@/components/ui/AlertBanner';
+import {
+  recoveryLookupSchema,
+  recoveryResetSchema,
+  type RecoveryLookupData,
+  type RecoveryResetData,
+} from '@/lib/security/authSchemas';
+import { lookupUserForRecovery, updatePassword } from '@/services/authCredentials';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'lookup' | 'reset' | 'done'>('lookup');
   const [resolvedUser, setResolvedUser] = useState<string | null>(null);
-  const [lookupError, setLookupError] = useState<string | null>(null);
-  const [resetError, setResetError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const lookupForm = useForm<LookupData>({ resolver: zodResolver(lookupSchema) });
-  const resetForm = useForm<ResetData>({ resolver: zodResolver(resetSchema) });
+  const lookupForm = useForm<RecoveryLookupData>({ resolver: zodResolver(recoveryLookupSchema) });
+  const resetForm = useForm<RecoveryResetData>({ resolver: zodResolver(recoveryResetSchema) });
 
-  const onLookup = (data: LookupData) => {
-    setLookupError(null);
-    const user = findUser(data.userName);
-    if (!user) {
-      setLookupError('No encontramos ese usuario. Verifica el nombre e intenta de nuevo.');
+  const onLookup = (data: RecoveryLookupData) => {
+    setFormError(null);
+    const result = lookupUserForRecovery(data.userName);
+    if (!result.ok) {
+      setFormError(result.message);
       return;
     }
-    setResolvedUser(user.userName);
+    setResolvedUser(result.userName);
     setStep('reset');
   };
 
-  const onReset = (data: ResetData) => {
+  const onReset = async (data: RecoveryResetData) => {
     if (!resolvedUser) return;
-    setResetError(null);
-    const ok = updatePassword(resolvedUser, data.password);
-    if (!ok) {
-      setResetError('No se pudo actualizar la contraseña. Intenta otra vez.');
+    setFormError(null);
+    const result = await updatePassword(resolvedUser, data.password);
+    if (!result.ok) {
+      setFormError(result.message);
       return;
     }
     setStep('done');
@@ -58,11 +46,12 @@ export function ForgotPasswordPage() {
   if (step === 'done') {
     return (
       <AuthShell
-        eyebrow="Listo"
+        eyebrow="Confirmación"
         title="Contraseña actualizada"
-        subtitle="Ya puedes iniciar sesión con tu nueva contraseña."
+        subtitle="Su nueva contraseña quedó registrada. Puede iniciar sesión de inmediato."
       >
-        <button type="button" onClick={() => navigate('/login')} className="btn-primary w-full">
+        <AlertBanner variant="success">El cambio se aplicó correctamente.</AlertBanner>
+        <button type="button" onClick={() => navigate('/login')} className="btn-primary mt-6 w-full">
           Ir al inicio de sesión
         </button>
       </AuthShell>
@@ -72,49 +61,50 @@ export function ForgotPasswordPage() {
   if (step === 'reset') {
     return (
       <AuthShell
-        eyebrow="Nueva clave"
-        title="Restablecer contraseña"
-        subtitle={`Define una contraseña nueva para el usuario ${resolvedUser}.`}
+        eyebrow="Restablecimiento"
+        title="Nueva contraseña"
+        subtitle={`Defina una contraseña segura para el usuario ${resolvedUser}.`}
       >
-        <form onSubmit={resetForm.handleSubmit(onReset)} className="space-y-5">
-          <label className="block text-sm font-semibold text-slate-700">
+        <form onSubmit={resetForm.handleSubmit(onReset)} className="space-y-5" noValidate>
+          <label className="block text-sm font-medium text-charcoal">
             Nueva contraseña
             <input
               {...resetForm.register('password')}
               type="password"
               autoComplete="new-password"
+              maxLength={64}
               className="input-field mt-2"
               placeholder="Mínimo 4 caracteres"
             />
             {resetForm.formState.errors.password && (
-              <p className="mt-2 text-sm font-medium text-ember">{resetForm.formState.errors.password.message}</p>
+              <p className="mt-2 text-sm text-danger">{resetForm.formState.errors.password.message}</p>
             )}
           </label>
 
-          <label className="block text-sm font-semibold text-slate-700">
+          <label className="block text-sm font-medium text-charcoal">
             Confirmar contraseña
             <input
               {...resetForm.register('confirmPassword')}
               type="password"
               autoComplete="new-password"
+              maxLength={64}
               className="input-field mt-2"
-              placeholder="Repite la contraseña"
+              placeholder="Repita la contraseña"
             />
             {resetForm.formState.errors.confirmPassword && (
-              <p className="mt-2 text-sm font-medium text-ember">
-                {resetForm.formState.errors.confirmPassword.message}
-              </p>
+              <p className="mt-2 text-sm text-danger">{resetForm.formState.errors.confirmPassword.message}</p>
             )}
           </label>
 
-          {resetError && (
-            <p className="rounded-xl border border-ember/30 bg-ember/10 px-4 py-3 text-sm font-medium text-ember">
-              {resetError}
-            </p>
-          )}
+          <p className="text-xs leading-relaxed text-slate">
+            No use contraseñas comunes ni que contengan su nombre de usuario. Evite espacios y caracteres especiales
+            sospechosos.
+          </p>
+
+          {formError && <AlertBanner>{formError}</AlertBanner>}
 
           <button type="submit" disabled={resetForm.formState.isSubmitting} className="btn-primary w-full">
-            Guardar contraseña
+            {resetForm.formState.isSubmitting ? 'Guardando…' : 'Guardar contraseña'}
           </button>
 
           <button
@@ -122,8 +112,9 @@ export function ForgotPasswordPage() {
             onClick={() => {
               setStep('lookup');
               setResolvedUser(null);
+              setFormError(null);
             }}
-            className="w-full text-sm font-semibold text-slate-600 transition hover:text-ink"
+            className="btn-secondary w-full"
           >
             Cambiar usuario
           </button>
@@ -136,33 +127,30 @@ export function ForgotPasswordPage() {
     <AuthShell
       eyebrow="Recuperación"
       title="Recuperar acceso"
-      subtitle="Escribe tu usuario. Si existe en el sistema, podrás definir una contraseña nueva."
+      subtitle="Indique su usuario institucional para continuar con el restablecimiento de contraseña."
     >
-      <form onSubmit={lookupForm.handleSubmit(onLookup)} className="space-y-5">
-        <label className="block text-sm font-semibold text-slate-700">
+      <form onSubmit={lookupForm.handleSubmit(onLookup)} className="space-y-5" noValidate>
+        <label className="block text-sm font-medium text-charcoal">
           Usuario
           <input
             {...lookupForm.register('userName')}
             autoComplete="username"
+            maxLength={32}
             className="input-field mt-2"
-            placeholder="Ej. arturo"
+            placeholder="usuario.institucional"
           />
           {lookupForm.formState.errors.userName && (
-            <p className="mt-2 text-sm font-medium text-ember">{lookupForm.formState.errors.userName.message}</p>
+            <p className="mt-2 text-sm text-danger">{lookupForm.formState.errors.userName.message}</p>
           )}
         </label>
 
-        {lookupError && (
-          <p className="rounded-xl border border-ember/30 bg-ember/10 px-4 py-3 text-sm font-medium text-ember">
-            {lookupError}
-          </p>
-        )}
+        {formError && <AlertBanner>{formError}</AlertBanner>}
 
         <button type="submit" disabled={lookupForm.formState.isSubmitting} className="btn-primary w-full">
           Continuar
         </button>
 
-        <Link to="/login" className="block w-full text-center text-sm font-semibold text-moss transition hover:text-ink">
+        <Link to="/login" className="block w-full text-center text-sm font-medium text-accent hover:text-ink">
           Volver al inicio de sesión
         </Link>
       </form>
