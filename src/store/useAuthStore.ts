@@ -1,53 +1,105 @@
 import { create } from 'zustand';
+import { SESSION_MAX_AGE_MS } from '@/lib/security/constants';
 import { validateCredentials } from '@/services/authCredentials';
+
+type SessionPayload = {
+  userName: string;
+  displayName: string;
+  expiresAt: number;
+  sessionToken: string;
+};
 
 type AuthState = {
   userName: string | null;
   displayName: string | null;
   isAuthenticated: boolean;
-  signIn: (userName: string, password: string) => { ok: true } | { ok: false; message: string };
+  signIn: (userName: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   signOut: () => void;
+  checkSession: () => boolean;
+  touchSession: () => void;
 };
 
 const SESSION_KEY = 'liceo-auth-session';
 
-function loadSession(): Pick<AuthState, 'userName' | 'displayName' | 'isAuthenticated'> {
+function createSessionToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function readSession(): SessionPayload | null {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return { userName: null, displayName: null, isAuthenticated: false };
-    const data = JSON.parse(raw) as { userName: string; displayName: string };
-    return { userName: data.userName, displayName: data.displayName, isAuthenticated: true };
+    if (!raw) return null;
+    const data = JSON.parse(raw) as SessionPayload;
+    if (!data.userName || !data.sessionToken || !data.expiresAt) return null;
+    if (Date.now() > data.expiresAt) return null;
+    return data;
   } catch {
-    return { userName: null, displayName: null, isAuthenticated: false };
+    return null;
   }
 }
 
-const initial = loadSession();
+function writeSession(data: SessionPayload) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+}
 
-export const useAuthStore = create<AuthState>((set) => ({
-  userName: initial.userName,
-  displayName: initial.displayName,
-  isAuthenticated: initial.isAuthenticated,
+function sessionToState(session: SessionPayload | null): Pick<AuthState, 'userName' | 'displayName' | 'isAuthenticated'> {
+  if (!session) {
+    return { userName: null, displayName: null, isAuthenticated: false };
+  }
+  return {
+    userName: session.userName,
+    displayName: session.displayName,
+    isAuthenticated: true,
+  };
+}
 
-  signIn: (userName, password) => {
-    const user = validateCredentials(userName, password);
-    if (!user) {
-      return { ok: false, message: 'Usuario o contraseña incorrectos.' };
+const initialSession = readSession();
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  ...sessionToState(initialSession),
+
+  signIn: async (userName, password) => {
+    const result = await validateCredentials(userName, password);
+    if (!result.ok) {
+      return { ok: false, message: result.message };
     }
-    sessionStorage.setItem(
-      SESSION_KEY,
-      JSON.stringify({ userName: user.userName, displayName: user.displayName }),
-    );
-    set({
-      userName: user.userName,
-      displayName: user.displayName,
-      isAuthenticated: true,
-    });
+
+    const session: SessionPayload = {
+      userName: result.user.userName,
+      displayName: result.user.displayName,
+      expiresAt: Date.now() + SESSION_MAX_AGE_MS,
+      sessionToken: createSessionToken(),
+    };
+
+    writeSession(session);
+    set(sessionToState(session));
     return { ok: true };
   },
 
   signOut: () => {
     sessionStorage.removeItem(SESSION_KEY);
     set({ userName: null, displayName: null, isAuthenticated: false });
+  },
+
+  checkSession: () => {
+    const session = readSession();
+    if (!session) {
+      if (get().isAuthenticated) {
+        set({ userName: null, displayName: null, isAuthenticated: false });
+      }
+      return false;
+    }
+    set(sessionToState(session));
+    return true;
+  },
+
+  touchSession: () => {
+    const session = readSession();
+    if (!session) return;
+    writeSession({ ...session, expiresAt: Date.now() + SESSION_MAX_AGE_MS });
   },
 }));
