@@ -1,11 +1,15 @@
 > [!NOTE]
 > Nota: Información útil que el usuario debe tener en cuenta.
+
 > [!TIP]
 > Consejo: Consejos útiles para hacer las cosas mejor o más fácil.
+
 > [!IMPORTANT]
 > Importante: Información clave para que los usuarios logren sus objetivos.
+
 > [!WARNING]
 > Advertencia: Información urgente que requiere atención inmediata para evitar problemas.
+
 > [!CAUTION]
 > Precaución: Informa sobre riesgos o resultados negativos de ciertas acciones.
 
