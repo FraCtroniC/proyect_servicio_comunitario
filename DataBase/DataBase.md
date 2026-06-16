@@ -264,3 +264,9 @@ Table auditoria {
   ip_direccion varchar(45) [note: 'Soporta IPv4 e IPv6']
   fecha_hora timestamp [default: `now()`]
 }
+
+> [!IMPORTANT]
+> LINK PARA VISUALZAR EL DIAGRAMA DE LA DB
+> https://dbdiagram.io/d/Servicio-Comunitario-6a26e2c625fc5bf036bb3b9d
+
+
