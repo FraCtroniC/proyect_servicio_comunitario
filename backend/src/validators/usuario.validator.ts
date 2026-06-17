@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ValidationError } from '../../../shared/errors';
+import { ValidationError } from '../shared/errors';
 
 export const validateCrearUsuario = (
   req: Request,
@@ -8,9 +8,9 @@ export const validateCrearUsuario = (
 ): void => {
   const errors: Record<string, string[]> = {};
 
-  if (!req.body.nombre) errors.nombre = ['El nombre es requerido'];
-  if (!req.body.email) errors.email = ['El email es requerido'];
+  if (!req.body.username) errors.username = ['El username es requerido'];
   if (!req.body.password) errors.password = ['La contraseña es requerida'];
+  if (!req.body.idRol && req.body.idRol !== 0) errors.idRol = ['El idRol es requerido'];
 
   if (Object.keys(errors).length > 0) {
     throw new ValidationError(errors);

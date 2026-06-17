@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../shared/errors';
-import { config } from '../config';
+import { environment } from '../../config/environment';
 
 export const errorHandler = (
   err: Error,
@@ -24,7 +24,7 @@ export const errorHandler = (
 
   res.status(500).json({
     error: {
-      message: config.nodeEnv === 'production'
+      message: environment.nodeEnv === 'production'
         ? 'Error interno del servidor'
         : err.message,
     },

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { UsuarioService } from '../services';
-import { wrapAsync } from '../../../shared/utils';
+import { UsuarioService } from '../services/usuario.service';
+import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const UsuarioController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -9,7 +9,7 @@ export const UsuarioController = {
   }),
 
   obtenerPorId: wrapAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const usuario = await UsuarioService.obtenerPorId(id);
     res.json({ data: usuario });
   }),
@@ -20,13 +20,13 @@ export const UsuarioController = {
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const usuario = await UsuarioService.actualizar(id, req.body);
     res.json({ data: usuario });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     await UsuarioService.eliminar(id);
     res.status(204).send();
   }),
