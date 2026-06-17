@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { SESSION_MAX_AGE_MS } from '@/lib/security/constants';
-import { validateCredentials } from '@/services/authCredentials';
 
 type SessionPayload = {
   userName: string;
@@ -13,6 +12,7 @@ type AuthState = {
   userName: string | null;
   displayName: string | null;
   isAuthenticated: boolean;
+  token: string | null;
   signIn: (userName: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   signOut: () => void;
   syncSession: () => void;
@@ -20,14 +20,6 @@ type AuthState = {
 };
 
 const SESSION_KEY = 'liceo-auth-session';
-
-function createSessionToken(): string {
-  const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 function readSession(): SessionPayload | null {
   try {
@@ -51,14 +43,15 @@ function writeSession(data: SessionPayload) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
 }
 
-function sessionToState(session: SessionPayload | null): Pick<AuthState, 'userName' | 'displayName' | 'isAuthenticated'> {
+function sessionToState(session: SessionPayload | null): Pick<AuthState, 'userName' | 'displayName' | 'isAuthenticated' | 'token'> {
   if (!session) {
-    return { userName: null, displayName: null, isAuthenticated: false };
+    return { userName: null, displayName: null, isAuthenticated: false, token: null };
   }
   return {
     userName: session.userName,
     displayName: session.displayName,
     isAuthenticated: true,
+    token: session.sessionToken,
   };
 }
 
@@ -68,26 +61,40 @@ export const useAuthStore = create<AuthState>((set) => ({
   ...sessionToState(initialSession),
 
   signIn: async (userName, password) => {
-    const result = await validateCredentials(userName, password);
-    if (!result.ok) {
-      return { ok: false, message: result.message };
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: userName, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        return { ok: false, message: data.message || 'Usuario o contraseña incorrectos.' };
+      }
+
+      const session: SessionPayload = {
+        userName: data.user.userName,
+        displayName: data.user.displayName,
+        expiresAt: Date.now() + SESSION_MAX_AGE_MS,
+        sessionToken: data.token,
+      };
+
+      writeSession(session);
+      set(sessionToState(session));
+      return { ok: true };
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+      return { ok: false, message: 'No se pudo conectar con el servidor. Verifique su conexión.' };
     }
-
-    const session: SessionPayload = {
-      userName: result.user.userName,
-      displayName: result.user.displayName,
-      expiresAt: Date.now() + SESSION_MAX_AGE_MS,
-      sessionToken: createSessionToken(),
-    };
-
-    writeSession(session);
-    set(sessionToState(session));
-    return { ok: true };
   },
 
   signOut: () => {
     sessionStorage.removeItem(SESSION_KEY);
-    set({ userName: null, displayName: null, isAuthenticated: false });
+    set({ userName: null, displayName: null, isAuthenticated: false, token: null });
   },
 
   syncSession: () => {

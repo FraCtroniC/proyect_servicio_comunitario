@@ -1,11 +1,11 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Rol extends Model {
-  public id_rol!: number;
-  public nombre!: string;
-  public descripcion!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_rol: number;
+  declare nombre: string;
+  declare descripcion: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Rol.hasMany(models.Usuario, { foreignKey: 'id_rol', as: 'usuarios' });

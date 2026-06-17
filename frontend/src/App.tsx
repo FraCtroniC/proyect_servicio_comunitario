@@ -8,7 +8,6 @@ import { GradesPage } from '@/features/grades/GradesPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
-import { ensureDefaultUsers } from '@/services/authCredentials';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -26,9 +25,6 @@ export default function App() {
 
   useEffect(() => {
     syncSession();
-    ensureDefaultUsers().catch((error) => {
-      console.error('Error al preparar usuarios:', error);
-    });
   }, [syncSession]);
 
   return (

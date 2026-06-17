@@ -1,15 +1,17 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Usuario extends Model {
-  public id_usuario!: number;
-  public id_rol!: number;
-  public id_docente!: number | null;
-  public username!: string;
-  public password_hash!: string;
-  public estatus!: string | null;
-  public ultimo_acceso!: Date | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_usuario: number;
+  declare id_rol: number;
+  declare id_docente: number | null;
+  declare username: string;
+  declare password_hash: string;
+  declare estatus: string | null;
+  declare ultimo_acceso: Date | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
+  declare rol?: any;
+  declare docente?: any;
 
   static associate(models: any) {
     Usuario.belongsTo(models.Rol, { foreignKey: 'id_rol', as: 'rol' });

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authRoutes } from './auth.routes';
 import { usuarioRoutes } from './usuario.routes';
 import { rolRoutes } from './rol.routes';
 import { docenteRoutes } from './docente.routes';
@@ -23,6 +24,8 @@ import { justificacionRoutes } from './justificacion.routes';
 import { auditoriaRoutes } from './auditoria.routes';
 
 export const routes = Router();
+
+routes.use('/auth', authRoutes);
 
 // Rutas individuales independientes para cada entidad del sistema
 routes.use('/usuarios', usuarioRoutes);
