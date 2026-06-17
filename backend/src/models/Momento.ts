@@ -1,0 +1,46 @@
+import { Model, DataTypes, Sequelize } from 'sequelize';
+
+export class Momento extends Model {
+  public id_momento!: number;
+  public id_periodo!: number;
+  public descripcion!: string | null;
+  public readonly created_at!: Date;
+  public readonly updated_at!: Date | null;
+
+  static associate(models: any) {
+    Momento.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });
+    Momento.hasMany(models.Calificacion, { foreignKey: 'id_momento', as: 'calificaciones' });
+  }
+}
+
+export function initMomento(sequelize: Sequelize): typeof Momento {
+  Momento.init(
+    {
+      id_momento: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      id_periodo: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'periodos_escolares',
+          key: 'id_periodo',
+        },
+      },
+      descripcion: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+    },
+    {
+      sequelize,
+      tableName: 'momentos',
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
+    }
+  );
+  return Momento;
+}
