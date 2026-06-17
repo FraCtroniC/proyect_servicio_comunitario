@@ -8,7 +8,6 @@ export class PeriodoEscolar extends Model {
   public readonly updated_at!: Date | null;
 
   static associate(models: any) {
-    PeriodoEscolar.hasMany(models.Seccion, { foreignKey: 'id_periodo', as: 'secciones' });
     PeriodoEscolar.hasMany(models.Matricula, { foreignKey: 'id_periodo', as: 'matriculas' });
     PeriodoEscolar.hasMany(models.Momento, { foreignKey: 'id_periodo', as: 'momentos' });
     PeriodoEscolar.hasMany(models.HistoricoNotaCertificada, { foreignKey: 'id_periodo', as: 'historicos' });

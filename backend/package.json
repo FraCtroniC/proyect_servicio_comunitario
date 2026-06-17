@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/src/server.js",
     "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "tsx src/scripts/seed.ts",
+    "seed:phase2": "tsx src/scripts/seed-phase2.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
