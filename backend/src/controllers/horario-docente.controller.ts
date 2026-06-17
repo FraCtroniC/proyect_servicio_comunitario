@@ -1,10 +1,22 @@
 import { Request, Response } from 'express';
-import { HorarioDocente } from '../models/HorarioDocente';
+import { HorarioDocente, Asignatura, Seccion, DiaSemana, BloqueHorario, Aula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const HorarioDocenteController = {
-  listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await HorarioDocente.findAll();
+  listar: wrapAsync(async (req: Request, res: Response) => {
+    const where: any = {};
+    if (req.query.id_docente) where.id_docente = Number(req.query.id_docente);
+
+    const result = await HorarioDocente.findAll({
+      where,
+      include: [
+        { model: Asignatura, as: 'asignatura' },
+        { model: Seccion, as: 'seccion' },
+        { model: DiaSemana, as: 'dia' },
+        { model: BloqueHorario, as: 'bloque' },
+        { model: Aula, as: 'aula' }
+      ]
+    });
     res.json({ data: result });
   }),
 

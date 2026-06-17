@@ -1,0 +1,78 @@
+const SESSION_KEY = 'liceo-auth-session';
+
+function getSessionToken(): string | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data && data.sessionToken && data.expiresAt && Date.now() < data.expiresAt) {
+      return data.sessionToken;
+    }
+  } catch {
+    // ignorar
+  }
+  return null;
+}
+
+type RequestOptions = RequestInit & {
+  params?: Record<string, string | number | boolean>;
+};
+
+async function request<T>(url: string, options: RequestOptions = {}): Promise<T> {
+  const token = getSessionToken();
+  const headers = new Headers(options.headers);
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  if (options.body && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  let finalUrl = url;
+  if (options.params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) {
+        searchParams.append(key, String(val));
+      }
+    });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      finalUrl += (url.includes('?') ? '&' : '?') + queryString;
+    }
+  }
+
+  const response = await fetch(finalUrl, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorMsg = 'Error en la petición al servidor';
+    try {
+      const errData = await response.json();
+      errorMsg = errData.error?.message || errData.message || errorMsg;
+    } catch {
+      // no es JSON o no contiene error
+    }
+    throw new Error(errorMsg);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  const resJson = await response.json();
+  return resJson.data !== undefined ? resJson.data : resJson;
+}
+
+export const api = {
+  get: <T>(url: string, params?: Record<string, any>) => request<T>(url, { method: 'GET', params }),
+  post: <T>(url: string, body?: any) =>
+    request<T>(url, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  patch: <T>(url: string, body?: any) =>
+    request<T>(url, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
+  delete: <T>(url: string) => request<T>(url, { method: 'DELETE' }),
+};

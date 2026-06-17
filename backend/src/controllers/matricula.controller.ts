@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
-import { Matricula } from '../models/Matricula';
+import { Matricula, Estudiante } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const MatriculaController = {
-  listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await Matricula.findAll();
+  listar: wrapAsync(async (req: Request, res: Response) => {
+    const where: any = {};
+    if (req.query.id_seccion) where.id_seccion = Number(req.query.id_seccion);
+    if (req.query.id_periodo) where.id_periodo = Number(req.query.id_periodo);
+
+    const result = await Matricula.findAll({
+      where,
+      include: [{ model: Estudiante, as: 'estudiante' }]
+    });
     res.json({ data: result });
   }),
 

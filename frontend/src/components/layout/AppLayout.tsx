@@ -5,6 +5,7 @@ const titles: Record<string, { eyebrow: string; title: string }> = {
   '/': { eyebrow: 'Resumen', title: 'Panel general' },
   '/attendance': { eyebrow: 'Operaciones', title: 'Control de asistencia' },
   '/grades': { eyebrow: 'Académico', title: 'Gestión de calificaciones' },
+  '/classrooms': { eyebrow: 'Infraestructura', title: 'Gestión de aulas' },
 };
 
 export function AppLayout() {
@@ -36,6 +37,9 @@ export function AppLayout() {
             </NavLink>
             <NavLink to="/grades" className={({ isActive }) => navClass(isActive)}>
               Calificaciones
+            </NavLink>
+            <NavLink to="/classrooms" className={({ isActive }) => navClass(isActive)}>
+              Aulas
             </NavLink>
           </nav>
 

@@ -8,6 +8,7 @@ import { GradesPage } from '@/features/grades/GradesPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { ClassroomsPage } from '@/features/classrooms/ClassroomsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -42,6 +43,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="grades" element={<GradesPage />} />
+        <Route path="classrooms" element={<ClassroomsPage />} />
       </Route>
       <Route path="*" element={<Navigate to={isAuthenticated && isSessionValid() ? '/' : '/login'} replace />} />
     </Routes>
