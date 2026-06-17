@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Home, PlusCircle, Trash, Shield, AlertTriangle, Cpu, Radio, ShieldCheck } from 'lucide-react';
 import { Classroom, ScheduleEvent, UserRole } from '../types';
+import { Modal } from './Modal';
 
 interface FacilitiesProps {
   classrooms: Classroom[];
@@ -29,6 +30,7 @@ export default function FacilitiesManager({
   const [resources, setResources] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +56,7 @@ export default function FacilitiesManager({
     setName('');
     setCapacity(30);
     setResources('');
+    setIsModalOpen(false);
   };
 
   const getClassroomOccupancyCount = (roomId: string) => {
@@ -78,8 +81,8 @@ export default function FacilitiesManager({
   };
 
   return (
-    <div id="facilities-root" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
-      
+    <>
+      <div id="facilities-root" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
       {/* Header */}
       <div id="facilities-header" className="border-b border-slate-100 pb-4">
         <h1 id="facilities-title" className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -89,16 +92,27 @@ export default function FacilitiesManager({
         <p className="text-xs text-slate-500 mt-1">Estructuración e inventariado de salones de clase teóricos, laboratorios especializados, y espacios deportivos regulados por el MPPE.</p>
       </div>
 
-      <div id="facilities-grid" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div id="facilities-grid" className="grid grid-cols-1 gap-6">
 
-        {/* Left Side: Room list display (col span 2) */}
-        <div id="room-list-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 lg:col-span-2 space-y-4 shadow-xs">
+        {/* Room list display (full width now) */}
+        <div id="room-list-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-xs">
           <div id="room-list-header" className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800">Directorio de Planta Física Activa</h3>
-            <span className="text-[10px] bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded">Total Locaciones: {classrooms.length}</span>
+            <div className="flex gap-4 items-center">
+              <span className="text-[10px] bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded">Total Locaciones: {classrooms.length}</span>
+              {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  Agregar Aula
+                </button>
+              )}
+            </div>
           </div>
 
-          <div id="room-cards" className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-1">
+          <div id="room-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-1">
             {classrooms.map(room => {
               const bookingCount = getClassroomOccupancyCount(room.id);
               
@@ -159,96 +173,88 @@ export default function FacilitiesManager({
           </div>
         </div>
 
-        {/* Right Side: Add new space register (requires SuperAdmin or ControlDeEstudios) */}
-        <div id="add-room-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs h-fit space-y-4">
-          <div id="add-room-panel-header" className="border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <PlusCircle className="h-4.5 w-4.5 text-indigo-600" />
-              Ingresar Nueva Locación
-            </h3>
-          </div>
-
-          {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
-            <div id="room-form-locked" className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-2">
-              <Shield className="h-5 w-5 text-amber-600" />
-              <p className="font-bold">Acceso Denegado</p>
-              <p className="leading-relaxed">
-                Su rol simulado no posee habilitaciones para administrar el inventariado de planta física. 
-                Por favor, modifique su perfil a <strong>Director</strong> o <strong>Control de Estudios</strong>.
-              </p>
-            </div>
-          ) : (
-            <form id="add-room-form" onSubmit={handleSubmit} className="space-y-4">
-              {errorMsg && (
-                <div id="add-room-error" className="p-2.5 bg-rose-50 border border-rose-250 font-medium rounded-lg text-rose-800 text-[11px]">
-                  {errorMsg}
-                </div>
-              )}
-              {successMsg && (
-                <div id="add-room-success" className="p-2.5 bg-green-50 border border-green-250 font-medium rounded-lg text-green-800 text-[11px]">
-                  {successMsg}
-                </div>
-              )}
-
-              <div id="form-room-name" className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Nombre / Identificador del Espacio</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Laboratorio de Biología" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
-                />
-              </div>
-
-              <div id="form-room-cap" className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Aforo / Capacidad de Pupitres</label>
-                <input 
-                  type="number" 
-                  value={capacity}
-                  onChange={(e) => setCapacity(Number(e.target.value))}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
-                />
-              </div>
-
-              <div id="form-room-type" className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Función / Tipología</label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as any)}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-                >
-                  <option value="Teórica">Teórica (Aulas de EMG)</option>
-                  <option value="Laboratorio">Laboratorio Especializado</option>
-                  <option value="Deportiva">Deportiva / Recreativa</option>
-                  <option value="Comunitaria">Taller de Vinculación Comunitaria</option>
-                </select>
-              </div>
-
-              <div id="form-room-res" className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Inventario de Recursos (Separado por coma)</label>
-                <textarea 
-                  placeholder="e.g. Proyector, Microscopios, Ventiladores, Acondicionador de Aire" 
-                  value={resources}
-                  onChange={(e) => setResources(e.target.value)}
-                  rows={3}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
-              >
-                Registrar Aula en Inventario
-              </button>
-            </form>
-          )}
-
-        </div>
-
+      </div>
       </div>
 
-    </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Ingresar Nueva Locación">
+        {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
+          <div id="room-form-locked" className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-2">
+            <Shield className="h-5 w-5 text-amber-600" />
+            <p className="font-bold">Acceso Denegado</p>
+            <p className="leading-relaxed">
+              Su rol simulado no posee habilitaciones para administrar el inventariado de planta física. 
+              Por favor, modifique su perfil a <strong>Director</strong> o <strong>Control de Estudios</strong>.
+            </p>
+          </div>
+        ) : (
+          <form id="add-room-form" onSubmit={handleSubmit} className="space-y-4">
+            {errorMsg && (
+              <div id="add-room-error" className="p-2.5 bg-rose-50 border border-rose-250 font-medium rounded-lg text-rose-800 text-[11px]">
+                {errorMsg}
+              </div>
+            )}
+            {successMsg && (
+              <div id="add-room-success" className="p-2.5 bg-green-50 border border-green-250 font-medium rounded-lg text-green-800 text-[11px]">
+                {successMsg}
+              </div>
+            )}
+
+            <div id="form-room-name" className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Nombre / Identificador del Espacio</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Laboratorio de Biología" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
+              />
+            </div>
+
+            <div id="form-room-cap" className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Aforo / Capacidad de Pupitres</label>
+              <input 
+                type="number" 
+                value={capacity}
+                onChange={(e) => setCapacity(Number(e.target.value))}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
+              />
+            </div>
+
+            <div id="form-room-type" className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Función / Tipología</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as any)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              >
+                <option value="Teórica">Teórica (Aulas de EMG)</option>
+                <option value="Laboratorio">Laboratorio Especializado</option>
+                <option value="Deportiva">Deportiva / Recreativa</option>
+                <option value="Comunitaria">Taller de Vinculación Comunitaria</option>
+              </select>
+            </div>
+
+            <div id="form-room-res" className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Inventario de Recursos (Separado por coma)</label>
+              <textarea 
+                placeholder="e.g. Proyector, Microscopios, Ventiladores, Acondicionador de Aire" 
+                value={resources}
+                onChange={(e) => setResources(e.target.value)}
+                rows={3}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+            >
+              Registrar Aula en Inventario
+            </button>
+          </form>
+        )}
+      </Modal>
+
+    </>
   );
 }

@@ -89,6 +89,6 @@ export function mapCalificacionToGrade(dbCalif: any, studentId: string): Grade {
     subjectId: String(dbCalif.id_plan), // simplified
     lapso: dbCalif.id_momento as any,
     evaluationId: `ev1-${dbCalif.id_plan}`, // simplified matching
-    score: dbCalif.escala?.nota_max || 0
+    score: dbCalif.escala?.nota_calculo || dbCalif.id_escala || 0
   };
 }

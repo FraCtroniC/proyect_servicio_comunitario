@@ -8,7 +8,10 @@ export class Seccion extends Model {
   public readonly created_at!: Date;
   public readonly updated_at!: Date | null;
 
+  public id_periodo!: number;
+
   static associate(models: any) {
+    Seccion.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });
     Seccion.belongsTo(models.GradoAno, { foreignKey: 'id_grado', as: 'grado' });
     Seccion.belongsTo(models.Docente, { foreignKey: 'id_docente_guia', as: 'docenteGuia' });
     Seccion.hasMany(models.Matricula, { foreignKey: 'id_seccion', as: 'matriculas' });
@@ -23,6 +26,14 @@ export function initSeccion(sequelize: Sequelize): typeof Seccion {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+      },
+      id_periodo: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'periodos_escolares',
+          key: 'id_periodo',
+        },
       },
       id_grado: {
         type: DataTypes.INTEGER,

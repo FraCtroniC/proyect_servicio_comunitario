@@ -61,6 +61,8 @@ import {
 import Dashboard from './components/Dashboard';
 import UserManager from './components/UserManager';
 import AcademicManager from './components/AcademicManager';
+import StudentManager from './components/StudentManager';
+import StaffManager from './components/StaffManager';
 import GradeManager from './components/GradeManager';
 import AttendanceTracker from './components/AttendanceTracker';
 import ScheduleCoordinator from './components/ScheduleCoordinator';
@@ -160,8 +162,9 @@ export default function App() {
           setEvaluationPlans(planesData.map(mapPlanToEvaluationPlan));
           setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
           setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
+          alert("Error al cargar datos desde el backend: " + error.message);
         }
       };
       loadInitialData();
@@ -278,8 +281,20 @@ export default function App() {
     setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
   };
 
-  const handleAddClassroom = (room: Classroom) => {
-    setClassrooms(p => [...p, room]);
+  const handleAddClassroom = async (room: Classroom) => {
+    try {
+      const resp = await api.post<any>('/api/aulas', {
+        nombre_codigo: room.name,
+        capacidad: room.capacity,
+        tipo_espacio: room.type,
+        estatus: 'Activo'
+      });
+      const savedRoom = mapAulaToClassroom(resp);
+      setClassrooms(prev => [...prev, savedRoom]);
+    } catch (e) {
+      console.error(e);
+      alert('Error al crear el aula en la base de datos');
+    }
   };
 
   const handleRemoveClassroom = (roomId: string) => {
@@ -289,11 +304,13 @@ export default function App() {
   // Tabs structure definitions
   const tabs = [
     { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard },
-    { id: 'academic', label: 'Matrícula EMG', icon: Users },
+    { id: 'students', label: 'Matrícula Estudiantes', icon: Users },
+    { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap },
     { id: 'grades', label: 'Notas Calificación', icon: Award },
     { id: 'attendance', label: 'Control Asistencia', icon: Calendar },
     { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck },
     { id: 'facilities', label: 'Salones & Aulas', icon: Home },
+    { id: 'staff', label: 'Directorio Personal', icon: BookOpen },
     { id: 'users', label: 'Roles Acceso', icon: Shield },
     { id: 'documentation', label: 'Tesis Arquitectura', icon: BookOpen }
   ];
@@ -505,6 +522,15 @@ export default function App() {
                 />
               )}
 
+              {activeTab === 'students' && (
+                <StudentManager
+                  students={students}
+                  currentUserRole={currentUserRole}
+                  onAddStudent={handleAddStudent}
+                  onUpdateStudentStatus={handleUpdateStudentStatus}
+                />
+              )}
+
               {activeTab === 'academic' && (
                 <AcademicManager
                   students={students}
@@ -558,6 +584,16 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onAddClassroom={handleAddClassroom}
                   onRemoveClassroom={handleRemoveClassroom}
+                />
+              )}
+
+              {activeTab === 'staff' && (
+                <StaffManager
+                  users={users}
+                  currentUserRole={currentUserRole}
+                  onSetUserRole={setCurrentUserRole}
+                  onAddUser={handleAddUser}
+                  onToggleUserActive={handleToggleUserActive}
                 />
               )}
 

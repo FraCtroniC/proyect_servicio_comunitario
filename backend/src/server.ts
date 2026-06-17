@@ -6,7 +6,11 @@ async function main() {
   try {
     console.log('Conectando a la base de datos con Sequelize...');
     await sequelize.authenticate();
-    console.log('Conexión a PostgreSQL (Sequelize) establecida correctamente.');
+    console.log('Conexión a la base de datos establecida correctamente.');
+
+    // Sincronizar modelos
+    await sequelize.sync({ alter: true });
+    console.log('Modelos sincronizados con la base de datos.');
 
     // Sincronizar modelos en desarrollo si es necesario (sin alterar datos existentes por ahora)
     // await sequelize.sync();
@@ -37,3 +41,4 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 main();
+// trigger restart 

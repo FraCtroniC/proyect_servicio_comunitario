@@ -7,6 +7,8 @@ async function seed() {
   try {
     await sequelize.authenticate();
     console.log('✅ Conexión a la base de datos establecida.');
+    await sequelize.sync({ force: true });
+    console.log('✅ Base de datos sincronizada (force: true).');
 
     // 1. Roles (Asegurar que existan los roles base)
     const roles = [

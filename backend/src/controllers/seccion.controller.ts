@@ -3,8 +3,12 @@ import { Seccion } from '../models/Seccion';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const SeccionController = {
-  listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await Seccion.findAll();
+  listar: wrapAsync(async (req: Request, res: Response) => {
+    const where: any = {};
+    if (req.query.id_periodo) {
+      where.id_periodo = Number(req.query.id_periodo);
+    }
+    const result = await Seccion.findAll({ where });
     res.json({ data: result });
   }),
 

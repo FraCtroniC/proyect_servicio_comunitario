@@ -109,26 +109,36 @@ async function runSeed() {
     }
 
     // 8. Docentes (Traer los creados en la fase 1)
+    const seccionesData = [
+      { id_grado: 1, letra: 'A', id_docente_guia: 1, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 1, letra: 'B', id_docente_guia: 2, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 1, letra: 'C', id_docente_guia: 3, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 1, letra: 'D', id_docente_guia: 4, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 2, letra: 'A', id_docente_guia: 5, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 2, letra: 'B', id_docente_guia: 6, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 3, letra: 'A', id_docente_guia: 7, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 3, letra: 'B', id_docente_guia: 8, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 4, letra: 'A', id_docente_guia: 9, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 4, letra: 'B', id_docente_guia: 10, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 5, letra: 'A', id_docente_guia: 11, id_periodo: periodo.get('id_periodo') },
+      { id_grado: 5, letra: 'B', id_docente_guia: 12, id_periodo: periodo.get('id_periodo') }
+    ];
+    const seccionesDb = [];
+    for (const sec of seccionesData) {
+      const [seccionObj] = await Seccion.findOrCreate({
+        where: { id_grado: sec.id_grado, letra: sec.letra, id_periodo: sec.id_periodo },
+        defaults: sec
+      });
+      seccionesDb.push(seccionObj);
+    }
+
     const docentesDb = await Docente.findAll();
     if (docentesDb.length === 0) {
       console.log('No hay docentes creados. Asegúrate de correr el seed de fase 1 primero.');
       return;
     }
 
-    // 9. Secciones (Crear múltiples secciones A, B, C, D para 1er año, y A, B para el resto)
-    const seccionesDb = [];
-    for (const grado of gradosDb) {
-      const letras = grado.get('numero') === 1 ? ['A', 'B', 'C', 'D'] : ['A', 'B'];
-      for (const letra of letras) {
-        const d_guia = docentesDb[Math.floor(Math.random() * docentesDb.length)];
-        const [seccion] = await Seccion.findOrCreate({
-          where: { id_grado: grado.get('id_grado'), letra: letra },
-          defaults: { id_docente_guia: d_guia.get('id_docente') }
-        });
-        seccionesDb.push(seccion);
-      }
-    }
-
+    // 9. Secciones created above (seccionesDb)
     // 10. Horarios (Asignar aleatoriamente materias y docentes a las secciones)
     console.log('Creando Horarios...');
     for (const seccion of seccionesDb) {
@@ -155,14 +165,14 @@ async function runSeed() {
 
     // 11. Escala Calificacion
     const escalas = [
-      { valor: '20', descripcion: 'Excelente', nota_min: 19, nota_max: 20 },
-      { valor: '15', descripcion: 'Regular', nota_min: 10, nota_max: 15 },
+      { nota_impresa: '20', ponderacion_letra: 'Excelente', nota_literal: 'A', nota_calculo: 20 },
+      { nota_impresa: '15', ponderacion_letra: 'Regular', nota_literal: 'C', nota_calculo: 15 },
     ];
     const escalasDb = [];
     for (const e of escalas) {
       const [esc] = await EscalaCalificacion.findOrCreate({
-        where: { valor: e.valor },
-        defaults: e
+        where: { nota_impresa: e.nota_impresa },
+        defaults: e as any
       });
       escalasDb.push(esc);
     }
