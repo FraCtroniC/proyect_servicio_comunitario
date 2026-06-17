@@ -6,7 +6,7 @@ const safeUserName = z
   .string()
   .min(USERNAME_MIN, `Mínimo ${USERNAME_MIN} caracteres`)
   .max(USERNAME_MAX, `Máximo ${USERNAME_MAX} caracteres`)
-  .regex(/^[a-zA-Z0-9._-]+$/, 'Caracteres no permitidos en el usuario')
+  .regex(/^[a-zA-Z0-9._@+-]+$/, 'Caracteres no permitidos en el usuario')
   .refine((v) => !containsMaliciousPattern(v), 'Entrada no permitida');
 
 function buildPasswordSchema(minLength: number, minMessage: string) {
@@ -28,7 +28,9 @@ export const loginSchema = z.object({
 });
 
 export const recoveryLookupSchema = z.object({
-  userName: safeUserName,
+  userName: z.string()
+    .min(1, 'El correo es requerido')
+    .email('Ingrese un correo institucional válido'),
 });
 
 export const recoveryResetSchema = z
