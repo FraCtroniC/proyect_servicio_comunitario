@@ -7,6 +7,7 @@ export class Usuario extends Model {
   declare username: string;
   declare password_hash: string;
   declare estatus: string | null;
+  declare correo: string | null;
   declare ultimo_acceso: Date | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
@@ -56,6 +57,10 @@ export function initUsuario(sequelize: Sequelize): typeof Usuario {
         type: DataTypes.STRING(15),
         allowNull: true,
         defaultValue: 'Activo',
+      },
+      correo: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
       },
       ultimo_acceso: {
         type: DataTypes.DATE,
