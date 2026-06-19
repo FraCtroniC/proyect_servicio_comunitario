@@ -1,21 +1,21 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Estudiante extends Model {
-  public id_estudiante!: number;
-  public cedula_escolar!: string;
-  public nombre1!: string;
-  public nombre2!: string | null;
-  public apellido1!: string;
-  public apellido2!: string | null;
-  public fecha_nac!: Date;
-  public lugar_nac!: string | null;
-  public municipio!: string | null;
-  public estado!: string | null;
-  public genero!: string | null;
-  public id_representante!: number;
-  public estatus_estudiante!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_estudiante: number;
+  declare cedula_escolar: string;
+  declare nombre1: string;
+  declare nombre2: string | null;
+  declare apellido1: string;
+  declare apellido2: string | null;
+  declare fecha_nac: Date;
+  declare lugar_nac: string | null;
+  declare municipio: string | null;
+  declare estado: string | null;
+  declare genero: string | null;
+  declare id_representante: number;
+  declare estatus_estudiante: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Estudiante.belongsTo(models.Representante, { foreignKey: 'id_representante', as: 'representante' });

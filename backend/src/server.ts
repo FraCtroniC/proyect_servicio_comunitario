@@ -8,11 +8,8 @@ async function main() {
     await sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
 
-    // Sincronizar modelos
-    await sequelize.sync({ alter: true });
-    console.log('Modelos sincronizados con la base de datos.');
-
-    // Sincronizar modelos en desarrollo si es necesario (sin alterar datos existentes por ahora)
+    // Nota: sync() está comentado porque las tablas ya existen.
+    // Si agregas un modelo nuevo, ejecutá las migraciones o usá el script seed.
     // await sequelize.sync();
   } catch (err) {
     console.error('Error al conectar con PostgreSQL mediante Sequelize:', err);

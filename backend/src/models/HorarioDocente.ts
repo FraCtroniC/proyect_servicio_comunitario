@@ -1,15 +1,15 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class HorarioDocente extends Model {
-  public id_horario!: number;
-  public id_docente!: number;
-  public id_asignatura!: number;
-  public id_seccion!: number;
-  public id_dia!: number;
-  public id_bloque!: number;
-  public id_aula!: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_horario: number;
+  declare id_docente: number;
+  declare id_asignatura: number;
+  declare id_seccion: number;
+  declare id_dia: number;
+  declare id_bloque: number;
+  declare id_aula: number;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     HorarioDocente.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });

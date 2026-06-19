@@ -1,13 +1,13 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class PlanEstudio extends Model {
-  public id_plan!: number;
-  public id_grado!: number;
-  public id_asignatura!: number;
-  public codigo_asignatura!: string | null;
-  public posicion!: number | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_plan: number;
+  declare id_grado: number;
+  declare id_asignatura: number;
+  declare codigo_asignatura: string | null;
+  declare posicion: number | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     PlanEstudio.belongsTo(models.GradoAno, { foreignKey: 'id_grado', as: 'grado' });

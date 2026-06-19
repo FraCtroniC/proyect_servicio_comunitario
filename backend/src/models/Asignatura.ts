@@ -1,11 +1,11 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Asignatura extends Model {
-  public id_asignatura!: number;
-  public nombre!: string;
-  public tipo_calificacion!: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_asignatura: number;
+  declare nombre: string;
+  declare tipo_calificacion: string;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Asignatura.hasMany(models.PlanEstudio, { foreignKey: 'id_asignatura', as: 'planes' });

@@ -1,10 +1,10 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class DiaSemana extends Model {
-  public id_dia!: number;
-  public nombre!: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_dia: number;
+  declare nombre: string;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     DiaSemana.hasMany(models.HorarioDocente, { foreignKey: 'id_dia', as: 'horarios' });

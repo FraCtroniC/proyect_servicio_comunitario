@@ -1,14 +1,14 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Seccion extends Model {
-  public id_seccion!: number;
-  public id_grado!: number;
-  public letra!: string;
-  public id_docente_guia!: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_seccion: number;
+  declare id_grado: number;
+  declare letra: string;
+  declare id_docente_guia: number;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
-  public id_periodo!: number;
+  declare id_periodo: number;
 
   static associate(models: any) {
     Seccion.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });

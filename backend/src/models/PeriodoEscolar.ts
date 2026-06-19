@@ -1,11 +1,11 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class PeriodoEscolar extends Model {
-  public id_periodo!: number;
-  public nombre!: string;
-  public estatus!: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_periodo: number;
+  declare nombre: string;
+  declare estatus: string;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     PeriodoEscolar.hasMany(models.Matricula, { foreignKey: 'id_periodo', as: 'matriculas' });

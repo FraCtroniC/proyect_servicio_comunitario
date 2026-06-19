@@ -1,15 +1,15 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Auditoria extends Model {
-  public id_auditoria!: number;
-  public id_usuario!: number | null;
-  public accion!: string;
-  public tabla_afectada!: string;
-  public registro_id!: number | null;
-  public valores_antiguos!: any | null;
-  public valores_nuevos!: any | null;
-  public ip_direccion!: string | null;
-  public readonly fecha_hora!: Date;
+  declare id_auditoria: number;
+  declare id_usuario: number | null;
+  declare accion: string;
+  declare tabla_afectada: string;
+  declare registro_id: number | null;
+  declare valores_antiguos: any | null;
+  declare valores_nuevos: any | null;
+  declare ip_direccion: string | null;
+  declare readonly fecha_hora: Date;
 
   static associate(models: any) {
     Auditoria.belongsTo(models.Usuario, { foreignKey: 'id_usuario', as: 'usuario' });

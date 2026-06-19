@@ -1,14 +1,14 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Calificacion extends Model {
-  public id_calificacion!: number;
-  public id_matricula!: number;
-  public id_plan!: number;
-  public id_momento!: number;
-  public id_escala!: number;
-  public inasistencias_asignatura!: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_calificacion: number;
+  declare id_matricula: number;
+  declare id_plan: number;
+  declare id_momento: number;
+  declare id_escala: number;
+  declare inasistencias_asignatura: number;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Calificacion.belongsTo(models.Matricula, { foreignKey: 'id_matricula', as: 'matricula' });

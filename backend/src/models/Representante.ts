@@ -1,17 +1,17 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Representante extends Model {
-  public id_representante!: number;
-  public cedula_rep!: string;
-  public nombre1!: string;
-  public nombre2!: string | null;
-  public apellido1!: string;
-  public apellido2!: string | null;
-  public telefono!: string | null;
-  public direccion!: string | null;
-  public correo!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_representante: number;
+  declare cedula_rep: string;
+  declare nombre1: string;
+  declare nombre2: string | null;
+  declare apellido1: string;
+  declare apellido2: string | null;
+  declare telefono: string | null;
+  declare direccion: string | null;
+  declare correo: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Representante.hasMany(models.Estudiante, { foreignKey: 'id_representante', as: 'estudiantes' });

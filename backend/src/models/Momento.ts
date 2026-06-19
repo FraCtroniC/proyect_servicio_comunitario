@@ -1,11 +1,11 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Momento extends Model {
-  public id_momento!: number;
-  public id_periodo!: number;
-  public descripcion!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_momento: number;
+  declare id_periodo: number;
+  declare descripcion: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Momento.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });

@@ -1,13 +1,13 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class EscalaCalificacion extends Model {
-  public id_escala!: number;
-  public nota_impresa!: string;
-  public nota_literal!: string;
-  public nota_calculo!: number | null;
-  public ponderacion_letra!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_escala: number;
+  declare nota_impresa: string;
+  declare nota_literal: string;
+  declare nota_calculo: number | null;
+  declare ponderacion_letra: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     EscalaCalificacion.hasMany(models.Calificacion, { foreignKey: 'id_escala', as: 'calificaciones' });

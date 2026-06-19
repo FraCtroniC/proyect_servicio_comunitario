@@ -1,13 +1,13 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class BloqueHorario extends Model {
-  public id_bloque!: number;
-  public hora_inicio!: string;
-  public hora_fin!: string;
-  public tipo_bloque!: string | null;
-  public numero_bloque!: number | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_bloque: number;
+  declare hora_inicio: string;
+  declare hora_fin: string;
+  declare tipo_bloque: string | null;
+  declare numero_bloque: number | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     BloqueHorario.hasMany(models.HorarioDocente, { foreignKey: 'id_bloque', as: 'horarios' });

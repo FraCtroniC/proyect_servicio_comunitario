@@ -1,11 +1,11 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class GradoAno extends Model {
-  public id_grado!: number;
-  public numero!: number;
-  public nombre!: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_grado: number;
+  declare numero: number;
+  declare nombre: string;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     GradoAno.hasMany(models.Seccion, { foreignKey: 'id_grado', as: 'secciones' });

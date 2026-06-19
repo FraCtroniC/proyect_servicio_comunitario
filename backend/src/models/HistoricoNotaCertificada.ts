@@ -1,15 +1,15 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class HistoricoNotaCertificada extends Model {
-  public id_historico!: number;
-  public id_estudiante!: number;
-  public id_grado!: number;
-  public id_asignatura!: number;
-  public id_periodo!: number;
-  public id_escala!: number;
-  public institucion_origen!: string;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_historico: number;
+  declare id_estudiante: number;
+  declare id_grado: number;
+  declare id_asignatura: number;
+  declare id_periodo: number;
+  declare id_escala: number;
+  declare institucion_origen: string;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     HistoricoNotaCertificada.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante', as: 'estudiante' });

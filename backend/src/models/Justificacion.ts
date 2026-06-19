@@ -1,12 +1,12 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Justificacion extends Model {
-  public id_justificacion!: number;
-  public id_asistencia!: number;
-  public motivo!: string | null;
-  public soporte_digital!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_justificacion: number;
+  declare id_asistencia: number;
+  declare motivo: string | null;
+  declare soporte_digital: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Justificacion.belongsTo(models.AsistenciaDocente, { foreignKey: 'id_asistencia', as: 'asistencia' });

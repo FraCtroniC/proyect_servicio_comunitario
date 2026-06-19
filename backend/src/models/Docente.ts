@@ -1,19 +1,19 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Docente extends Model {
-  public id_docente!: number;
-  public cedula_docente!: string;
-  public nombre1!: string;
-  public nombre2!: string | null;
-  public apellido1!: string;
-  public apellido2!: string | null;
-  public especialidad!: string | null;
-  public telefono!: string | null;
-  public correo!: string | null;
-  public token_qr!: string | null;
-  public estatus!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_docente: number;
+  declare cedula_docente: string;
+  declare nombre1: string;
+  declare nombre2: string | null;
+  declare apellido1: string;
+  declare apellido2: string | null;
+  declare especialidad: string | null;
+  declare telefono: string | null;
+  declare correo: string | null;
+  declare token_qr: string | null;
+  declare estatus: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Docente.hasMany(models.Usuario, { foreignKey: 'id_docente', as: 'usuarios' });

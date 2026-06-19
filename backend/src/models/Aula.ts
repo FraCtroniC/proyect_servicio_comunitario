@@ -1,14 +1,14 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Aula extends Model {
-  public id_aula!: number;
-  public nombre_codigo!: string;
-  public capacidad!: number | null;
-  public tipo_espacio!: string | null;
-  public ubicacion!: string | null;
-  public estatus!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date | null;
+  declare id_aula: number;
+  declare nombre_codigo: string;
+  declare capacidad: number | null;
+  declare tipo_espacio: string | null;
+  declare ubicacion: string | null;
+  declare estatus: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date | null;
 
   static associate(models: any) {
     Aula.hasMany(models.HorarioDocente, { foreignKey: 'id_aula', as: 'horarios' });
