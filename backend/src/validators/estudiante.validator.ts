@@ -4,7 +4,7 @@ export const validateCrearEstudiante = validateRules([
   { field: 'cedula_escolar', required: true },
   { field: 'nombre1', required: true },
   { field: 'apellido1', required: true },
-  { field: 'fecha_nacimiento', required: true },
+  { field: 'fecha_nac', required: true },
 ]);
 
 export const validateActualizarEstudiante = validateRules([

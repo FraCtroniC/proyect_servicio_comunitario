@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Usuario as UsuarioModel } from '../models';
+import { Usuario as UsuarioModel, Rol } from '../models';
 import { UsuarioDto, CrearUsuarioDto, ActualizarUsuarioDto } from '../types/usuario.types';
 import { NotFoundError, ValidationError } from '../shared/errors';
 
@@ -13,9 +13,11 @@ function mapModelToDto(model: UsuarioModel): UsuarioDto {
     username: model.username,
     passwordHash: model.password_hash,
     estatus: model.estatus,
+    correo: model.correo,
     ultimoAcceso: model.ultimo_acceso,
     createdAt: model.created_at,
     updatedAt: model.updated_at,
+    role: model.rol ? { idRol: model.rol.id_rol, nombre: model.rol.nombre } : undefined,
   };
 }
 
@@ -23,6 +25,9 @@ export const UsuarioService = {
   async listar(): Promise<UsuarioDto[]> {
     const usuarios = await UsuarioModel.findAll({
       order: [['id_usuario', 'ASC']],
+      include: [
+        { model: Rol, as: 'rol' },
+      ],
     });
     return usuarios.map(mapModelToDto);
   },
@@ -58,6 +63,7 @@ export const UsuarioService = {
       id_docente: dto.idDocente ?? null,
       username: dto.username,
       password_hash: passwordHash,
+      correo: dto.correo ?? null,
       estatus: dto.estatus ?? 'Activo',
     });
 
@@ -90,6 +96,10 @@ export const UsuarioService = {
 
     if (dto.idDocente !== undefined) {
       usuario.id_docente = dto.idDocente ?? null;
+    }
+
+    if (dto.correo !== undefined) {
+      usuario.correo = dto.correo;
     }
 
     if (dto.estatus !== undefined) {

@@ -5,9 +5,11 @@ export interface UsuarioDto {
   username: string;
   passwordHash: string;
   estatus: string | null;
+  correo: string | null;
   ultimoAcceso: Date | null;
   createdAt: Date;
   updatedAt: Date | null;
+  role?: { idRol: number; nombre: string };
 }
 
 export interface CrearUsuarioDto {
@@ -16,6 +18,7 @@ export interface CrearUsuarioDto {
   username: string;
   password: string;
   estatus?: string;
+  correo?: string;
 }
 
 export interface ActualizarUsuarioDto {
@@ -24,4 +27,5 @@ export interface ActualizarUsuarioDto {
   username?: string;
   password?: string;
   estatus?: string;
+  correo?: string;
 }

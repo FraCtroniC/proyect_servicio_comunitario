@@ -16,6 +16,7 @@ interface AttendanceTrackerProps {
   onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J') => void;
   onAddTeacherLog: (log: TeacherScheduleLog) => void;
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
+  onSyncTeacherAttendance?: (asistencias: Array<{ id_docente: number; fecha: string; hora_entrada?: string; hora_salida?: string; estatus?: string }>) => Promise<void>;
 }
 
 export default function AttendanceTracker({
@@ -26,7 +27,8 @@ export default function AttendanceTracker({
   currentUserRole,
   onModifyAttendance,
   onAddTeacherLog,
-  onUpdateTeacherLog
+  onUpdateTeacherLog,
+  onSyncTeacherAttendance
 }: AttendanceTrackerProps) {
   // Navigation
   const [trackerTab, setTrackerTab] = useState<'students' | 'teachers'>('students');
@@ -71,6 +73,20 @@ export default function AttendanceTracker({
     };
 
     onAddTeacherLog(newLog);
+
+    // Sincronizar con el backend
+    if (onSyncTeacherAttendance) {
+      const teacherIdNum = parseInt(selectedTeacherId.replace(/\D/g, '')) || 0;
+      if (teacherIdNum > 0) {
+        onSyncTeacherAttendance([{
+          id_docente: teacherIdNum,
+          fecha: selectedDate,
+          hora_entrada: nowHour,
+          estatus: status === 'OnTime' ? 'Puntual' : 'Retardo'
+        }]);
+      }
+    }
+
     const teacherName = users.find(u => u.id === selectedTeacherId)?.name || "Docente";
     setClockSuccessMsg(`Entrada registrada para ${teacherName} a las ${newLog.clockInTime} (${newLog.status === 'OnTime' ? 'A Tiempo' : 'Con Retardo'}).`);
     setTimeout(() => setClockSuccessMsg(''), 5000);
@@ -79,6 +95,21 @@ export default function AttendanceTracker({
   const handleTeacherClockOut = (logId: string) => {
     const nowHour = new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5); // "12:30"
     onUpdateTeacherLog(logId, nowHour || '12:30');
+
+    // Sincronizar salida con el backend
+    const log = teacherLogs.find(l => l.id === logId);
+    if (log && onSyncTeacherAttendance) {
+      const teacherIdNum = parseInt(log.teacherId.replace(/\D/g, '')) || 0;
+      if (teacherIdNum > 0) {
+        onSyncTeacherAttendance([{
+          id_docente: teacherIdNum,
+          fecha: log.date,
+          hora_salida: nowHour,
+          estatus: 'Completado'
+        }]);
+      }
+    }
+
     setClockSuccessMsg(`Salida registrada a las ${nowHour || '12:30'}. Asistencia cumplidora.`);
     setTimeout(() => setClockSuccessMsg(''), 5000);
   };

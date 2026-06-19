@@ -16,6 +16,7 @@ interface GradeManagerProps {
   currentUserRole: UserRole;
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
+  onSyncGrades: (calificaciones: Array<{ id_matricula: number; id_plan: number; id_momento: number; id_escala: number; inasistencias_asignatura?: number }>) => Promise<void>;
 }
 
 export default function GradeManager({
@@ -25,7 +26,8 @@ export default function GradeManager({
   grades,
   currentUserRole,
   onUpdateGrade,
-  onUpdateEvaluationPlan
+  onUpdateEvaluationPlan,
+  onSyncGrades
 }: GradeManagerProps) {
   // Navigation inside Grade Module
   const [activeSubTab, setActiveSubTab] = useState<'carga' | 'sabana' | 'boletin'>('carga');
@@ -222,7 +224,28 @@ export default function GradeManager({
               </select>
             </div>
 
-            <div id="eval-plan-actions" className="ml-auto pt-2">
+            <div id="eval-plan-actions" className="ml-auto flex items-center gap-2 pt-2">
+              <button
+                id="btn-sync-grades"
+                onClick={async () => {
+                  const calificaciones = grades.map(g => ({
+                    id_matricula: parseInt(g.studentId) || 0,
+                    id_plan: parseInt(g.subjectId) || 0,
+                    id_momento: g.lapso,
+                    id_escala: Math.round(g.score / 2) || 1,
+                  })).filter(c => c.id_matricula > 0 && c.id_plan > 0);
+                  if (calificaciones.length > 0) {
+                    await onSyncGrades(calificaciones);
+                    alert('Calificaciones sincronizadas con el servidor');
+                  } else {
+                    alert('No hay calificaciones para sincronizar. Asegúrese de que los IDs sean numéricos.');
+                  }
+                }}
+                className="py-2 px-3 bg-green-600 hover:bg-green-700 text-white font-bold border border-green-600 text-xs rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Sincronizar Notas
+              </button>
               <button
                 id="btn-modify-eval-plan"
                 onClick={handleStartModifyPlan}

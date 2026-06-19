@@ -8,11 +8,23 @@ export function mapRole(idRol: number): UserRole {
 }
 
 export function mapUsuarioToUser(dbUser: any): User {
+  const roleName = dbUser.role?.nombre || '';
+  let mappedRole: UserRole;
+  if (roleName.toLowerCase().includes('admin')) {
+    mappedRole = 'super_admin';
+  } else if (roleName.toLowerCase().includes('secretaria') || roleName.toLowerCase().includes('control')) {
+    mappedRole = 'control_estudios';
+  } else if (roleName.toLowerCase().includes('docente') || roleName.toLowerCase().includes('profesor')) {
+    mappedRole = 'docente';
+  } else {
+    mappedRole = mapRole(dbUser.idRol || dbUser.id_rol);
+  }
+
   return {
     id: String(dbUser.id || dbUser.id_usuario),
     name: dbUser.username || `Usuario ${dbUser.id}`,
     email: dbUser.correo || `${dbUser.username}@local.liceo`,
-    role: mapRole(dbUser.idRol || dbUser.id_rol),
+    role: mappedRole,
     active: dbUser.estatus === 'Activo',
     cedula: dbUser.cedula || undefined,
   };
@@ -84,11 +96,15 @@ export function mapPlanToEvaluationPlan(dbPlan: any): EvaluationPlan {
 }
 
 export function mapCalificacionToGrade(dbCalif: any, studentId: string): Grade {
+  const subjectId = dbCalif.plan?.asignatura
+    ? String(dbCalif.plan.asignatura.id_asignatura)
+    : String(dbCalif.id_plan);
+
   return {
     studentId: studentId,
-    subjectId: String(dbCalif.id_plan), // simplified
+    subjectId,
     lapso: dbCalif.id_momento as any,
-    evaluationId: `ev1-${dbCalif.id_plan}`, // simplified matching
+    evaluationId: `ev1-${dbCalif.id_plan}`,
     score: dbCalif.escala?.nota_calculo || dbCalif.id_escala || 0
   };
 }

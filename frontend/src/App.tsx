@@ -139,32 +139,46 @@ export default function App() {
       const loadInitialData = async () => {
         try {
           const [
-            usuariosData, 
+            usuariosData,
             estudiantesData,
             aulasData,
             asignaturasData,
             planesData,
             horariosData,
-            calificacionesData
-          ] = await Promise.all([
+            calificacionesData,
+            docentesData,
+            rolesData,
+            seccionesData,
+            gradosData,
+            periodosData,
+            momentosData,
+            escalasData
+          ] = await Promise.allSettled([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
             api.get<any[]>('/api/aulas'),
             api.get<any[]>('/api/asignaturas'),
             api.get<any[]>('/api/plan-estudio'),
             api.get<any[]>('/api/horarios'),
-            api.get<any[]>('/api/calificaciones')
+            api.get<any[]>('/api/calificaciones'),
+            api.get<any[]>('/api/docentes'),
+            api.get<any[]>('/api/roles'),
+            api.get<any[]>('/api/secciones'),
+            api.get<any[]>('/api/grados'),
+            api.get<any[]>('/api/periodos'),
+            api.get<any[]>('/api/momentos'),
+            api.get<any[]>('/api/escalas')
           ]);
-          setUsers(usuariosData.map(mapUsuarioToUser));
-          setStudents(estudiantesData.map(mapEstudianteToStudent));
-          setClassrooms(aulasData.map(mapAulaToClassroom));
-          setSubjects(asignaturasData.map(mapAsignaturaToSubject));
-          setEvaluationPlans(planesData.map(mapPlanToEvaluationPlan));
-          setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
-          setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+
+          if (usuariosData.status === 'fulfilled') setUsers(usuariosData.value.map(mapUsuarioToUser));
+          if (estudiantesData.status === 'fulfilled') setStudents(estudiantesData.value.map(mapEstudianteToStudent));
+          if (aulasData.status === 'fulfilled') setClassrooms(aulasData.value.map(mapAulaToClassroom));
+          if (asignaturasData.status === 'fulfilled') setSubjects(asignaturasData.value.map(mapAsignaturaToSubject));
+          if (planesData.status === 'fulfilled') setEvaluationPlans(planesData.value.map(mapPlanToEvaluationPlan));
+          if (horariosData.status === 'fulfilled') setScheduleEvents(horariosData.value.map(mapHorarioToScheduleEvent));
+          if (calificacionesData.status === 'fulfilled') setGrades(calificacionesData.value.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
         } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
-          alert("Error al cargar datos desde el backend: " + error.message);
         }
       };
       loadInitialData();
@@ -175,8 +189,9 @@ export default function App() {
   const handleAddUser = async (newUser: User) => {
     try {
       const dto = {
-        username: newUser.email.split('@')[0], // Aproximación
-        password: 'Password123', // Default
+        username: newUser.email.split('@')[0],
+        password: 'Password123',
+        correo: newUser.email,
         idRol: newUser.role === 'super_admin' ? 1 : (newUser.role === 'control_estudios' ? 2 : 3)
       };
       const created = await api.post<any>('/api/usuarios', dto);
@@ -273,11 +288,30 @@ export default function App() {
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
   };
 
-  const handleAddScheduleEvent = (evt: ScheduleEvent) => {
-    setScheduleEvents(p => [...p, evt]);
+  const handleAddScheduleEvent = async (evt: ScheduleEvent) => {
+    try {
+      const dto: any = {
+        id_docente: parseInt(evt.teacherId) || 0,
+        id_asignatura: parseInt(evt.subjectId) || 0,
+        id_seccion: 1, // TODO: Resolver seccion ID desde año/letra
+        id_dia: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].indexOf(evt.day) + 1,
+        id_bloque: 1,
+        id_aula: parseInt(evt.classroomId) || 0,
+      };
+      const created = await api.post<any>('/api/horarios', dto);
+      setScheduleEvents(p => [...p, evt]);
+    } catch (e) {
+      console.error(e);
+      setScheduleEvents(p => [...p, evt]); // keep local anyway
+    }
   };
 
-  const handleRemoveScheduleEvent = (evtId: string) => {
+  const handleRemoveScheduleEvent = async (evtId: string) => {
+    try {
+      await api.delete(`/api/horarios/${evtId}`);
+    } catch (e) {
+      console.error(e);
+    }
     setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
   };
 
@@ -297,8 +331,47 @@ export default function App() {
     }
   };
 
-  const handleRemoveClassroom = (roomId: string) => {
-    setClassrooms(p => p.filter(c => c.id !== roomId));
+  const handleRemoveClassroom = async (roomId: string) => {
+    try {
+      await api.delete(`/api/aulas/${roomId}`);
+      setClassrooms(p => p.filter(c => c.id !== roomId));
+    } catch (e) {
+      console.error(e);
+      alert('Error al eliminar el aula en la base de datos');
+    }
+  };
+
+  const handleSyncGrades = async (
+    calificaciones: Array<{ id_matricula: number; id_plan: number; id_momento: number; id_escala: number; inasistencias_asignatura?: number }>
+  ) => {
+    try {
+      const result = await api.post<any>('/api/calificaciones/bulk', { calificaciones });
+      if (result) {
+        const mapped = result.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula)));
+        setGrades(p => {
+          const updated = [...p];
+          for (const g of mapped) {
+            const idx = updated.findIndex(x => x.studentId === g.studentId && x.subjectId === g.subjectId && x.lapso === g.lapso && x.evaluationId === g.evaluationId);
+            if (idx >= 0) updated[idx] = g;
+            else updated.push(g);
+          }
+          return updated;
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error al sincronizar calificaciones con el servidor');
+    }
+  };
+
+  const handleSyncTeacherAttendance = async (asistencias: Array<{ id_docente: number; fecha: string; hora_entrada?: string; hora_salida?: string; estatus?: string }>) => {
+    try {
+      for (const a of asistencias) {
+        await api.post<any>('/api/asistencias', a);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // Tabs structure definitions
@@ -549,6 +622,7 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onUpdateGrade={handleUpdateGrade}
                   onUpdateEvaluationPlan={handleUpdateEvaluationPlan}
+                  onSyncGrades={handleSyncGrades}
                 />
               )}
 
@@ -562,6 +636,7 @@ export default function App() {
                   onModifyAttendance={handleModifyAttendance}
                   onAddTeacherLog={handleAddTeacherLog}
                   onUpdateTeacherLog={handleUpdateTeacherLog}
+                  onSyncTeacherAttendance={handleSyncTeacherAttendance}
                 />
               )}
 
