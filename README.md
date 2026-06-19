@@ -82,7 +82,7 @@ npm run dev
 
 - [Frontend](frontend/README.md) — detalles de instalación y estructura del cliente web
 - [DataBase](DataBase/DataBase.md) — esquema y modelo de datos
-- [Backend](backend/README.md) — *(pendiente)*
+- [Backend](backend/README.md) — API REST, autenticación, roles, tests
 
 ## Variables de entorno
 

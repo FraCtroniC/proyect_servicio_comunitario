@@ -52,6 +52,18 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
     }
   };
 
+  function decodeTokenPayload(token: string): Record<string, any> | null {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const payload = parts[1];
+      const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+      return JSON.parse(decoded);
+    } catch {
+      return null;
+    }
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -80,6 +92,9 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         return;
       }
 
+      // Decodificar JWT para obtener idUsuario
+      const tokenPayload = decodeTokenPayload(data.token);
+
       // Guardar sesión compatible con logica anterior
       sessionStorage.setItem('liceo-auth-session', JSON.stringify({
         userName: data.user.userName,
@@ -100,7 +115,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
       }
 
       const loggedUser: User = {
-        id: data.user.userName, // backend no siempre expone id, usamos userName temporalmente
+        id: String(tokenPayload?.idUsuario || data.user.userName),
         name: data.user.displayName,
         email: identifier.trim(),
         role: mappedRole,

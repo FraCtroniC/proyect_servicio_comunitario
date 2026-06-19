@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Calificacion } from '../models';
+import { Calificacion, PlanEstudio, Asignatura, EscalaCalificacion, Matricula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const CalificacionController = {
@@ -9,7 +9,14 @@ export const CalificacionController = {
     if (req.query.id_momento) where.id_momento = Number(req.query.id_momento);
     if (req.query.id_matricula) where.id_matricula = Number(req.query.id_matricula);
 
-    const result = await Calificacion.findAll({ where });
+    const result = await Calificacion.findAll({
+      where,
+      include: [
+        { model: PlanEstudio, as: 'plan', include: [{ model: Asignatura, as: 'asignatura' }] },
+        { model: EscalaCalificacion, as: 'escala' },
+        { model: Matricula, as: 'matricula' },
+      ],
+    });
     res.json({ data: result });
   }),
 
@@ -31,7 +38,14 @@ export const CalificacionController = {
       if (!created) {
         await record.update({ id_escala, inasistencias_asignatura: inasistencias_asignatura ?? 0 });
       }
-      savedRecords.push(record);
+
+      const fullRecord = await Calificacion.findByPk(record.id_calificacion, {
+        include: [
+          { model: PlanEstudio, as: 'plan', include: [{ model: Asignatura, as: 'asignatura' }] },
+          { model: EscalaCalificacion, as: 'escala' },
+        ],
+      });
+      savedRecords.push(fullRecord);
     }
 
     res.json({ data: savedRecords });

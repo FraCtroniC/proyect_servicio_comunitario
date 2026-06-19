@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { Docente } from '../models/Docente';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { NotFoundError } from '../shared/errors';
 
 export const DocenteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -43,5 +45,16 @@ export const DocenteController = {
     }
     await record.destroy();
     res.status(204).send();
+  }),
+
+  generarQR: wrapAsync(async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const docente = await Docente.findByPk(id);
+    if (!docente) {
+      throw new NotFoundError('Docente no encontrado');
+    }
+    docente.token_qr = uuidv4();
+    await docente.save();
+    res.json({ data: { token_qr: docente.token_qr } });
   }),
 };

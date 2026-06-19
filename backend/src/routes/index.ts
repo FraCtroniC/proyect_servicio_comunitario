@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import { authRoutes } from './auth.routes';
 import { usuarioRoutes } from './usuario.routes';
 import { rolRoutes } from './rol.routes';
@@ -25,9 +26,12 @@ import { auditoriaRoutes } from './auditoria.routes';
 
 export const routes = Router();
 
+// Auth routes are public (no auth middleware)
 routes.use('/auth', authRoutes);
 
-// Rutas individuales independientes para cada entidad del sistema
+// All other routes require authentication
+routes.use(authMiddleware);
+
 routes.use('/usuarios', usuarioRoutes);
 routes.use('/roles', rolRoutes);
 routes.use('/docentes', docenteRoutes);
