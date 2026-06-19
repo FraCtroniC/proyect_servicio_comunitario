@@ -18,6 +18,12 @@ export interface User {
 
 export type AcademicYear = 1 | 2 | 3 | 4 | 5; // 1er a 5to Año de Educación Media General
 
+export interface SchoolPeriod {
+  id: string;
+  name: string;
+  status: 'Activo' | 'Cerrado' | 'Planificación';
+}
+
 export interface Student {
   id: string;
   firstName: string;
@@ -37,6 +43,15 @@ export interface Subject {
   name: string;
   shortName: string;
   years: AcademicYear[]; // Which years have this subject
+}
+
+export interface StudyPlanItem {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  year: AcademicYear;
+  codigo: string;
+  posicion: number;
 }
 
 export interface EvaluationItem {

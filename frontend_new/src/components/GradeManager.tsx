@@ -13,8 +13,10 @@ interface GradeManagerProps {
   subjects: Subject[];
   evaluationPlans: EvaluationPlan[];
   grades: Grade[];
+  auditLogs: any[];
   currentUserRole: UserRole;
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
+  onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number) => void;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
 }
 
@@ -23,8 +25,10 @@ export default function GradeManager({
   subjects,
   evaluationPlans,
   grades,
+  auditLogs,
   currentUserRole,
   onUpdateGrade,
+  onSaveGrades,
   onUpdateEvaluationPlan
 }: GradeManagerProps) {
   // Navigation inside Grade Module
@@ -113,6 +117,26 @@ export default function GradeManager({
     
     onUpdateGrade(stdId, selectedSubjectId, selectedLapso, evId, scoreNum);
     setEditingGradeCell(null);
+  };
+
+  const handleGlobalSave = () => {
+    // Filtrar las calificaciones actuales para el año, sección, lapso y asignatura seleccionados
+    const subjectName = getSubjectName(selectedSubjectId);
+    
+    // Obtener las notas que corresponden a los estudiantes activos de la sección y asignatura
+    const currentSectionStudentIds = activeSectionStudents.map(s => s.id);
+    const gradesToSave = grades.filter(g => 
+      currentSectionStudentIds.includes(g.studentId) &&
+      g.subjectId === selectedSubjectId &&
+      g.lapso === selectedLapso
+    );
+
+    if (gradesToSave.length === 0) {
+      alert("No hay calificaciones cargadas para guardar en este periodo.");
+      return;
+    }
+
+    onSaveGrades(gradesToSave, subjectName, selectedYear, selectedSection, selectedLapso);
   };
 
   const getSubjectName = (subId: string) => {
@@ -319,10 +343,21 @@ export default function GradeManager({
                 <h3 className="text-sm font-bold text-slate-800">Ingreso Manual de Calificaciones</h3>
                 <p className="text-[11px] text-slate-400 font-medium">Haga clic sobre cualquier celda para cargar o editar la nota del 1 al 20.</p>
               </div>
-              <div className="flex gap-2 text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-100 font-medium text-slate-500">
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-rose-500 inline-block"></span> Insuficiente (1-9)</span>
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block"></span> Mínima (10-14)</span>
-                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span> Sobresaliente (15-20)</span>
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+                <div className="flex gap-2 text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-100 font-medium text-slate-500">
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-rose-500 inline-block"></span> Insuficiente (1-9)</span>
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block"></span> Mínima (10-14)</span>
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span> Sobresaliente (15-20)</span>
+                </div>
+                {['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) && (
+                  <button
+                    onClick={handleGlobalSave}
+                    className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 pointer-events-auto cursor-pointer"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Guardar Calificaciones
+                  </button>
+                )}
               </div>
             </div>
 
@@ -438,6 +473,48 @@ export default function GradeManager({
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Historial de Modificaciones Card */}
+          <div id="grades-history-box" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 mt-6">
+            <div className="border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="h-4.5 w-4.5 text-indigo-500" />
+                Historial de Modificaciones (Auditoría)
+              </h3>
+              <p className="text-[11px] text-slate-400 font-medium mt-1">
+                Registro permanente de las calificaciones guardadas en el sistema.
+              </p>
+            </div>
+            
+            <div className="max-h-60 overflow-y-auto pr-2 space-y-3">
+              {auditLogs.filter(log => log.accion === 'GUARDAR_NOTAS').length > 0 ? (
+                auditLogs.filter(log => log.accion === 'GUARDAR_NOTAS').map((log, index) => (
+                  <div key={index} className="flex gap-3 items-start p-3 bg-slate-50 rounded-lg border border-slate-150">
+                    <div className="bg-indigo-100 p-1.5 rounded-full mt-0.5">
+                      <CheckCircle className="h-3.5 w-3.5 text-indigo-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-800">Carga de Calificaciones Exitosa</span>
+                        <span className="text-[9px] font-mono text-slate-400">
+                          {new Date(log.fecha_hora).toLocaleString('es-VE')}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        Se registraron y guardaron las notas para <strong>{log.valores_nuevos?.asignatura}</strong>, 
+                        pertenecientes a {log.valores_nuevos?.year}° Año "{log.valores_nuevos?.section}" 
+                        (Lapso {log.valores_nuevos?.lapso}).
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center p-6 border-2 border-dashed border-slate-100 rounded-lg">
+                  <p className="text-xs font-semibold text-slate-400">Aún no hay registros de carga de calificaciones en base de datos.</p>
+                </div>
+              )}
             </div>
           </div>
 

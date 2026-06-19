@@ -19,7 +19,9 @@ import {
   Menu,
   X,
   Lock,
-  ClipboardCheck
+  ClipboardCheck,
+  Book,
+  CalendarDays
 } from 'lucide-react';
 
 import {
@@ -32,7 +34,9 @@ import {
   Grade,
   Attendance,
   TeacherScheduleLog,
-  UserRole
+  UserRole,
+  StudyPlanItem,
+  SchoolPeriod
 } from './types';
 
 import {
@@ -54,7 +58,9 @@ import {
   mapAsignaturaToSubject,
   mapHorarioToScheduleEvent,
   mapPlanToEvaluationPlan,
-  mapCalificacionToGrade
+  mapCalificacionToGrade,
+  mapPlanToStudyPlanItem,
+  mapPeriodoToSchoolPeriod
 } from './services/mappers';
 
 // Component imports
@@ -69,6 +75,8 @@ import ScheduleCoordinator from './components/ScheduleCoordinator';
 import FacilitiesManager from './components/FacilitiesManager';
 import DocumentationView from './components/DocumentationView';
 import LoginScreen from './components/loginScreen';
+import SubjectManager from './components/SubjectManager';
+import PeriodManager from './components/PeriodManager';
 
 export default function App() {
   // Global States loaded with seed data representing a Venezuelan Liceo
@@ -80,7 +88,10 @@ export default function App() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const [evaluationPlans, setEvaluationPlans] = useState<EvaluationPlan[]>([]);
+  const [studyPlans, setStudyPlans] = useState<StudyPlanItem[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [periods, setPeriods] = useState<SchoolPeriod[]>([]);
 
   // Persistence seed arrays
   const [attendance, setAttendance] = useState<Attendance[]>(() =>
@@ -139,13 +150,15 @@ export default function App() {
       const loadInitialData = async () => {
         try {
           const [
-            usuariosData, 
+            usuariosData,
             estudiantesData,
             aulasData,
             asignaturasData,
             planesData,
             horariosData,
-            calificacionesData
+            calificacionesData,
+            auditoriaData,
+            periodosData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -153,15 +166,21 @@ export default function App() {
             api.get<any[]>('/api/asignaturas'),
             api.get<any[]>('/api/plan-estudio'),
             api.get<any[]>('/api/horarios'),
-            api.get<any[]>('/api/calificaciones')
+            api.get<any[]>('/api/calificaciones'),
+            api.get<any[]>('/api/auditorias'),
+            api.get<any[]>('/api/periodos')
           ]);
           setUsers(usuariosData.map(mapUsuarioToUser));
           setStudents(estudiantesData.map(mapEstudianteToStudent));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           setSubjects(asignaturasData.map(mapAsignaturaToSubject));
           setEvaluationPlans(planesData.map(mapPlanToEvaluationPlan));
+          setStudyPlans(planesData.map(mapPlanToStudyPlanItem));
           setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
           setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+          
+          setAuditLogs(auditoriaData.sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
+          setPeriods(periodosData.map(mapPeriodoToSchoolPeriod));
         } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
           alert("Error al cargar datos desde el backend: " + error.message);
@@ -225,6 +244,74 @@ export default function App() {
     }
   };
 
+  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number) => {
+    try {
+      // 1. Check if subject exists or create it
+      let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
+      
+      if (!subjectId) {
+        const subResp = await api.post<any>('/api/asignaturas', {
+          nombre: name,
+          tipo_calificacion: 'Cuantitativa'
+        });
+        const newSub = mapAsignaturaToSubject(subResp);
+        setSubjects(p => [...p, newSub]);
+        subjectId = newSub.id;
+      }
+
+      // 2. Create the plan_estudio record
+      const planResp = await api.post<any>('/api/plan-estudio', {
+        id_asignatura: Number(subjectId),
+        id_grado: year,
+        codigo_asignatura: codigo,
+        posicion: posicion
+      });
+      
+      const newItem = mapPlanToStudyPlanItem(planResp);
+      // Mapeador fallback si backend no devuelve el join
+      newItem.subjectName = name;
+      newItem.year = year as any;
+      
+      setStudyPlans(p => [...p, newItem]);
+    } catch (e) {
+      console.error(e);
+      alert('Error al añadir la materia al plan de estudio en la BD');
+    }
+  };
+
+  const handleUpdateSubject = async (id: string, name: string) => {
+    try {
+      await api.patch(`/api/asignaturas/${id}`, { nombre: name });
+      setSubjects(p => p.map(s => s.id === id ? { ...s, name, shortName: name.substring(0, 3).toUpperCase() } : s));
+    } catch (e) {
+      console.error(e);
+      alert('Error al actualizar la asignatura en la base de datos');
+    }
+  };
+
+  const handleAddPeriod = async (name: string, status: 'Activo' | 'Planificación') => {
+    try {
+      const resp = await api.post<any>('/api/periodos', {
+        nombre: name,
+        estatus: status
+      });
+      setPeriods(p => [...p, mapPeriodoToSchoolPeriod(resp)]);
+    } catch (e) {
+      console.error(e);
+      alert('Error al crear periodo escolar');
+    }
+  };
+
+  const handleUpdatePeriodStatus = async (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => {
+    try {
+      await api.patch(`/api/periodos/${id}`, { estatus: newStatus });
+      setPeriods(p => p.map(per => per.id === id ? { ...per, status: newStatus } : per));
+    } catch (e) {
+      console.error(e);
+      alert('Error al actualizar periodo escolar');
+    }
+  };
+
   const handleUpdateGrade = (stdId: string, subId: string, lap: 1 | 2 | 3, evId: string, score: number) => {
     setGrades(p => {
       // Check if record exists
@@ -237,6 +324,35 @@ export default function App() {
         return [...p, { studentId: stdId, subjectId: subId, lapso: lap, evaluationId: evId, score }];
       }
     });
+  };
+
+  const handleSaveGrades = async (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number) => {
+    try {
+      const payload = gradesToSave.map(g => ({
+        id_matricula: Number(g.studentId),
+        id_plan: Number(g.subjectId) || 1,
+        id_momento: g.lapso,
+        id_escala: g.score,
+        inasistencias_asignatura: 0
+      }));
+
+      await api.post('/api/calificaciones/bulk', { calificaciones: payload });
+
+      // Guardar en auditoría para el historial persistente
+      const auditPayload = {
+        id_usuario: currentUser ? Number(currentUser.id.replace(/\D/g, '')) || 1 : 1,
+        accion: 'GUARDAR_NOTAS',
+        tabla_afectada: 'calificaciones',
+        valores_nuevos: { asignatura: subjectName, year: year, section: section, lapso }
+      };
+      const createdAudit = await api.post<any>('/api/auditorias', auditPayload);
+      setAuditLogs(p => [createdAudit, ...p]);
+
+      alert(`Calificaciones guardadas exitosamente en la base de datos.`);
+    } catch (e) {
+      console.error(e);
+      alert('Error al guardar las calificaciones en la base de datos.');
+    }
   };
 
   const handleUpdateEvaluationPlan = (subId: string, year: number, section: string, lap: 1 | 2 | 3, evaluations: any[]) => {
@@ -306,6 +422,8 @@ export default function App() {
     { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard },
     { id: 'students', label: 'Matrícula Estudiantes', icon: Users },
     { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap },
+    { id: 'periods', label: 'Periodos Escolares', icon: CalendarDays },
+    { id: 'subjects', label: 'Plan de Estudio', icon: Book },
     { id: 'grades', label: 'Notas Calificación', icon: Award },
     { id: 'attendance', label: 'Control Asistencia', icon: Calendar },
     { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck },
@@ -540,14 +658,33 @@ export default function App() {
                 />
               )}
 
+              {activeTab === 'subjects' && (
+                <SubjectManager
+                  studyPlans={studyPlans}
+                  currentUserRole={currentUserRole}
+                  onAddStudyPlanItem={handleAddStudyPlanItem}
+                />
+              )}
+
+              {activeTab === 'periods' && (
+                <PeriodManager
+                  periods={periods}
+                  currentUserRole={currentUserRole}
+                  onAddPeriod={handleAddPeriod}
+                  onUpdatePeriodStatus={handleUpdatePeriodStatus}
+                />
+              )}
+
               {activeTab === 'grades' && (
                 <GradeManager
                   students={students}
                   subjects={subjects}
                   evaluationPlans={evaluationPlans}
                   grades={grades}
+                  auditLogs={auditLogs}
                   currentUserRole={currentUserRole}
                   onUpdateGrade={handleUpdateGrade}
+                  onSaveGrades={handleSaveGrades}
                   onUpdateEvaluationPlan={handleUpdateEvaluationPlan}
                 />
               )}

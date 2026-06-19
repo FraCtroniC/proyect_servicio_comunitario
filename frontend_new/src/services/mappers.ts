@@ -1,4 +1,4 @@
-import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade } from '../types';
+import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod } from '../types';
 
 export function mapRole(idRol: number): UserRole {
   if (idRol === 1) return 'super_admin';
@@ -15,6 +15,14 @@ export function mapUsuarioToUser(dbUser: any): User {
     role: mapRole(dbUser.idRol || dbUser.id_rol),
     active: dbUser.estatus === 'Activo',
     cedula: dbUser.cedula || undefined,
+  };
+}
+
+export function mapPeriodoToSchoolPeriod(dbPeriodo: any): SchoolPeriod {
+  return {
+    id: String(dbPeriodo.id_periodo),
+    name: dbPeriodo.nombre,
+    status: dbPeriodo.estatus as any
   };
 }
 
@@ -80,6 +88,17 @@ export function mapPlanToEvaluationPlan(dbPlan: any): EvaluationPlan {
     evaluations: [
       { id: `ev1-${dbPlan.id_plan}`, name: 'Evaluación Única', percentage: 100 }
     ]
+  };
+}
+
+export function mapPlanToStudyPlanItem(dbPlan: any): StudyPlanItem {
+  return {
+    id: String(dbPlan.id_plan),
+    subjectId: String(dbPlan.id_asignatura),
+    subjectName: dbPlan.asignatura?.nombre || `Materia #${dbPlan.id_asignatura}`,
+    year: (dbPlan.grado?.numero || dbPlan.id_grado || 1) as any,
+    codigo: dbPlan.codigo_asignatura || '',
+    posicion: dbPlan.posicion || 0
   };
 }
 

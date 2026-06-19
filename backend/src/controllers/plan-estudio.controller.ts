@@ -4,7 +4,12 @@ import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const PlanEstudioController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await PlanEstudio.findAll();
+    const result = await PlanEstudio.findAll({
+      include: [
+        { association: 'asignatura' },
+        { association: 'grado' }
+      ]
+    });
     res.json({ data: result });
   }),
 
