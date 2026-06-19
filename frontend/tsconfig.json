@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "compilerOptions": {
     "target": "ES2022",
     "experimentalDecorators": true,
@@ -24,11 +23,4 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   }
-=======
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
->>>>>>> 4499828b777f1e0171580a8ee6a64538716af936
 }
