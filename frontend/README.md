@@ -1,68 +1,20 @@
-# Sistema Web Liceo Estilita Orozco
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-Frontend desarrollado con Vite + React + TypeScript para la gestión de asistencia y calificaciones del Liceo Estilita Orozco.
+# Run and deploy your AI Studio app
 
-## Descripción
-Interfaz web para que personal administrativo y docente gestione usuarios, asistencia y notas. Este repositorio contiene el frontend del sistema.
+This contains everything you need to run your app locally.
 
-## Tecnologías
-- Vite
-- React
-- TypeScript
-- Tailwind CSS
+View your app in AI Studio: https://ai.studio/apps/0edc727e-cdb3-4675-bcf5-50082e78eb50
 
-## Requisitos
-- Node.js 18+ y npm / pnpm / yarn
+## Run Locally
 
-## Instalación (local)
-1. Clona el repositorio:
-   ```bash
-   git clone <url-del-repo>
-   ```
-2. Instala dependencias:
-   ```bash
-   npm install
-   ```
-3. Ejecuta en desarrollo:
-   ```bash
-   npm run dev
-   ```
+**Prerequisites:**  Node.js
 
-## Scripts recomendados
-- `npm run dev` — servidor de desarrollo (Vite)
-- `npm run build` — build de producción
-- `npm run preview` — previsualizar build localmente
-- `npm run test` — ejecutar tests
-- `npm run lint` — ejecutar linter (si aplica)
-- `npm run format` — formatear código (Prettier)
 
-## Estructura del proyecto
-- `index.html` — punto de entrada
-- `src/`
-  - `main.tsx`, `App.tsx` — arranque y componente raíz
-  - `components/` — componentes reutilizables
-  - `features/` — páginas y módulos por dominio (`auth`, `dashboard`, `attendance`, `grades`)
-  - `store/` — hooks / estado local (ej. `useAuthStore.ts`)
-  - `utils/` — utilidades y tests
-  - `styles/` — CSS y Tailwind
-
-## Variables de entorno
-No incluir archivos `.env` en el repositorio. Ejemplo de variables en `.env.local`:
-
-```
-VITE_API_URL=https://api.example.com
-VITE_AUTH_KEY=tu_token_aqui
-```
-
-## Testing
-- Mantén tests cerca del código que prueban (`src/**/*.test.*` o `src/**/__tests__`).
-- Ejecuta `npm run test` para ejecutar la suite.
-
-## Contribuir
-Lee `CONTRIBUTING.md` para el flujo de contribución, estilo de commits y pruebas.
-
-## Licencia
-Proyecto bajo licencia MIT — ver `LICENSE`.
-
-## Contacto
-- Mantenedor: Reemplaza con tu nombre y email.
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

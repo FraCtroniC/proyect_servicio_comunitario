@@ -50,12 +50,14 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   });
 
   if (!response.ok) {
-    let errorMsg = 'Error en la petición al servidor';
+    let errorMsg = `Error en la petición al servidor (Status: ${response.status} - ${response.statusText} en ${url})`;
     try {
-      const errData = await response.json();
-      errorMsg = errData.error?.message || errData.message || errorMsg;
-    } catch {
-      // no es JSON o no contiene error
+      const errJson = await response.json();
+      if (errJson.error && errJson.error.message) {
+        errorMsg = errJson.error.message;
+      }
+    } catch (e) {
+      // Ignorar si no es JSON válido
     }
     throw new Error(errorMsg);
   }
