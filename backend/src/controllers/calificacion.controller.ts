@@ -29,7 +29,18 @@ export const CalificacionController = {
 
     const savedRecords = [];
     for (const item of calificaciones) {
-      const { id_matricula, id_plan, id_momento, id_escala, inasistencias_asignatura } = item;
+      let { id_matricula, id_estudiante, id_plan, id_momento, id_escala, inasistencias_asignatura } = item;
+      
+      // Si se provee id_estudiante en vez de id_matricula (fallback)
+      if (!id_matricula && id_estudiante) {
+        const matricula = await Matricula.findOne({ where: { id_estudiante } });
+        if (matricula) {
+          id_matricula = (matricula as any).id_matricula;
+        } else {
+          continue; // Saltar si no está matriculado
+        }
+      }
+
       const [record, created] = await Calificacion.findOrCreate({
         where: { id_matricula, id_plan, id_momento },
         defaults: { id_escala, inasistencias_asignatura: inasistencias_asignatura ?? 0 }

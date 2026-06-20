@@ -4,7 +4,7 @@ export function mapRole(idRol: number): UserRole {
   if (idRol === 1) return 'super_admin';
   if (idRol === 2) return 'control_estudios';
   if (idRol === 3) return 'docente';
-  return 'representante';
+  return 'docente';
 }
 
 export function mapUsuarioToUser(dbUser: any): User {
@@ -102,12 +102,52 @@ export function mapPlanToStudyPlanItem(dbPlan: any): StudyPlanItem {
   };
 }
 
-export function mapCalificacionToGrade(dbCalif: any, studentId: string): Grade {
+export function mapCalificacionToGrade(dbCalificacion: any, studentId: string): Grade {
   return {
-    studentId: studentId,
-    subjectId: String(dbCalif.id_plan), // simplified
-    lapso: dbCalif.id_momento as any,
-    evaluationId: `ev1-${dbCalif.id_plan}`, // simplified matching
-    score: dbCalif.escala?.nota_calculo || dbCalif.id_escala || 0
+    studentId: String(dbCalificacion.matricula?.id_estudiante || studentId),
+    subjectId: String(dbCalificacion.plan?.id_asignatura || dbCalificacion.id_asignatura),
+    lapso: (dbCalificacion.id_momento || 1) as 1|2|3,
+    evaluationId: `ev1-${dbCalificacion.id_plan}`, // simplified matching
+    score: dbCalificacion.escala?.nota_calculo || dbCalificacion.id_escala || 0
+  };
+}
+
+export function mapEvaluacionesDbToPlans(evaluacionesDb: any[], studyPlans: any[], sectionsMap: any): EvaluationPlan[] {
+  // Agrupar evaluaciones por plan-seccion-momento
+  const map = new Map<string, EvaluationPlan>();
+  
+  for (const ev of evaluacionesDb) {
+    const planObj = studyPlans.find(p => String(p.id_plan || p.id) === String(ev.id_plan));
+    if (!planObj) continue;
+    
+    const subjectId = String(planObj.id_asignatura || planObj.subjectId);
+    const year = Number(planObj.year || planObj.grado?.numero || 1) as any;
+    const sectionObj = sectionsMap[ev.id_seccion];
+    const section = sectionObj ? sectionObj.letra : 'A';
+    const lapso = ev.id_momento as 1|2|3;
+    
+    const key = `${subjectId}-${year}-${section}-${lapso}`;
+    
+    if (!map.has(key)) {
+      map.set(key, { subjectId, year, section, lapso, evaluations: [] });
+    }
+    
+    map.get(key)!.evaluations.push({
+      id: String(ev.id_evaluacion),
+      name: ev.descripcion,
+      percentage: ev.ponderacion
+    });
+  }
+  
+  return Array.from(map.values());
+}
+
+export function mapNotaParcialToGrade(dbNota: any, studentId: string): Grade {
+  return {
+    studentId: String(dbNota.matricula?.id_estudiante || dbNota.id_estudiante || studentId),
+    subjectId: String(dbNota.evaluacion?.plan?.id_asignatura || dbNota.id_asignatura || ''),
+    lapso: (dbNota.evaluacion?.id_momento || dbNota.id_momento || 1) as 1|2|3,
+    evaluationId: String(dbNota.id_evaluacion),
+    score: dbNota.escala?.nota_calculo || dbNota.id_escala || 0
   };
 }

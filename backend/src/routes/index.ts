@@ -23,6 +23,7 @@ import { horarioDocenteRoutes } from './horario-docente.routes';
 import { asistenciaDocenteRoutes } from './asistencia-docente.routes';
 import { justificacionRoutes } from './justificacion.routes';
 import { auditoriaRoutes } from './auditoria.routes';
+import { evaluacionRoutes } from './evaluacion.routes';
 
 export const routes = Router();
 
@@ -54,3 +55,4 @@ routes.use('/horarios', horarioDocenteRoutes);
 routes.use('/asistencias', asistenciaDocenteRoutes);
 routes.use('/justificaciones', justificacionRoutes);
 routes.use('/auditorias', auditoriaRoutes);
+routes.use('/evaluaciones', evaluacionRoutes);
