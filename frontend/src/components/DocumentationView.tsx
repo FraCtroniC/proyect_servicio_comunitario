@@ -111,7 +111,7 @@ CREATE TABLE users (
   email VARCHAR(100) UNIQUE,
   phone VARCHAR(20),
   role VARCHAR(25) NOT NULL CHECK (
-    role IN ('super_admin', 'control_estudios', 'docente', 'representante')
+    role IN ('super_admin', 'control_estudios', 'docente')
   ),
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

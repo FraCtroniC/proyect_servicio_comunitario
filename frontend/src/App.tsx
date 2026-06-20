@@ -51,17 +51,7 @@ import {
 } from './mockData';
 
 import { api } from './services/api';
-import {
-  mapUsuarioToUser,
-  mapEstudianteToStudent,
-  mapAulaToClassroom,
-  mapAsignaturaToSubject,
-  mapHorarioToScheduleEvent,
-  mapPlanToEvaluationPlan,
-  mapCalificacionToGrade,
-  mapPlanToStudyPlanItem,
-  mapPeriodoToSchoolPeriod
-} from './services/mappers';
+import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToEvaluationPlan, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade } from './services/mappers';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -158,7 +148,9 @@ export default function App() {
             horariosData,
             calificacionesData,
             auditoriaData,
-            periodosData
+            periodosData,
+            evaluacionesPlanesResp,
+            evaluacionesNotasResp
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -168,16 +160,48 @@ export default function App() {
             api.get<any[]>('/api/horarios'),
             api.get<any[]>('/api/calificaciones'),
             api.get<any[]>('/api/auditorias'),
-            api.get<any[]>('/api/periodos')
+            api.get<any[]>('/api/periodos'),
+            api.get<any[]>('/api/evaluaciones/planes').catch(() => ({ data: [] })),
+            api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] }))
           ]);
+          
+          const seccionesMap = aulasData.reduce((acc, a) => {
+            if (a.secciones) a.secciones.forEach((s: any) => acc[s.id_seccion] = s);
+            return acc;
+          }, {});
+
           setUsers(usuariosData.map(mapUsuarioToUser));
           setStudents(estudiantesData.map(mapEstudianteToStudent));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           setSubjects(asignaturasData.map(mapAsignaturaToSubject));
-          setEvaluationPlans(planesData.map(mapPlanToEvaluationPlan));
-          setStudyPlans(planesData.map(mapPlanToStudyPlanItem));
+          
+          const studyPlansList = planesData.map(mapPlanToStudyPlanItem);
+          setStudyPlans(studyPlansList);
+          
+          // Fallback to generated plans ONLY for plans that don't exist in DB
+          const dbEvaluationsList = (Array.isArray((evaluacionesPlanesResp as any)?.data) ? (evaluacionesPlanesResp as any).data : (Array.isArray(evaluacionesPlanesResp) ? evaluacionesPlanesResp : [])) || [];
+          const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, planesData, seccionesMap);
+          
+          const defaultPlans = planesData.map(mapPlanToEvaluationPlan);
+          const finalPlans = [...dbPlans];
+          
+          // Add default plans for any subject/year that wasn't found in dbPlans
+          defaultPlans.forEach(dp => {
+            const exists = dbPlans.some(p => p.subjectId === dp.subjectId && p.year === dp.year && p.section === dp.section && p.lapso === dp.lapso);
+            if (!exists) finalPlans.push(dp);
+          });
+          
+          setEvaluationPlans(finalPlans);
+
           setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
-          setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+
+          // Use Partial Grades if they exist, fallback to Calificaciones
+          const dbNotasParciales = (Array.isArray((evaluacionesNotasResp as any)?.data) ? (evaluacionesNotasResp as any).data : (Array.isArray(evaluacionesNotasResp) ? evaluacionesNotasResp : [])) || [];
+          if (dbNotasParciales.length > 0) {
+            setGrades(dbNotasParciales.map((n: any) => mapNotaParcialToGrade(n, String(n.id_matricula))));
+          } else {
+            setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+          }
           
           setAuditLogs(auditoriaData.sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
           setPeriods(periodosData.map(mapPeriodoToSchoolPeriod));
@@ -326,46 +350,85 @@ export default function App() {
     });
   };
 
-  const handleSaveGrades = async (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number) => {
+  const handleSaveGrades = async (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => {
     try {
-      const payload = gradesToSave.map(g => ({
-        id_matricula: Number(g.studentId),
-        id_plan: Number(g.subjectId) || 1,
-        id_momento: g.lapso,
-        id_escala: g.score,
-        inasistencias_asignatura: 0
-      }));
+      const payload = gradesToSave.map(g => {
+        return {
+          id_estudiante: Number(g.studentId.replace('std-', '')),
+          id_evaluacion: Number(g.evaluationId),
+          id_escala: g.score,
+        };
+      });
 
-      await api.post('/api/calificaciones/bulk', { calificaciones: payload });
+      await api.post('/api/evaluaciones/notas/bulk', { notas_parciales: payload });
 
-      // Guardar en auditoría para el historial persistente
       const auditPayload = {
         id_usuario: currentUser ? Number(currentUser.id.replace(/\D/g, '')) || 1 : 1,
         accion: 'GUARDAR_NOTAS',
-        tabla_afectada: 'calificaciones',
-        valores_nuevos: { asignatura: subjectName, year: year, section: section, lapso }
+        tabla_afectada: 'notas_parciales',
+        valores_nuevos: { asignatura: subjectName, year: year, section: section, lapso, detalles, planEvaluaciones }
       };
       const createdAudit = await api.post<any>('/api/auditorias', auditPayload);
       setAuditLogs(p => [createdAudit, ...p]);
 
-      alert(`Calificaciones guardadas exitosamente en la base de datos.`);
-    } catch (e) {
-      console.error(e);
-      alert('Error al guardar las calificaciones en la base de datos.');
+    } catch (e: any) {
+      console.error("Error al guardar calificaciones:", e);
+      const msg = e.response?.data?.error?.message || e.message || "Error desconocido";
+      alert(`Error al guardar las calificaciones en la base de datos: ${msg}`);
+      throw e;
     }
   };
 
-  const handleUpdateEvaluationPlan = (subId: string, year: number, section: string, lap: 1 | 2 | 3, evaluations: any[]) => {
-    setEvaluationPlans(p => {
-      const idx = p.findIndex(plan => plan.subjectId === subId && plan.year === year && plan.section === section && plan.lapso === lap);
-      if (idx >= 0) {
+  const handleUpdateEvaluationPlan = async (subId: string, year: number, section: string, lap: 1 | 2 | 3, evaluations: any[]) => {
+    try {
+      const plan = studyPlans.find(p => p.subjectId === subId && Number(p.year) === year);
+      if (!plan) throw new Error("Plan de estudio no encontrado para esta materia y año");
+      
+      const realPlanId = Number(plan.id);
+      
+      // Need section ID from classroom list
+      const classrm = classrooms.find(c => c.sections?.some(s => s.grade === String(year) && s.name === section));
+      const seccObj = classrm?.sections?.find(s => s.grade === String(year) && s.name === section);
+      const realSectionId = seccObj ? Number(seccObj.id) : 1; // fallback
+      
+      const payload = {
+        id_plan: realPlanId,
+        id_seccion: realSectionId,
+        id_momento: lap,
+        evaluaciones: evaluations.map(e => ({
+          id_evaluacion: e.id && !String(e.id).includes('-') ? Number(e.id) : null,
+          descripcion: e.name,
+          ponderacion: e.percentage
+        }))
+      };
+
+      const result = await api.post<any[]>('/api/evaluaciones/planes', payload);
+      
+      // Update local state with real IDs from DB
+      setEvaluationPlans(p => {
         const copy = [...p];
-        copy[idx] = { ...copy[idx], evaluations };
+        const idx = copy.findIndex(pl => pl.subjectId === subId && pl.year === year && pl.section === section && pl.lapso === lap);
+        
+        const mappedEvs = result.map((r: any) => ({
+          id: String(r.id_evaluacion),
+          name: r.descripcion,
+          percentage: r.ponderacion
+        }));
+        
+        if (idx >= 0) {
+          copy[idx] = { ...copy[idx], evaluations: mappedEvs };
+        } else {
+          copy.push({ subjectId: subId, year: year as any, section, lapso: lap, evaluations: mappedEvs });
+        }
         return copy;
-      } else {
-        return [...p, { subjectId: subId, year: year as any, section, lapso: lap, evaluations }];
-      }
-    });
+      });
+
+      alert("Plan de Evaluación guardado permanentemente en la base de datos.");
+    } catch (e: any) {
+      console.error(e);
+      const msg = e.response?.data?.error?.message || e.message || "Error desconocido";
+      alert(`Error al guardar el plan de evaluación: ${msg}`);
+    }
   };
 
   const handleModifyAttendance = (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J') => {
@@ -442,8 +505,6 @@ export default function App() {
         return { label: 'Ctrl de Estudios', color: 'bg-indigo-600 text-white border-indigo-500' };
       case 'docente':
         return { label: 'Profesor / Docencia', color: 'bg-emerald-600 text-white border-emerald-500' };
-      case 'representante':
-        return { label: 'Representante LOPNA', color: 'bg-amber-600 text-white border-amber-500' };
     }
   };
 

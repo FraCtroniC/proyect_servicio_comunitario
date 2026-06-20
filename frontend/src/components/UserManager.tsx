@@ -26,8 +26,7 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-
+  const [showAllUsers, setShowAllUsers] = useState(false);
 
   const getRoleBadge = (r: UserRole) => {
     switch (r) {
@@ -37,8 +36,6 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
         return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Ctrl de Estudios</span>;
       case 'docente':
         return <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Docente</span>;
-      case 'representante':
-        return <span className="bg-amber-50 text-amber-700 border border-amber-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Representante/Padre</span>;
     }
   };
 
@@ -56,8 +53,8 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
           módulos de horarios, controles de asistencia y el cargado reglamentario de calificaciones MPPE.
         </p>
 
-        <div id="role-buttons" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-          {(['super_admin', 'control_estudios', 'docente', 'representante'] as UserRole[]).map(r => {
+        <div id="role-buttons" className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          {(['super_admin', 'control_estudios', 'docente'] as UserRole[]).map(r => {
             const isActive = currentUserRole === r;
             return (
               <button
@@ -65,7 +62,7 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
                 key={r}
                 onClick={() => {
                   onSetUserRole(r);
-                  setSuccessMsg(`Simulando rol: ${r === 'super_admin' ? 'Director/Super Admin' : r === 'control_estudios' ? 'Funcionario Control de Estudios' : r === 'docente' ? 'Profesor/Docente' : 'Padre/Representante'}. Las vistas se han actualizado.`);
+                  setSuccessMsg(`Simulando rol: ${r === 'super_admin' ? 'Director/Super Admin' : r === 'control_estudios' ? 'Funcionario Control de Estudios' : 'Profesor/Docente'}. Las vistas se han actualizado.`);
                   setErrorMsg('');
                 }}
                 className={`py-3 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-between pointer-events-auto cursor-pointer ${
@@ -78,7 +75,6 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
                   {r === 'super_admin' && '🔑 Director Principal'}
                   {r === 'control_estudios' && '📁 Control de Estudios'}
                   {r === 'docente' && '📝 Docente'}
-                  {r === 'representante' && '🏠 Representante'}
                 </span>
                 {isActive && <Check id={`check-${r}`} className="h-4 w-4 bg-white text-indigo-700 rounded-full p-0.5 shrink-0" />}
               </button>
@@ -106,8 +102,8 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
             </div>
           </div>
 
-          <div id="users-items" className="space-y-3.5 max-h-[480px] overflow-y-auto">
-            {users.map(u => (
+          <div id="users-items" className="space-y-3.5">
+            {(showAllUsers ? users : users.slice(0, 5)).map(u => (
               <div id={`user-card-${u.id}`} key={u.id} className="flex items-center justify-between p-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded-xl transition-all">
                 <div id={`user-card-info-${u.id}`} className="flex items-center gap-3">
                   <img id={`user-avatar-${u.id}`} src={u.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=80'} className="h-10 w-10 rounded-full object-cover border border-slate-200" alt="avatar" />
@@ -156,6 +152,16 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
               </div>
             ))}
           </div>
+          {users.length > 5 && (
+            <div className="pt-2 flex justify-center border-t border-slate-100 mt-4">
+              <button
+                onClick={() => setShowAllUsers(!showAllUsers)}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 px-4 rounded-lg hover:bg-indigo-50 cursor-pointer"
+              >
+                {showAllUsers ? 'Ocultar usuarios' : `Ver más (${users.length - 5} ocultos)`}
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

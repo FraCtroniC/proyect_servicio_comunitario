@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash } from 'lucide-react';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole } from '../types';
 import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../mockData';
@@ -16,7 +16,7 @@ interface GradeManagerProps {
   auditLogs: any[];
   currentUserRole: UserRole;
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
-  onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number) => void;
+  onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => Promise<void>;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
 }
 
@@ -37,8 +37,26 @@ export default function GradeManager({
   // Filters for Carga / Sábana
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
   const [selectedSection, setSelectedSection] = useState<string>('A');
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('mat');
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [selectedLapso, setSelectedLapso] = useState<1 | 2 | 3>(1);
+
+  // Audit log modal state
+  const [selectedAuditLog, setSelectedAuditLog] = useState<any | null>(null);
+
+  // Saving state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [lastSavedPayload, setLastSavedPayload] = useState<string>('');
+
+  // Audit logs pagination
+  const [visibleAuditLogsCount, setVisibleAuditLogsCount] = useState(3);
+
+  // Sync selectedSubjectId with loaded subjects
+  useEffect(() => {
+    if (subjects.length > 0 && (!selectedSubjectId || !subjects.find(s => s.id === selectedSubjectId))) {
+      setSelectedSubjectId(subjects[0].id);
+    }
+  }, [subjects, selectedSubjectId]);
 
   // Boletín states
   const [selectedStudentId, setSelectedStudentId] = useState<string>(students[0]?.id || '');
@@ -60,13 +78,15 @@ export default function GradeManager({
   const handleStartModifyPlan = () => {
     if (activePlan) {
       setPlanEvaluations([...activePlan.evaluations]);
-      setIsModifyingPlan(true);
+    } else {
+      setPlanEvaluations([{ id: `${selectedSubjectId}-${selectedYear}${selectedSection}-l${selectedLapso}-e1`, name: 'Evaluación Única', percentage: 100 }]);
     }
+    setIsModifyingPlan(true);
   };
 
-  const handleUpdatePlanWeight = (index: number, weight: number) => {
+  const handleUpdatePlanWeight = (index: number, val: string) => {
     const updated = [...planEvaluations];
-    updated[index].percentage = Math.max(1, Math.min(100, weight));
+    updated[index].percentage = val === '' ? 0 : Math.max(0, Math.min(100, Number(val)));
     setPlanEvaluations(updated);
   };
 
@@ -91,9 +111,13 @@ export default function GradeManager({
   };
 
   const handleSavePlan = () => {
-    const sum = planEvaluations.reduce((acc, curr) => acc + curr.percentage, 0);
+    const sum = planEvaluations.reduce((acc, curr) => acc + (Number(curr.percentage) || 0), 0);
     if (sum !== 100) {
       alert(`Error: La sumatoria de las ponderaciones debe ser exactamente el 100%. Actualmente suma ${sum}%.`);
+      return;
+    }
+    if (planEvaluations.some(ev => !ev.percentage || ev.percentage <= 0)) {
+      alert('Error: Todas las actividades deben tener un porcentaje mayor a 0%.');
       return;
     }
     onUpdateEvaluationPlan(selectedSubjectId, selectedYear, selectedSection, selectedLapso, planEvaluations);
@@ -107,7 +131,7 @@ export default function GradeManager({
     setTempGradeValue(currentScore !== undefined ? currentScore.toString() : '');
   };
 
-  const handleSaveGrade = (stdId: string, evId: string) => {
+  const handleSaveGrade = (stdId: string, evId: string, moveToNext: boolean = false) => {
     const scoreNum = Math.floor(Number(tempGradeValue));
     if (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 20) {
       alert("Calificación inválida. El formato de notas reglamentario venezolano del MPPE exige un rango estricto de 1 a 20 puntos.");
@@ -116,10 +140,24 @@ export default function GradeManager({
     }
     
     onUpdateGrade(stdId, selectedSubjectId, selectedLapso, evId, scoreNum);
-    setEditingGradeCell(null);
+    
+    if (moveToNext) {
+      const currentIndex = activeSectionStudents.findIndex(s => s.id === stdId);
+      if (currentIndex >= 0 && currentIndex < activeSectionStudents.length - 1) {
+        const nextStudent = activeSectionStudents[currentIndex + 1];
+        const nextScoreRecord = grades.find(g => g.studentId === nextStudent.id && g.subjectId === selectedSubjectId && g.lapso === selectedLapso && g.evaluationId === evId);
+        
+        setEditingGradeCell({ studentId: nextStudent.id, evaluationId: evId });
+        setTempGradeValue(nextScoreRecord ? nextScoreRecord.score.toString() : '');
+      } else {
+        setEditingGradeCell(null); // Reached the end of the list
+      }
+    } else {
+      setEditingGradeCell(null);
+    }
   };
 
-  const handleGlobalSave = () => {
+  const handleGlobalSave = async () => {
     // Filtrar las calificaciones actuales para el año, sección, lapso y asignatura seleccionados
     const subjectName = getSubjectName(selectedSubjectId);
     
@@ -136,7 +174,40 @@ export default function GradeManager({
       return;
     }
 
-    onSaveGrades(gradesToSave, subjectName, selectedYear, selectedSection, selectedLapso);
+    const currentPayload = JSON.stringify(gradesToSave);
+    if (currentPayload === lastSavedPayload) {
+      alert("No se detectaron cambios. Las calificaciones actuales ya se encuentran guardadas.");
+      return;
+    }
+
+    const activePlan = evaluationPlans.find(p => p.subjectId === selectedSubjectId && Number(p.year) === selectedYear && p.lapso === selectedLapso && p.section === selectedSection);
+    const detalles = gradesToSave.map(g => {
+      const student = activeSectionStudents.find(s => s.id === g.studentId);
+      const evalObj = activePlan?.evaluations.find(ev => ev.id === g.evaluationId);
+      return {
+        studentName: student ? `${student.lastName}, ${student.firstName}` : 'Estudiante Desconocido',
+        evaluationId: g.evaluationId,
+        evaluationName: evalObj?.name || 'Evaluación',
+        percentage: evalObj?.percentage || 0,
+        score: g.score
+      };
+    });
+
+    setIsSaving(true);
+    setSaveSuccess(false);
+    try {
+      await onSaveGrades(gradesToSave, subjectName, selectedYear, selectedSection, selectedLapso, detalles, activePlan?.evaluations || []);
+      setLastSavedPayload(currentPayload);
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setIsSaving(false);
+      }, 2000); // Muestra el check por 2 segundos antes de cerrar
+    } catch (e) {
+      console.error(e);
+      alert("Ocurrió un error al guardar las calificaciones.");
+      setIsSaving(false);
+    }
   };
 
   const getSubjectName = (subId: string) => {
@@ -146,6 +217,33 @@ export default function GradeManager({
   return (
     <div id="grade-manager-root" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-blue-100 selection:text-blue-900">
       
+      {/* Saving / Success Modal Overlay */}
+      {(isSaving || saveSuccess) && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            {saveSuccess ? (
+              <>
+                <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 text-center">¡Guardado Exitoso!</h3>
+                <p className="text-sm text-slate-500 text-center mt-2">
+                  Calificaciones guardadas exitosamente en la base de datos.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="h-12 w-12 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin mb-4" />
+                <h3 className="text-lg font-bold text-slate-800">Guardando Calificaciones</h3>
+                <p className="text-sm text-slate-500 text-center mt-2">
+                  Por favor espera mientras sincronizamos los datos con la base de datos...
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Sub tabs navigation */}
       <div id="grade-tabs-bar" className="flex border-b border-slate-200">
         <button
@@ -282,8 +380,8 @@ export default function GradeManager({
                     <div className="flex items-center gap-1 shrink-0 w-28">
                       <input 
                         type="number" 
-                        value={ev.percentage} 
-                        onChange={(e) => handleUpdatePlanWeight(idx, Number(e.target.value))}
+                        value={ev.percentage || ''} 
+                        onChange={(e) => handleUpdatePlanWeight(idx, e.target.value)}
                         className="text-xs p-2 bg-white border border-slate-200 rounded-lg w-16 text-center focus:outline-hidden"
                       />
                       <span className="text-xs font-bold text-slate-500">%</span>
@@ -411,7 +509,10 @@ export default function GradeManager({
                                       value={tempGradeValue}
                                       onChange={(e) => setTempGradeValue(e.target.value)}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSaveGrade(student.id, ev.id);
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          handleSaveGrade(student.id, ev.id, true);
+                                        }
                                         if (e.key === 'Escape') setEditingGradeCell(null);
                                       }}
                                       autoFocus
@@ -419,7 +520,7 @@ export default function GradeManager({
                                     />
                                     <button 
                                       type="button"
-                                      onClick={() => handleSaveGrade(student.id, ev.id)}
+                                      onClick={() => handleSaveGrade(student.id, ev.id, true)}
                                       className="text-[11px] text-white bg-blue-600 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                                     >
                                       ✓
@@ -488,33 +589,61 @@ export default function GradeManager({
               </p>
             </div>
             
-            <div className="max-h-60 overflow-y-auto pr-2 space-y-3">
-              {auditLogs.filter(log => log.accion === 'GUARDAR_NOTAS').length > 0 ? (
-                auditLogs.filter(log => log.accion === 'GUARDAR_NOTAS').map((log, index) => (
-                  <div key={index} className="flex gap-3 items-start p-3 bg-slate-50 rounded-lg border border-slate-150">
-                    <div className="bg-indigo-100 p-1.5 rounded-full mt-0.5">
-                      <CheckCircle className="h-3.5 w-3.5 text-indigo-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-800">Carga de Calificaciones Exitosa</span>
-                        <span className="text-[9px] font-mono text-slate-400">
-                          {new Date(log.fecha_hora).toLocaleString('es-VE')}
-                        </span>
+            <div className="pr-2 space-y-3">
+              {(() => {
+                const gradeAuditLogs = auditLogs.filter(log => log.accion === 'GUARDAR_NOTAS_PARCIALES' || log.accion === 'GUARDAR_NOTAS');
+                const visibleLogs = gradeAuditLogs.slice(0, visibleAuditLogsCount);
+                const hasMoreLogs = visibleAuditLogsCount < gradeAuditLogs.length;
+
+                return gradeAuditLogs.length > 0 ? (
+                  <>
+                    {visibleLogs.map((log, index) => (
+                      <div key={index} className="flex gap-3 items-start p-3 bg-slate-50 rounded-lg border border-slate-150">
+                        <div className="bg-indigo-100 p-1.5 rounded-full mt-0.5">
+                          <CheckCircle className="h-3.5 w-3.5 text-indigo-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-slate-800">Carga de Calificaciones Exitosa</span>
+                            <span className="text-[9px] font-mono text-slate-400">
+                              {new Date(log.fecha_hora).toLocaleString('es-VE')}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            Se registraron y guardaron las notas para <strong>{log.valores_nuevos?.asignatura}</strong>, 
+                            pertenecientes a {log.valores_nuevos?.year}° Año "{log.valores_nuevos?.section}" 
+                            (Lapso {log.valores_nuevos?.lapso}).
+                          </p>
+                          {log.valores_nuevos?.detalles && (
+                            <button
+                              onClick={() => setSelectedAuditLog(log)}
+                              className="mt-2 text-[10px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+                            >
+                              <FileText className="h-3 w-3" />
+                              Ver Archivo de Notas
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Se registraron y guardaron las notas para <strong>{log.valores_nuevos?.asignatura}</strong>, 
-                        pertenecientes a {log.valores_nuevos?.year}° Año "{log.valores_nuevos?.section}" 
-                        (Lapso {log.valores_nuevos?.lapso}).
-                      </p>
-                    </div>
+                    ))}
+                    {hasMoreLogs && (
+                      <div className="flex justify-center pt-2 pb-1">
+                        <button
+                          onClick={() => setVisibleAuditLogsCount(prev => prev + 3)}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors flex items-center gap-1"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Ver más
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center p-6 border-2 border-dashed border-slate-100 rounded-lg">
+                    <p className="text-xs font-semibold text-slate-400">Aún no hay registros de carga de calificaciones en base de datos.</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center p-6 border-2 border-dashed border-slate-100 rounded-lg">
-                  <p className="text-xs font-semibold text-slate-400">Aún no hay registros de carga de calificaciones en base de datos.</p>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 
@@ -902,6 +1031,136 @@ export default function GradeManager({
             );
           })()}
 
+        </div>
+      )}
+
+      {/* Modal for Audit Log Details */}
+      {selectedAuditLog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-indigo-600" />
+                <h3 className="font-bold text-slate-800">Archivo de Calificaciones</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedAuditLog(null)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <div className="mb-4 grid grid-cols-2 gap-4 text-sm bg-indigo-50/50 p-4 rounded-lg border border-indigo-100/50">
+                <div>
+                  <span className="text-slate-500 text-xs font-semibold block">Asignatura</span>
+                  <span className="font-bold text-slate-800">{selectedAuditLog.valores_nuevos?.asignatura}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-xs font-semibold block">Sección</span>
+                  <span className="font-bold text-slate-800">{selectedAuditLog.valores_nuevos?.year}° Año "{selectedAuditLog.valores_nuevos?.section}"</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-xs font-semibold block">Período</span>
+                  <span className="font-bold text-slate-800">Lapso {selectedAuditLog.valores_nuevos?.lapso}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-xs font-semibold block">Fecha de Registro</span>
+                  <span className="font-bold text-slate-800">{new Date(selectedAuditLog.fecha_hora).toLocaleString('es-VE')}</span>
+                </div>
+              </div>
+
+              <div className="border border-slate-200 rounded-lg overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th className="py-3 px-4">Estudiante</th>
+                      {(() => {
+                        const { evaluations } = (() => {
+                          const planEvals = selectedAuditLog.valores_nuevos?.planEvaluaciones;
+                          if (planEvals && planEvals.length > 0) {
+                            return { evaluations: planEvals.map((e: any) => ({ id: e.id || e.name, name: e.name, percentage: e.percentage })) };
+                          }
+                          const det = selectedAuditLog.valores_nuevos?.detalles || [];
+                          const evalsMap = new Map();
+                          det.forEach((d: any) => {
+                            const evKey = d.evaluationId || d.evaluationName;
+                            if (!evalsMap.has(evKey)) {
+                              evalsMap.set(evKey, { id: evKey, name: d.evaluationName, percentage: d.percentage });
+                            }
+                          });
+                          return { evaluations: Array.from(evalsMap.values()) };
+                        })();
+                        return evaluations.map((ev: any, i: number) => (
+                          <th key={i} className="py-3 px-4 text-center">
+                            {ev.name} <span className="text-[9px] text-slate-400 block mt-0.5">({ev.percentage}%)</span>
+                          </th>
+                        ));
+                      })()}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(() => {
+                      const det = selectedAuditLog.valores_nuevos?.detalles || [];
+                      const planEvals = selectedAuditLog.valores_nuevos?.planEvaluaciones;
+                      
+                      const studentsMap = new Map();
+                      det.forEach((d: any) => {
+                        if (!studentsMap.has(d.studentName)) studentsMap.set(d.studentName, { name: d.studentName, grades: {} });
+                        const evKey = d.evaluationId || d.evaluationName;
+                        studentsMap.get(d.studentName).grades[evKey] = d.score;
+                      });
+                      
+                      const evaluations = planEvals && planEvals.length > 0 
+                        ? planEvals.map((e: any) => ({ id: e.id || e.name, name: e.name, percentage: e.percentage }))
+                        : (() => {
+                            const evalsMap = new Map();
+                            det.forEach((d: any) => {
+                               const evKey = d.evaluationId || d.evaluationName;
+                               if (!evalsMap.has(evKey)) evalsMap.set(evKey, { id: evKey, name: d.evaluationName, percentage: d.percentage });
+                            });
+                            return Array.from(evalsMap.values());
+                        })();
+
+                      const students = Array.from(studentsMap.values());
+                      
+                      return students.map((std: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-2.5 px-4 font-medium text-slate-700">{std.name}</td>
+                          {evaluations.map((ev: any, i: number) => {
+                            const score = std.grades[ev.id];
+                            return (
+                              <td key={i} className="py-2.5 px-4 text-center">
+                                {score !== undefined ? (
+                                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold font-mono ${
+                                    score >= 10 ? 'bg-blue-100 text-blue-700' : 'bg-rose-100 text-rose-700'
+                                  }`}>
+                                    {String(score).padStart(2, '0')}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">--</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setSelectedAuditLog(null)}
+                className="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-900 transition-colors"
+              >
+                Cerrar Archivo
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

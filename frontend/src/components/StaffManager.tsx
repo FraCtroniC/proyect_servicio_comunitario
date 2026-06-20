@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Shield, UserPlus, ToggleLeft, ToggleRight, Check, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
+import { Shield, UserPlus, ToggleLeft, ToggleRight, Check, CheckCircle2, UserCheck, AlertCircle, PlusCircle } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { Modal } from './Modal';
 
@@ -26,6 +26,8 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [visibleUsersCount, setVisibleUsersCount] = useState(3);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +74,6 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
         return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Ctrl de Estudios</span>;
       case 'docente':
         return <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Docente</span>;
-      case 'representante':
-        return <span className="bg-amber-50 text-amber-700 border border-amber-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Representante/Padre</span>;
     }
   };
 
@@ -110,8 +110,8 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
             </div>
           </div>
 
-          <div id="users-items" className="space-y-3.5 max-h-[480px] overflow-y-auto">
-            {users.map(u => (
+          <div id="users-items" className="space-y-3.5">
+            {users.slice(0, visibleUsersCount).map(u => (
               <div id={`user-card-${u.id}`} key={u.id} className="flex items-center justify-between p-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded-xl transition-all">
                 <div id={`user-card-info-${u.id}`} className="flex items-center gap-3">
                   <img id={`user-avatar-${u.id}`} src={u.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=80'} className="h-10 w-10 rounded-full object-cover border border-slate-200" alt="avatar" />
@@ -159,6 +159,18 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
                 )}
               </div>
             ))}
+            
+            {visibleUsersCount < users.length && (
+              <div className="flex justify-center pt-2 pb-1">
+                <button
+                  onClick={() => setVisibleUsersCount(prev => prev + 3)}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors flex items-center gap-1 cursor-pointer pointer-events-auto"
+                >
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  Ver más
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -172,7 +184,7 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
             <p className="font-bold">Acceso Denegado</p>
             <p className="leading-relaxed">
-              Tu rol actual de demostración (Docente/Representante) no tiene permisos para crear usuarios. 
+              Tu rol actual de demostración (Docente) no tiene permisos para crear usuarios. 
               Por favor, selecciona el rol <strong>Director</strong> o <strong>Control de Estudios</strong> en la barra superior para habilitar esta funcionalidad.
             </p>
           </div>
@@ -235,9 +247,8 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
                 onChange={(e) => setRole(e.target.value as UserRole)}
                 className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white"
               >
-                <option value="docente">Docente / Profesor de Asignatura</option>
+                <option value="docente">Docente / Profesor</option>
                 <option value="control_estudios">Cuerpo de Control de Estudios (Admin)</option>
-                <option value="representante">Representante / Padre de Familia</option>
               </select>
             </div>
 

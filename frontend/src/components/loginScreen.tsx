@@ -48,7 +48,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
       case 'docente':
         return 'Docente / Profesor';
       default:
-        return 'Representante';
+        return 'Usuario';
     }
   };
 
@@ -89,7 +89,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
       }));
 
       // Mapear rol del backend al rol esperado en el frontend_new
-      let mappedRole: UserRole = 'representante';
+      let mappedRole: UserRole = 'docente';
       const backendRol = (data.user.rol || '').toLowerCase();
       if (backendRol.includes('director') || backendRol.includes('admin')) {
         mappedRole = 'super_admin';

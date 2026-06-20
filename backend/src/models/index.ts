@@ -24,6 +24,8 @@ import { initHorarioDocente, HorarioDocente } from './HorarioDocente';
 import { initAsistenciaDocente, AsistenciaDocente } from './AsistenciaDocente';
 import { initJustificacion, Justificacion } from './Justificacion';
 import { initAuditoria, Auditoria } from './Auditoria';
+import { initEvaluacion, Evaluacion } from './Evaluacion';
+import { initNotaParcial, NotaParcial } from './NotaParcial';
 
 const env = environment.nodeEnv || 'development';
 const config = databaseConfig[env];
@@ -57,6 +59,8 @@ initHorarioDocente(sequelize);
 initAsistenciaDocente(sequelize);
 initJustificacion(sequelize);
 initAuditoria(sequelize);
+initEvaluacion(sequelize);
+initNotaParcial(sequelize);
 
 const models = {
   Rol,
@@ -80,7 +84,9 @@ const models = {
   HorarioDocente,
   AsistenciaDocente,
   Justificacion,
-  Auditoria
+  Auditoria,
+  Evaluacion,
+  NotaParcial
 };
 
 // Configurar todas las asociaciones
@@ -114,5 +120,7 @@ export {
   HorarioDocente,
   AsistenciaDocente,
   Justificacion,
-  Auditoria
+  Auditoria,
+  Evaluacion,
+  NotaParcial
 };
