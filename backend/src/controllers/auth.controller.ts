@@ -8,6 +8,35 @@ import { environment } from '../../config/environment';
 import { AppError } from '../shared/errors';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
+// Bloqueo de cuenta por intentos fallidos (en memoria, no toca la DB)
+const loginAttempts = new Map<string, { count: number; lockUntil: number }>();
+const MAX_ATTEMPTS = 5;
+const LOCK_DURATION = 15 * 60 * 1000;
+
+function checkLoginLock(username: string): number | null {
+  const record = loginAttempts.get(username);
+  if (!record) return null;
+  if (Date.now() > record.lockUntil) {
+    loginAttempts.delete(username);
+    return null;
+  }
+  const remaining = Math.ceil((record.lockUntil - Date.now()) / 60000);
+  return remaining;
+}
+
+function recordFailedAttempt(username: string) {
+  const record = loginAttempts.get(username) || { count: 0, lockUntil: 0 };
+  record.count += 1;
+  if (record.count >= MAX_ATTEMPTS) {
+    record.lockUntil = Date.now() + LOCK_DURATION;
+  }
+  loginAttempts.set(username, record);
+}
+
+function clearLoginAttempts(username: string) {
+  loginAttempts.delete(username);
+}
+
 // Configuración del transportador de correo
 const transporter = nodemailer.createTransport({
   host: environment.smtp.host,
@@ -27,9 +56,17 @@ export const AuthController = {
       throw new AppError('El usuario y la contraseña son requeridos', 400);
     }
 
+    const usernameKey = username.toLowerCase();
+
+    // Verificar bloqueo temporal por intentos fallidos
+    const lockRemaining = checkLoginLock(usernameKey);
+    if (lockRemaining !== null) {
+      throw new AppError(`Demasiados intentos fallidos. Cuenta bloqueada por ${lockRemaining} minuto(s).`, 429);
+    }
+
     // Buscar el usuario en la base de datos e incluir Rol y Docente
     const usuario = await UsuarioModel.findOne({
-      where: { username: username.toLowerCase() },
+      where: { username: usernameKey },
       include: [
         { model: Rol, as: 'rol' },
         { model: Docente, as: 'docente' }
@@ -37,18 +74,24 @@ export const AuthController = {
     });
 
     if (!usuario) {
+      recordFailedAttempt(usernameKey);
       throw new AppError('Usuario o contraseña incorrectos', 401);
     }
 
     if (usuario.estatus !== 'Activo') {
+      recordFailedAttempt(usernameKey);
       throw new AppError('Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.', 403);
     }
 
     // Verificar contraseña
     const passwordMatch = await bcrypt.compare(password, usuario.password_hash);
     if (!passwordMatch) {
+      recordFailedAttempt(usernameKey);
       throw new AppError('Usuario o contraseña incorrectos', 401);
     }
+
+    // Limpiar intentos fallidos al iniciar sesión exitosamente
+    clearLoginAttempts(usernameKey);
 
     // Construir displayName amistoso
     let displayName = usuario.username;

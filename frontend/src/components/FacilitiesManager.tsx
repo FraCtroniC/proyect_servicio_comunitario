@@ -158,6 +158,7 @@ export default function FacilitiesManager({
                             alert("No se puede desincorporar este salón ya que posee bloques horarios planificados pendientes.");
                             return;
                           }
+                          if (!window.confirm(`¿Está seguro de desincorporar "${room.name}"? Esta acción no se puede deshacer.`)) return;
                           onRemoveClassroom(room.id);
                         }}
                         className="text-[9px] font-black text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-300 font-mono py-1 px-2 rounded-md transition-colors pointer-events-auto cursor-pointer flex items-center gap-1"

@@ -719,7 +719,7 @@ export default function GradeManager({
             <div id="sabana-sheet-title" className="text-center font-black text-xs space-y-1 text-slate-900 uppercase">
               <h4>ACTA INTEGRAL DE EVALUACIONES CONTINUAS ("SÁBANA DE NOTAS")</h4>
               <p className="text-[11px] font-semibold text-slate-500 font-mono">
-                Año Escolar: 2205-2026 | {selectedYear}° Año EMG - Sección "{selectedSection}" | Asignatura: {getSubjectName(selectedSubjectId).toUpperCase()}
+                Año Escolar: 2025-2026 | {selectedYear}° Año EMG - Sección "{selectedSection}" | Asignatura: {getSubjectName(selectedSubjectId)?.toUpperCase() || ''}
               </p>
             </div>
 

@@ -236,10 +236,11 @@ export default function App() {
   // --- PERSISTENCE ACTIONS PASSED DOWN ---
   const handleAddUser = async (newUser: User) => {
     try {
+      const tempPassword = 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
       const dto = {
-        username: newUser.email.split('@')[0], // Aproximación
-        password: 'Password123', // Default
-        idRol: newUser.role === 'super_admin' ? 1 : (newUser.role === 'control_estudios' ? 2 : 3)
+        username: newUser.email.split('@')[0],
+        password: tempPassword,
+        idRol: newUser.role === 'super_admin' ? 1 : (newUser.role === 'docente' ? 2 : 3)
       };
       const created = await api.post<any>('/api/usuarios', dto);
       setUsers(p => [mapUsuarioToUser(created), ...p]);
@@ -451,10 +452,8 @@ export default function App() {
       
       const realPlanId = Number(plan.id);
       
-      // Need section ID from classroom list
-      const classrm = classrooms.find(c => c.sections?.some(s => s.grade === String(year) && s.name === section));
-      const seccObj = classrm?.sections?.find(s => s.grade === String(year) && s.name === section);
-      const realSectionId = seccObj ? Number(seccObj.id) : 1; // fallback
+      const seccion = sections.find(s => s.grade === year && s.letter === section);
+      const realSectionId = seccion ? Number(seccion.id) : 1;
       
       const payload = {
         id_plan: realPlanId,

@@ -463,7 +463,10 @@ export default function ScheduleCoordinator({
                                 {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                                   <button
                                     id={`del-evt-${activeEvent.id}`}
-                                    onClick={() => onRemoveScheduleEvent(activeEvent.id)}
+                                    onClick={() => {
+                                      if (!window.confirm(`¿Eliminar esta asignación de ${getSubjectName(activeEvent.subjectId)} (${activeEvent.day} ${activeEvent.timeBlock})?`)) return;
+                                      onRemoveScheduleEvent(activeEvent.id);
+                                    }}
                                     className="absolute -top-1 -right-1 p-1 bg-rose-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto cursor-pointer block text-[8px] hover:bg-rose-700 shadow-sm"
                                     title="Quitar Asignación"
                                   >
