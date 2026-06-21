@@ -14,6 +14,7 @@ export interface User {
   active: boolean;
   avatarUrl?: string;
   phone?: string;
+  teacherId?: string;
 }
 
 export type AcademicYear = 1 | 2 | 3 | 4 | 5; // 1er a 5to Año de Educación Media General
@@ -101,6 +102,22 @@ export interface Classroom {
   capacity: number;
   type: 'Teórica' | 'Laboratorio' | 'Deportiva' | 'Comunitaria';
   resources: string[];  // e.g., "Pizarra Acrílica", "Proyector", "Microscopios"
+}
+
+export interface Section {
+  id: string;
+  grade: number;
+  letter: string;
+  periodId: string;
+  teacherGuideId: string;
+}
+
+export interface Representative {
+  id: string;
+  cedula: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
 }
 
 export interface ScheduleEvent {

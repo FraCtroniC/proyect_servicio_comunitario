@@ -36,7 +36,8 @@ import {
   TeacherScheduleLog,
   UserRole,
   StudyPlanItem,
-  SchoolPeriod
+  SchoolPeriod,
+  Section
 } from './types';
 
 import {
@@ -51,7 +52,7 @@ import {
 } from './mockData';
 
 import { api } from './services/api';
-import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToEvaluationPlan, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade } from './services/mappers';
+import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToEvaluationPlan, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative } from './services/mappers';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -82,6 +83,10 @@ export default function App() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [periods, setPeriods] = useState<SchoolPeriod[]>([]);
+
+  const [sections, setSections] = useState<Section[]>([]);
+  const [representatives, setRepresentatives] = useState<any[]>([]);
+  const [referenceData, setReferenceData] = useState<{ dias: any[]; bloques: any[] }>({ dias: [], bloques: [] });
 
   // Persistence seed arrays
   const [attendance, setAttendance] = useState<Attendance[]>(() =>
@@ -150,7 +155,11 @@ export default function App() {
             auditoriaData,
             periodosData,
             evaluacionesPlanesResp,
-            evaluacionesNotasResp
+            evaluacionesNotasResp,
+            seccionesData,
+            representantesData,
+            diasData,
+            bloquesData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -162,7 +171,11 @@ export default function App() {
             api.get<any[]>('/api/auditorias'),
             api.get<any[]>('/api/periodos'),
             api.get<any[]>('/api/evaluaciones/planes').catch(() => ({ data: [] })),
-            api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] }))
+            api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] })),
+            api.get<any[]>('/api/secciones').catch(() => []),
+            api.get<any[]>('/api/representantes').catch(() => []),
+            api.get<any[]>('/api/dias').catch(() => []),
+            api.get<any[]>('/api/bloques').catch(() => [])
           ]);
           
           const seccionesMap = aulasData.reduce((acc, a) => {
@@ -205,6 +218,12 @@ export default function App() {
           
           setAuditLogs(auditoriaData.sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
           setPeriods(periodosData.map(mapPeriodoToSchoolPeriod));
+          setSections((Array.isArray(seccionesData) ? seccionesData : []).map(mapSeccionToSection));
+          setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
+          setReferenceData({
+            dias: Array.isArray(diasData) ? diasData : [],
+            bloques: Array.isArray(bloquesData) ? bloquesData : []
+          });
         } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
           alert("Error al cargar datos desde el backend: " + error.message);
@@ -230,11 +249,13 @@ export default function App() {
     }
   };
 
+  const stripId = (id: string) => id.replace(/^[a-zA-Z]+-/, '');
+
   const handleToggleUserActive = async (userId: string) => {
     try {
       const user = users.find(u => u.id === userId);
       if (user) {
-        await api.patch(`/api/usuarios/${userId}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
+        await api.patch(`/api/usuarios/${stripId(userId)}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
         setUsers(p => p.map(u => u.id === userId ? { ...u, active: !u.active } : u));
       }
     } catch (e) {
@@ -244,15 +265,40 @@ export default function App() {
 
   const handleAddStudent = async (newStudent: Student) => {
     try {
-      const dto = {
+      const repPayload = {
+        cedula_representante: newStudent.representativeCedula,
+        nombre1: newStudent.representativeName.split(' ')[0],
+        apellido1: newStudent.representativeName.split(' ').slice(1).join(' ') || newStudent.representativeName,
+        telefono: newStudent.representativePhone
+      };
+      const createdRep = await api.post<any>('/api/representantes', repPayload);
+      const repId = createdRep.id_representante || createdRep.id;
+
+      const estPayload = {
         cedula_escolar: newStudent.cedula,
         nombre1: newStudent.firstName.split(' ')[0],
         apellido1: newStudent.lastName.split(' ')[0],
         fecha_nac: newStudent.dateOfBirth,
-        id_representante: 1 // TODO: Necesita implementarse selector de representante
+        id_representante: repId
       };
-      const created = await api.post<any>('/api/estudiantes', dto);
-      setStudents(p => [mapEstudianteToStudent(created), ...p]);
+      if (newStudent.firstName.split(' ')[1]) estPayload['nombre2'] = newStudent.firstName.split(' ')[1];
+      if (newStudent.lastName.split(' ')[1]) estPayload['apellido2'] = newStudent.lastName.split(' ')[1];
+
+      const created = await api.post<any>('/api/estudiantes', estPayload);
+      const studentId = created.id_estudiante || created.id;
+
+      const activePeriod = periods.find(p => p.status === 'Activo');
+      const matchingSection = sections.find(s => s.grade === newStudent.academicYear && s.letter === newStudent.section);
+      if (activePeriod && matchingSection) {
+        await api.post('/api/matriculas', {
+          id_estudiante: Number(studentId),
+          id_seccion: Number(matchingSection.id),
+          id_periodo: Number(activePeriod.id),
+          estatus_matricula: 'Activo'
+        }).catch((e: any) => console.warn('Matrícula no creada:', e.message));
+      }
+
+      setStudents(p => [{ ...newStudent, id: String(studentId) }, ...p]);
     } catch (e) {
       console.error(e);
       alert('Error al crear estudiante en BD');
@@ -261,7 +307,7 @@ export default function App() {
 
   const handleUpdateStudentStatus = async (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => {
     try {
-      await api.patch(`/api/estudiantes/${studentId}`, { estatus_estudiante: status });
+      await api.patch(`/api/estudiantes/${stripId(studentId)}`, { estatus_estudiante: status });
       setStudents(p => p.map(s => s.id === studentId ? { ...s, status } : s));
     } catch (e) {
       console.error(e);
@@ -305,7 +351,7 @@ export default function App() {
 
   const handleUpdateSubject = async (id: string, name: string) => {
     try {
-      await api.patch(`/api/asignaturas/${id}`, { nombre: name });
+      await api.patch(`/api/asignaturas/${stripId(id)}`, { nombre: name });
       setSubjects(p => p.map(s => s.id === id ? { ...s, name, shortName: name.substring(0, 3).toUpperCase() } : s));
     } catch (e) {
       console.error(e);
@@ -328,11 +374,30 @@ export default function App() {
 
   const handleUpdatePeriodStatus = async (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => {
     try {
-      await api.patch(`/api/periodos/${id}`, { estatus: newStatus });
+      await api.patch(`/api/periodos/${stripId(id)}`, { estatus: newStatus });
       setPeriods(p => p.map(per => per.id === id ? { ...per, status: newStatus } : per));
     } catch (e) {
       console.error(e);
       alert('Error al actualizar periodo escolar');
+    }
+  };
+
+  const handleCreateSection = async (periodId: string, grade: number, letter: string, teacherGuideId: string) => {
+    try {
+      const payload = {
+        id_periodo: Number(periodId),
+        id_grado: grade,
+        letra: letter,
+        id_docente_guia: Number(teacherGuideId.replace(/\D/g, '')) || 1
+      };
+      const created = await api.post<any>('/api/secciones', payload);
+      const newSection = mapSeccionToSection(created.data || created);
+      setSections(p => [...p, newSection]);
+      return newSection;
+    } catch (e: any) {
+      console.error('Error al crear sección:', e);
+      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
+      throw new Error(msg);
     }
   };
 
@@ -444,20 +509,77 @@ export default function App() {
     });
   };
 
-  const handleAddTeacherLog = (log: TeacherScheduleLog) => {
-    setTeacherLogs(p => [log, ...p]);
+  const handleAddTeacherLog = async (log: TeacherScheduleLog) => {
+    try {
+      const user = users.find(u => u.id === log.teacherId);
+      const idDocente = user?.teacherId ? Number(user.teacherId) : Number(log.teacherId.replace(/\D/g, '')) || 1;
+      const payload = {
+        id_docente: idDocente,
+        fecha: log.date,
+        hora_entrada: log.clockInTime,
+        estatus: log.status === 'OnTime' ? 'Puntual' : 'Retardo'
+      };
+      const created = await api.post<any>('/api/asistencias', payload);
+      setTeacherLogs(p => [{ ...log, id: String(created.id_asistencia || created.id) }, ...p]);
+    } catch (e) {
+      console.error(e);
+      setTeacherLogs(p => [log, ...p]);
+    }
   };
 
-  const handleUpdateTeacherLog = (logId: string, clockOut: string) => {
+  const handleUpdateTeacherLog = async (logId: string, clockOut: string) => {
+    try {
+      const id = Number(logId.replace(/\D/g, ''));
+      if (id) {
+        await api.patch(`/api/asistencias/${id}`, { hora_salida: clockOut });
+      }
+    } catch (e) {
+      console.error(e);
+    }
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
   };
 
-  const handleAddScheduleEvent = (evt: ScheduleEvent) => {
-    setScheduleEvents(p => [...p, evt]);
+  const handleAddScheduleEvent = async (evt: ScheduleEvent) => {
+    try {
+      const dayMap: Record<string, number> = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5 };
+      const idDia = dayMap[evt.day] || 1;
+      const bloque = referenceData.bloques.find((b: any) =>
+        `${b.hora_inicio} - ${b.hora_fin}` === evt.timeBlock ||
+        `${b.hora_inicio.substring(0, 5)} - ${b.hora_fin.substring(0, 5)}` === evt.timeBlock
+      );
+      const idBloque = bloque?.id_bloque || Number(evt.timeBlock.split(':')[0]) || 1;
+      const seccion = sections.find(s => s.grade === evt.year && s.letter === evt.section);
+      const user = users.find(u => u.id === evt.teacherId);
+      const idDocente = user?.teacherId ? Number(user.teacherId) : Number(evt.teacherId.replace(/\D/g, '')) || 1;
+
+      const payload = {
+        id_docente: idDocente,
+        id_asignatura: Number(evt.subjectId.replace(/\D/g, '')) || Number(evt.subjectId),
+        id_seccion: seccion ? Number(seccion.id) : 1,
+        id_dia: idDia,
+        id_bloque: idBloque,
+        id_aula: Number(evt.classroomId.replace(/\D/g, '')) || Number(evt.classroomId)
+      };
+
+      const created = await api.post<any>('/api/horarios', payload);
+      setScheduleEvents(p => [...p, { ...evt, id: String(created.id_horario || created.id) }]);
+    } catch (e: any) {
+      console.error('Error al crear horario:', e);
+      alert('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
+    }
   };
 
-  const handleRemoveScheduleEvent = (evtId: string) => {
-    setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
+  const handleRemoveScheduleEvent = async (evtId: string) => {
+    try {
+      const id = Number(evtId.replace(/\D/g, ''));
+      if (id) {
+        await api.delete(`/api/horarios/${id}`);
+      }
+      setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
+    } catch (e) {
+      console.error('Error al eliminar horario:', e);
+      setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
+    }
   };
 
   const handleAddClassroom = async (room: Classroom) => {
@@ -476,8 +598,17 @@ export default function App() {
     }
   };
 
-  const handleRemoveClassroom = (roomId: string) => {
-    setClassrooms(p => p.filter(c => c.id !== roomId));
+  const handleRemoveClassroom = async (roomId: string) => {
+    try {
+      const id = Number(roomId.replace(/\D/g, ''));
+      if (id) {
+        await api.delete(`/api/aulas/${id}`);
+      }
+      setClassrooms(p => p.filter(c => c.id !== roomId));
+    } catch (e) {
+      console.error('Error al eliminar aula:', e);
+      setClassrooms(p => p.filter(c => c.id !== roomId));
+    }
   };
 
   // Tabs structure definitions
@@ -713,9 +844,13 @@ export default function App() {
               {activeTab === 'academic' && (
                 <AcademicManager
                   students={students}
+                  sections={sections}
+                  periods={periods}
+                  users={users}
                   currentUserRole={currentUserRole}
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
+                  onCreateSection={handleCreateSection}
                 />
               )}
 

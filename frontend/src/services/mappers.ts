@@ -1,4 +1,4 @@
-import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod } from '../types';
+import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative } from '../types';
 
 export function mapRole(idRol: number): UserRole {
   if (idRol === 1) return 'super_admin';
@@ -14,7 +14,8 @@ export function mapUsuarioToUser(dbUser: any): User {
     email: dbUser.correo || `${dbUser.username}@local.liceo`,
     role: mapRole(dbUser.idRol || dbUser.id_rol),
     active: dbUser.estatus === 'Activo',
-    cedula: dbUser.cedula || undefined,
+    cedula: dbUser.cedula || dbUser.docente?.cedula_docente || undefined,
+    teacherId: dbUser.id_docente ? String(dbUser.id_docente) : undefined,
   };
 }
 
@@ -140,6 +141,26 @@ export function mapEvaluacionesDbToPlans(evaluacionesDb: any[], studyPlans: any[
   }
   
   return Array.from(map.values());
+}
+
+export function mapSeccionToSection(dbSeccion: any): Section {
+  return {
+    id: String(dbSeccion.id_seccion),
+    grade: dbSeccion.id_grado || dbSeccion.grado?.numero || 1,
+    letter: dbSeccion.letra,
+    periodId: String(dbSeccion.id_periodo),
+    teacherGuideId: String(dbSeccion.id_docente_guia),
+  };
+}
+
+export function mapRepresentanteToRepresentative(dbRep: any): Representative {
+  return {
+    id: String(dbRep.id_representante),
+    cedula: dbRep.cedula_rep,
+    firstName: dbRep.nombre1 + (dbRep.nombre2 ? ` ${dbRep.nombre2}` : ''),
+    lastName: dbRep.apellido1 + (dbRep.apellido2 ? ` ${dbRep.apellido2}` : ''),
+    phone: dbRep.telefono || '',
+  };
 }
 
 export function mapNotaParcialToGrade(dbNota: any, studentId: string): Grade {
