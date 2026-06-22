@@ -525,7 +525,7 @@ export default function App() {
       if (activePeriod && matchingSection) {
         // Encontrar la matricula
         const matriculasReq = await api.get<any[]>('/api/matriculas');
-        const matriculas = Array.isArray(matriculasReq) ? matriculasReq : matriculasReq.data || [];
+        const matriculas = Array.isArray(matriculasReq) ? matriculasReq : (matriculasReq as any).data || [];
         const numStudentId = Number(studentId.replace(/\D/g, '')) || Number(studentId);
         const matricula = matriculas.find(m => m.id_estudiante === numStudentId && m.id_periodo === Number(activePeriod.id) && m.id_seccion === Number(matchingSection.id));
         if (matricula) matriculaId = matricula.id_matricula;

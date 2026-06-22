@@ -96,7 +96,8 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
       representativeName: repName.trim(),
       representativeCedula: cleanRepCedula,
       representativePhone: repPhone.trim(),
-      dateOfBirth: birthYear
+      dateOfBirth: birthYear,
+      gender: 'M'
     };
 
     onAddStudent(newStudent);
