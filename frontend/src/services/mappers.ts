@@ -35,12 +35,15 @@ export function mapEstudianteToStudent(dbStudent: any): Student {
     cedula: dbStudent.cedula_escolar,
     academicYear: 1, 
     section: 'A', 
-    status: dbStudent.estatus_estudiante === 'Activo' ? 'Activo' : 
-            dbStudent.estatus_estudiante === 'Retirado' ? 'Retirado' : 'Inactivo',
-    representativeName: 'No asignado', 
-    representativeCedula: '',
-    representativePhone: '',
+    status: dbStudent.estatus_estudiante === 'Inactivo' ? 'Inactivo' : 
+            dbStudent.estatus_estudiante === 'Retirado' ? 'Retirado' : 'Activo',
+    representativeName: dbStudent.representante 
+      ? `${dbStudent.representante.nombre1} ${dbStudent.representante.apellido1}` 
+      : 'No asignado',
+    representativeCedula: dbStudent.representante?.cedula_rep || '',
+    representativePhone: dbStudent.representante?.telefono || '',
     dateOfBirth: dbStudent.fecha_nac,
+    gender: dbStudent.genero || 'M',
   };
 }
 

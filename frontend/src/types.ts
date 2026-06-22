@@ -17,6 +17,17 @@ export interface User {
   teacherId?: string;
 }
 
+export interface MateriaPendiente {
+  id_materia_pendiente: number;
+  id_estudiante: number;
+  id_asignatura: number;
+  id_periodo: number;
+  id_docente_evaluador: number | null;
+  nota_definitiva: number | null;
+  estatus: 'Cursando' | 'Aprobada' | 'Aplazada';
+  asignatura?: Subject;
+}
+
 export type AcademicYear = 1 | 2 | 3 | 4 | 5; // 1er a 5to Año de Educación Media General
 
 export interface SchoolPeriod {
@@ -37,6 +48,7 @@ export interface Student {
   representativeCedula: string;
   representativePhone: string;
   dateOfBirth: string;
+  gender: 'M' | 'F' | string;
 }
 
 export interface Subject {

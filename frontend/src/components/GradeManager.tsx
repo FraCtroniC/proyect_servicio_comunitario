@@ -7,6 +7,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash } from 'lucide-react';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole } from '../types';
 import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../utils/gradeCalculations';
+import { generateBoletinPDF } from '../utils/pdfGenerator';
+import { exportGradesToExcel } from '../utils/excelGenerator';
 
 interface GradeManagerProps {
   students: Student[];
@@ -440,6 +442,11 @@ export default function GradeManager({
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Ingreso Manual de Calificaciones</h3>
                 <p className="text-[11px] text-slate-400 font-medium">Haga clic sobre cualquier celda para cargar o editar la nota del 1 al 20.</p>
+                {!activePlan && (
+                  <div className="mt-2 text-xs font-bold text-rose-600 bg-rose-50 p-2 border border-rose-200 rounded">
+                    ⚠️ Esta asignatura no está asignada al plan de estudios de este año o no tiene evaluaciones configuradas. Ve a "Plan de Estudio" o usa "Configurar Plan de Evaluación".
+                  </div>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
                 <div className="flex gap-2 text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-100 font-medium text-slate-500">
@@ -696,6 +703,12 @@ export default function GradeManager({
             >
               <Printer className="h-4.5 w-4.5" />
               <span>Imprimir Formato MPPE</span>
+            </button>
+            <button
+              onClick={() => exportGradesToExcel(students, subjects, grades, evaluationPlans, selectedYear, selectedSection)}
+              className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
+            >
+              <Printer className="h-4 w-4" /> Excel (Sábana)
             </button>
           </div>
 

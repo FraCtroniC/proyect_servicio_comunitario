@@ -431,9 +431,13 @@ export default function App() {
   const handleSaveGrades = async (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => {
     try {
       const payload = gradesToSave.map(g => {
+        const evId = Number(g.evaluationId);
+        if (isNaN(evId)) {
+          throw new Error("MOCK_PLAN");
+        }
         return {
           id_estudiante: Number(g.studentId.replace('std-', '')),
-          id_evaluacion: Number(g.evaluationId),
+          id_evaluacion: evId,
           id_escala: g.score,
         };
       });
@@ -451,6 +455,10 @@ export default function App() {
 
     } catch (e: any) {
       console.error("Error al guardar calificaciones:", e);
+      if (e.message === "MOCK_PLAN") {
+        alert("⚠️ ATENCIÓN: Debes 'Configurar Plan de Evaluación' para esta asignatura y lapso antes de guardar calificaciones.");
+        return;
+      }
       const msg = e.response?.data?.error?.message || e.message || "Error desconocido";
       alert(`Error al guardar las calificaciones en la base de datos: ${msg}`);
       throw e;
@@ -884,6 +892,7 @@ export default function App() {
                   subjects={subjects}
                   evaluationPlans={evaluationPlans}
                   onNavigateToTab={setActiveTab}
+                  currentUserRole={currentUserRole}
                 />
               )}
 

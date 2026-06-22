@@ -4,7 +4,9 @@ import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const EstudianteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await Estudiante.findAll();
+    const result = await Estudiante.findAll({
+      include: ['representante']
+    });
     res.json({ data: result });
   }),
 

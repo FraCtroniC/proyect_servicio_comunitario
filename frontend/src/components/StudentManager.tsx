@@ -4,9 +4,12 @@
  */
 
 import React, { useState } from 'react';
-import { Layers, UserPlus, Filter, ShieldAlert, GraduationCap, Users } from 'lucide-react';
-import { Student, AcademicYear, UserRole } from '../types';
+import { Layers, UserPlus, Filter, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
+import { Student, AcademicYear, UserRole, MateriaPendiente } from '../types';
+import { generateConstanciaEstudio } from '../utils/pdfGenerator';
+import { exportStudentsToExcel } from '../utils/excelGenerator';
 import { Modal } from './Modal';
+import { api } from '../services/api';
 
 interface StudentManagerProps {
   students: Student[];
@@ -37,6 +40,20 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
 
   // Tab & Modal states
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [pendingSubjects, setPendingSubjects] = useState<MateriaPendiente[]>([]);
+  
+  const handleOpenProfile = async (s: Student) => {
+    setSelectedStudent(s);
+    setIsProfileModalOpen(true);
+    try {
+      const res = await api.materiasPendientes.getByStudent(s.id);
+      setPendingSubjects(res);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Filter students array
   const filteredStudents = students.filter(s => {
@@ -174,6 +191,14 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
               className="text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-[200px]"
             />
             
+            <button
+              onClick={() => exportStudentsToExcel(filteredStudents)}
+              className="hidden md:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              Exportar Nómina
+            </button>
+
             {['super_admin', 'control_estudios'].includes(currentUserRole) && (
               <button
                 onClick={() => setIsStudentModalOpen(true)}
@@ -186,26 +211,26 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
           </div>
 
           {/* Student list layout */}
-          <div id="student-list-scroller" className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          <div id="student-list-scroller" className="overflow-x-auto w-full pb-4">
+            <table className="w-full text-left border-collapse text-xs min-w-[800px]">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5">Cédula</th>
-                  <th className="py-2.5">Estudiante</th>
-                  <th className="py-2.5">Año / Secc.</th>
-                  <th className="py-2.5">Representante (LOPNA)</th>
-                  <th className="py-2.5">Estatus</th>
-                  {['super_admin', 'control_estudios'].includes(currentUserRole) && <th className="py-2.5 text-right">Acciones</th>}
+                  <th className="py-2.5 whitespace-nowrap">Cédula</th>
+                  <th className="py-2.5 whitespace-nowrap">Estudiante</th>
+                  <th className="py-2.5 whitespace-nowrap">Año / Secc.</th>
+                  <th className="py-2.5 whitespace-nowrap">Representante (LOPNA)</th>
+                  <th className="py-2.5 whitespace-nowrap">Estatus</th>
+                  <th className="py-2.5 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/60 font-medium text-slate-750">
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map(s => (
                     <tr id={`std-row-${s.id}`} key={s.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 font-mono font-bold text-slate-700">{s.cedula}</td>
-                      <td className="py-3">
+                      <td className="py-3 font-mono font-bold text-slate-700 whitespace-nowrap">{s.cedula}</td>
+                      <td className="py-3 min-w-[150px]">
                         <span className="font-bold text-slate-800 text-[12px] block">{s.lastName}, {s.firstName}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">Nacimiento: {s.dateOfBirth}</span>
+                        <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Nacimiento: {s.dateOfBirth}</span>
                       </td>
                       <td className="py-3">
                         <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold">{s.academicYear}° Año "{s.section}"</span>
@@ -218,7 +243,21 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
                         <span className={getStatusStyle(s.status)}>{s.status}</span>
                       </td>
                       {['super_admin', 'control_estudios'].includes(currentUserRole) && (
-                        <td className="py-3 text-right">
+                        <td className="py-3 text-right flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenProfile(s)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                            title="Materias Pendientes"
+                          >
+                            <BookOpen className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => generateConstanciaEstudio(s)}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                            title="Constancia de Estudio"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
                           <select
                             value={s.status}
                             onChange={(e) => onUpdateStudentStatus(s.id, e.target.value as 'Activo' | 'Inactivo' | 'Retirado')}
@@ -384,6 +423,74 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
             Inscribir y Matricular
           </button>
         </form>
+      </Modal>
+
+      {/* Modal Perfil Estudiante (Materias Pendientes) */}
+      <Modal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} title="Perfil Académico Avanzado">
+        {selectedStudent && (
+          <div className="space-y-4">
+            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+              <h3 className="font-bold text-indigo-900">{selectedStudent.firstName} {selectedStudent.lastName}</h3>
+              <p className="text-xs text-indigo-700">C.I: {selectedStudent.cedula} | {selectedStudent.academicYear}° Año "{selectedStudent.section}"</p>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-bold text-slate-800 mb-3 border-b pb-2 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-slate-500" />
+                Materias Pendientes (Arrastre)
+              </h4>
+              
+              {pendingSubjects.length > 0 ? (
+                <ul className="space-y-2">
+                  {pendingSubjects.map(mp => (
+                    <li key={mp.id_materia_pendiente} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                      <div>
+                        <span className="font-bold text-slate-800 text-xs block">{mp.asignatura?.name || 'Asignatura'}</span>
+                        <span className="text-[10px] text-slate-500">Periodo de Arrastre: {mp.id_periodo}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${mp.estatus === 'Aprobada' ? 'bg-green-100 text-green-700' : mp.estatus === 'Aplazada' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {mp.estatus}
+                        </span>
+                        {mp.nota_definitiva !== null && (
+                          <span className="block text-xs font-mono font-bold mt-1 text-slate-700">Nota: {mp.nota_definitiva}/20</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-500 text-center py-4 bg-slate-50 rounded-lg border border-slate-100 border-dashed">
+                  Este estudiante no posee materias pendientes.
+                </p>
+              )}
+            </div>
+
+            {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+              <button 
+                onClick={async () => {
+                  const asigId = window.prompt('Ingrese el ID de la asignatura a matricular (Pendiente):');
+                  if (asigId) {
+                    try {
+                      await api.materiasPendientes.create({
+                        id_estudiante: selectedStudent.id,
+                        id_asignatura: asigId,
+                        id_periodo: 1 // Por defecto periodo activo
+                      });
+                      alert('Materia pendiente matriculada con éxito.');
+                      handleOpenProfile(selectedStudent);
+                    } catch (e) {
+                      alert('Error matriculando materia pendiente.');
+                    }
+                  }
+                }}
+                className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition-colors"
+              >
+                + Registrar Nueva Materia Pendiente
+              </button>
+            )}
+          </div>
+        )}
       </Modal>
 
     </div>

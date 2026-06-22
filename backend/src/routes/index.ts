@@ -25,6 +25,9 @@ import { justificacionRoutes } from './justificacion.routes';
 import { auditoriaRoutes } from './auditoria.routes';
 import { evaluacionRoutes } from './evaluacion.routes';
 import { asistenciaEstudianteRoutes } from './asistencia-estudiante.routes';
+import { systemRoutes } from './system.routes';
+import { notificacionRoutes } from './notificacion.routes';
+import { materiaPendienteRoutes } from './materia-pendiente.routes';
 
 export const routes = Router();
 
@@ -58,3 +61,6 @@ routes.use('/asistencias-estudiantes', asistenciaEstudianteRoutes);
 routes.use('/justificaciones', justificacionRoutes);
 routes.use('/auditorias', auditoriaRoutes);
 routes.use('/evaluaciones', evaluacionRoutes);
+routes.use('/system', systemRoutes);
+routes.use('/notificaciones', notificacionRoutes);
+routes.use('/materias-pendientes', materiaPendienteRoutes);

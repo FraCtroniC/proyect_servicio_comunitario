@@ -10,6 +10,8 @@ async function syncDb() {
     console.log('NotaParcial synced');
     await sequelize.models.AsistenciaEstudiante.sync({ alter: true });
     console.log('AsistenciaEstudiante synced');
+    await sequelize.models.MateriaPendiente.sync({ alter: true });
+    console.log('MateriaPendiente synced');
     console.log('All new models synced successfully');
   } catch (e) {
     console.error('Error syncing:', e);

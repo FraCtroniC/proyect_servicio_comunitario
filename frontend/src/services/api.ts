@@ -77,4 +77,12 @@ export const api = {
   patch: <T>(url: string, body?: any) =>
     request<T>(url, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(url: string) => request<T>(url, { method: 'DELETE' }),
+  materiasPendientes: {
+    getByStudent: (id: string) => request(`/materias-pendientes/estudiante/${id}`),
+    create: (data: any) => request('/materias-pendientes', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request(`/materias-pendientes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  },
+  notificaciones: {
+    alertaAcademica: (data: any) => request('/notificaciones/alerta-academica', { method: 'POST', body: JSON.stringify(data) })
+  }
 };

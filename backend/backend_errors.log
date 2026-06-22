@@ -73,3 +73,14 @@ Error: Usuario o contraseña incorrectos
 Error: Usuario o contraseña incorrectos
     at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:50:13)
 
+2026-06-22T15:12:02.665Z
+SequelizeValidationError: notNull Violation: NotaParcial.id_evaluacion cannot be null
+    at InstanceValidator._validate (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\instance-validator.js:78:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async InstanceValidator._validateAndRunHooks (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\instance-validator.js:111:7)
+    at async InstanceValidator.validate (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\instance-validator.js:93:12)
+    at async NotaParcial.save (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:4077:7)
+    at async NotaParcial.create (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2305:12)
+    at async NotaParcial.findOrCreate (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2417:25)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\evaluacion.controller.ts:121:33)
+

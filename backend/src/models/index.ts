@@ -27,6 +27,7 @@ import { initAuditoria, Auditoria } from './Auditoria';
 import { initEvaluacion, Evaluacion } from './Evaluacion';
 import { initNotaParcial, NotaParcial } from './NotaParcial';
 import { initAsistenciaEstudiante, AsistenciaEstudiante } from './AsistenciaEstudiante';
+import { initMateriaPendiente, MateriaPendiente } from './MateriaPendiente';
 
 const env = environment.nodeEnv || 'development';
 const config = databaseConfig[env];
@@ -63,6 +64,7 @@ initAuditoria(sequelize);
 initEvaluacion(sequelize);
 initNotaParcial(sequelize);
 initAsistenciaEstudiante(sequelize);
+initMateriaPendiente(sequelize);
 
 const models = {
   Rol,
@@ -89,7 +91,8 @@ const models = {
   Auditoria,
   Evaluacion,
   NotaParcial,
-  AsistenciaEstudiante
+  AsistenciaEstudiante,
+  MateriaPendiente
 };
 
 // Configurar todas las asociaciones
@@ -126,5 +129,6 @@ export {
   Auditoria,
   Evaluacion,
   NotaParcial,
-  AsistenciaEstudiante
+  AsistenciaEstudiante,
+  MateriaPendiente
 };

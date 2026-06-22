@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { Student, User, Attendance, Grade, Subject, EvaluationPlan } from '../types';
+import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock, Database } from 'lucide-react';
+import { Student, User, Attendance, Grade, Subject, EvaluationPlan, UserRole } from '../types';
 import { calculateEvaluationAverage } from '../utils/gradeCalculations';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { api } from '../services/api';
 
 interface DashboardProps {
   students: Student[];
@@ -15,9 +17,10 @@ interface DashboardProps {
   subjects: Subject[];
   evaluationPlans: EvaluationPlan[];
   onNavigateToTab: (tab: string) => void;
+  currentUserRole: UserRole;
 }
 
-export default function Dashboard({ students, users, attendance, grades, subjects, evaluationPlans, onNavigateToTab }: DashboardProps) {
+export default function Dashboard({ students, users, attendance, grades, subjects, evaluationPlans, onNavigateToTab, currentUserRole }: DashboardProps) {
   // 1. Stats calculations
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === 'Activo').length;
@@ -55,6 +58,50 @@ export default function Dashboard({ students, users, attendance, grades, subject
     const avg = studentGrades.reduce((a, b) => a + b, 0) / studentGrades.length;
     return avg < 10;
   });
+
+  // 4. Gender Stats
+  const maleCount = students.filter(s => s.gender === 'M' || s.gender === 'V').length;
+  const femaleCount = students.filter(s => s.gender === 'F' || s.gender === 'H').length;
+  const genderData = [
+    { name: 'Varones', value: maleCount, color: '#3b82f6' },
+    { name: 'Hembras', value: femaleCount, color: '#ec4899' }
+  ];
+
+  // 5. Approved vs Failed (General approximation based on average grade by year)
+  const performanceData = [1, 2, 3, 4, 5].map(year => {
+    const yearStudents = students.filter(s => s.academicYear === year);
+    let aprobados = 0;
+    let aplazados = 0;
+    yearStudents.forEach(s => {
+      const g = grades.filter(gr => gr.studentId === s.id).map(gr => gr.score);
+      const avg = g.length > 0 ? (g.reduce((a,b)=>a+b,0)/g.length) : 0;
+      if (avg >= 10 || g.length === 0) aprobados++; else aplazados++;
+    });
+    return { name: `${year}° Año`, Aprobados: aprobados, Aplazados: aplazados };
+  });
+
+  const handleBackup = async () => {
+    try {
+      // Usaremos un endpoint directo que devuelve el blob
+      const token = localStorage.getItem('token') || '';
+      const response = await fetch('/api/system/backup', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Fallo al respaldar');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Respaldo_Liceo_${new Date().toISOString().split('T')[0]}.sql`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      alert("Error al descargar el respaldo.");
+      console.error(e);
+    }
+  };
 
   return (
     <div id="dashboard-container" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-blue-100 selection:text-blue-900">
@@ -136,13 +183,45 @@ export default function Dashboard({ students, users, attendance, grades, subject
 
         {/* Left Column: Grade distributions by Year */}
         <div id="year-performance-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 lg:col-span-2 space-y-6">
-          <div id="year-perf-header" className="flex items-center justify-between border-b border-fold-line pb-3">
+          <div id="year-perf-header" className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 tracking-tight">Rendimiento Académico Promedio por Año</h3>
             <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono font-medium">Escala MPPE (1 - 20)</span>
           </div>
 
-          <div id="year-bars" className="space-y-4">
-            {[1, 2, 3, 4, 5].map(yr => {
+          <div id="performance-chart" className="h-[250px] w-full">
+            <ResponsiveContainer width="99%" height="100%">
+              <BarChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{fontSize: 10}} />
+                <YAxis tick={{fontSize: 10}} />
+                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Legend wrapperStyle={{fontSize: '11px'}} />
+                <Bar dataKey="Aprobados" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Aplazados" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-4">Desglose de Matrícula (Género)</h3>
+              <div className="h-[200px] w-full flex justify-center">
+                <ResponsiveContainer width="99%" height="100%">
+                  <PieChart>
+                    <Pie data={genderData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={60} paddingAngle={2}>
+                      {genderData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Legend wrapperStyle={{fontSize: '11px'}} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            <div id="year-bars" className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-2">Promedios Oficiales</h3>
+              {[1, 2, 3, 4, 5].map(yr => {
               const yearAvg = averageGradeByYear(yr);
               // Percentage represented on 1-20 scale (e.g. 15 is 75%)
               const barPercent = Math.round((yearAvg / 20) * 100);
@@ -169,6 +248,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
                 </div>
               );
             })}
+            </div>
           </div>
 
           {/* Additional note info on the grading laws */}
@@ -191,14 +271,36 @@ export default function Dashboard({ students, users, attendance, grades, subject
             {strugglingStudents.length > 0 ? (
               <div id="failing-alert-card" className="p-3 bg-red-50/90 border border-red-200 rounded-lg flex items-start gap-2.5">
                 <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-                <div id="failing-alert-content" className="text-xs">
+                <div id="failing-alert-content" className="text-xs w-full">
                   <span className="font-bold text-rose-900 block">Estudiantes en riesgo de repitencia</span>
                   <p className="text-rose-700/90 mt-0.5 leading-relaxed">
-                    Hay <strong>{strugglingStudents.length}</strong> estudiante(s) activo(s) con promedio acumulado inferior a 10 ptos. Se sugiere convocar a sus representantes.
+                    Hay <strong>{strugglingStudents.length}</strong> estudiante(s) activo(s) con promedio acumulado inferior a 10 ptos.
                   </p>
-                  <ul className="mt-1.5 pl-2 list-disc list-inside text-[11px] text-rose-800 font-medium">
+                  <ul className="mt-1.5 pl-2 list-disc list-inside text-[11px] text-rose-800 font-medium space-y-1">
                     {strugglingStudents.map(s => (
-                      <li key={s.id}>{s.firstName} {s.lastName} ({s.academicYear}° Año "{s.section}")</li>
+                      <li key={s.id} className="flex items-center justify-between">
+                        <span>{s.firstName} {s.lastName} ({s.academicYear}° Año "{s.section}")</span>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm(`¿Enviar alerta al representante de ${s.firstName}?`)) {
+                              try {
+                                await api.notificaciones.alertaAcademica({
+                                  emailRepresentante: 'representante.demo@gmail.com', // Demo, en prod usar s.representativeEmail
+                                  studentName: `${s.firstName} ${s.lastName}`,
+                                  subjectName: 'Bajo Rendimiento General',
+                                  notes: 'Promedio actual inferior a 10 ptos.'
+                                });
+                                alert('Alerta enviada correctamente');
+                              } catch (e) {
+                                alert('Error enviando alerta');
+                              }
+                            }
+                          }}
+                          className="ml-2 bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-0.5 rounded transition-colors"
+                        >
+                          ✉️ Enviar Alerta
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -241,6 +343,18 @@ export default function Dashboard({ students, users, attendance, grades, subject
                 </div>
               </div>
             </div>
+
+            {currentUserRole === 'super_admin' && (
+              <div className="pt-4 border-t border-slate-100">
+                <button
+                  onClick={handleBackup}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-colors"
+                >
+                  <Database className="h-4 w-4" />
+                  Descargar Respaldo BD (.sql)
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
