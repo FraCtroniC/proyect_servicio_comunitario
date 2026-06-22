@@ -8,6 +8,8 @@ async function syncDb() {
     console.log('Evaluacion synced');
     await sequelize.models.NotaParcial.sync({ alter: true });
     console.log('NotaParcial synced');
+    await sequelize.models.AsistenciaEstudiante.sync({ alter: true });
+    console.log('AsistenciaEstudiante synced');
     console.log('All new models synced successfully');
   } catch (e) {
     console.error('Error syncing:', e);

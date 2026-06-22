@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash } from 'lucide-react';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole } from '../types';
-import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../mockData';
+import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../utils/gradeCalculations';
 
 interface GradeManagerProps {
   students: Student[];

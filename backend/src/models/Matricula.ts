@@ -15,6 +15,7 @@ export class Matricula extends Model {
     Matricula.belongsTo(models.Seccion, { foreignKey: 'id_seccion', as: 'seccion' });
     Matricula.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });
     Matricula.hasMany(models.Calificacion, { foreignKey: 'id_matricula', as: 'calificaciones' });
+    Matricula.hasMany(models.AsistenciaEstudiante, { foreignKey: 'id_matricula', as: 'asistencias' });
   }
 }
 

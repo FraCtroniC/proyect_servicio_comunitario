@@ -24,6 +24,7 @@ import { asistenciaDocenteRoutes } from './asistencia-docente.routes';
 import { justificacionRoutes } from './justificacion.routes';
 import { auditoriaRoutes } from './auditoria.routes';
 import { evaluacionRoutes } from './evaluacion.routes';
+import { asistenciaEstudianteRoutes } from './asistencia-estudiante.routes';
 
 export const routes = Router();
 
@@ -53,6 +54,7 @@ routes.use('/dias', diaSemanaRoutes);
 routes.use('/bloques', bloqueHorarioRoutes);
 routes.use('/horarios', horarioDocenteRoutes);
 routes.use('/asistencias', asistenciaDocenteRoutes);
+routes.use('/asistencias-estudiantes', asistenciaEstudianteRoutes);
 routes.use('/justificaciones', justificacionRoutes);
 routes.use('/auditorias', auditoriaRoutes);
 routes.use('/evaluaciones', evaluacionRoutes);

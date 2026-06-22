@@ -40,17 +40,6 @@ import {
   Section
 } from './types';
 
-import {
-  initialSubjects,
-  initialStudents,
-  initialClassrooms,
-  initialScheduleEvents,
-  seedEvaluationPlans,
-  generateSeedGrades,
-  initialAttendance,
-  initialTeacherLogs
-} from './mockData';
-
 import { api } from './services/api';
 import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToEvaluationPlan, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative } from './services/mappers';
 
@@ -88,13 +77,9 @@ export default function App() {
   const [representatives, setRepresentatives] = useState<any[]>([]);
   const [referenceData, setReferenceData] = useState<{ dias: any[]; bloques: any[] }>({ dias: [], bloques: [] });
 
-  // Persistence seed arrays
-  const [attendance, setAttendance] = useState<Attendance[]>(() =>
-    initialAttendance()
-  );
-  const [teacherLogs, setTeacherLogs] = useState<TeacherScheduleLog[]>(() =>
-    initialTeacherLogs
-  );
+  // Persistence arrays from Backend
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const [teacherLogs, setTeacherLogs] = useState<TeacherScheduleLog[]>([]);
 
   // Simulated login/role permission state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -159,7 +144,9 @@ export default function App() {
             seccionesData,
             representantesData,
             diasData,
-            bloquesData
+            bloquesData,
+            asistenciasData,
+            asistenciasEstudiantesData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -175,7 +162,9 @@ export default function App() {
             api.get<any[]>('/api/secciones').catch(() => []),
             api.get<any[]>('/api/representantes').catch(() => []),
             api.get<any[]>('/api/dias').catch(() => []),
-            api.get<any[]>('/api/bloques').catch(() => [])
+            api.get<any[]>('/api/bloques').catch(() => []),
+            api.get<any[]>('/api/asistencias').catch(() => []),
+            api.get<any[]>('/api/asistencias-estudiantes').catch(() => [])
           ]);
           
           const seccionesMap = aulasData.reduce((acc, a) => {
@@ -224,6 +213,29 @@ export default function App() {
             dias: Array.isArray(diasData) ? diasData : [],
             bloques: Array.isArray(bloquesData) ? bloquesData : []
           });
+
+          // Set Asistencias
+          if (Array.isArray(asistenciasData)) {
+            setTeacherLogs(asistenciasData.map((a: any) => ({
+              id: String(a.id_asistencia),
+              teacherId: String(a.id_docente),
+              date: a.fecha,
+              clockInTime: a.hora_entrada,
+              clockOutTime: a.hora_salida,
+              status: a.estatus === 'Puntual' ? 'OnTime' : 'Late'
+            })));
+          }
+
+          if (Array.isArray(asistenciasEstudiantesData)) {
+            setAttendance(asistenciasEstudiantesData.map((a: any) => ({
+              id: String(a.id_asistencia_est),
+              studentId: String(a.matricula?.id_estudiante || ''),
+              date: a.fecha,
+              academicYear: a.matricula?.seccion?.id_grado || 1,
+              section: a.matricula?.seccion?.letra || 'A',
+              status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P')
+            })));
+          }
         } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
           alert("Error al cargar datos desde el backend: " + error.message);
@@ -495,17 +507,61 @@ export default function App() {
     }
   };
 
-  const handleModifyAttendance = (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J') => {
-    setAttendance(p => {
-      const idx = p.findIndex(a => a.studentId === studentId && a.date === date);
-      if (idx >= 0) {
-        const copy = [...p];
-        copy[idx] = { ...copy[idx], status };
-        return copy;
-      } else {
-        return [...p, { id: `att-${studentId}-${date}`, studentId, date, academicYear: year as any, section, status }];
+  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J') => {
+    try {
+      const dbStatus = status === 'P' ? 'Presente' : (status === 'A' ? 'Ausente' : 'Justificado');
+      const activePeriod = periods.find(p => p.status === 'Activo');
+      const matchingSection = sections.find(s => s.grade === year && s.letter === section);
+      
+      let matriculaId = null;
+      if (activePeriod && matchingSection) {
+        // Encontrar la matricula
+        const matriculasReq = await api.get<any[]>('/api/matriculas');
+        const matriculas = Array.isArray(matriculasReq) ? matriculasReq : matriculasReq.data || [];
+        const numStudentId = Number(studentId.replace(/\D/g, '')) || Number(studentId);
+        const matricula = matriculas.find(m => m.id_estudiante === numStudentId && m.id_periodo === Number(activePeriod.id) && m.id_seccion === Number(matchingSection.id));
+        if (matricula) matriculaId = matricula.id_matricula;
       }
-    });
+
+      if (matriculaId) {
+        const payload = {
+          id_matricula: matriculaId,
+          fecha: date,
+          estatus: dbStatus,
+          observacion: ''
+        };
+        const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date);
+        if (existingAtt && existingAtt.id.startsWith('att-')) {
+           // mock data, create it
+           const created = await api.post<any>('/api/asistencias-estudiantes', payload);
+           setAttendance(p => {
+            const idx = p.findIndex(a => a.studentId === studentId && a.date === date);
+            if (idx >= 0) {
+              const copy = [...p];
+              copy[idx] = { ...copy[idx], status, id: String(created.id_asistencia_est || created.id) };
+              return copy;
+            } else {
+              return [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }];
+            }
+          });
+        } else if (existingAtt && !existingAtt.id.startsWith('att-')) {
+           // existing db record, update
+           await api.patch(`/api/asistencias-estudiantes/${existingAtt.id}`, { estatus: dbStatus });
+           setAttendance(p => {
+             const copy = [...p];
+             const idx = copy.findIndex(a => a.id === existingAtt.id);
+             if (idx >= 0) copy[idx] = { ...copy[idx], status };
+             return copy;
+           });
+        } else {
+           // completely new
+           const created = await api.post<any>('/api/asistencias-estudiantes', payload);
+           setAttendance(p => [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }]);
+        }
+      }
+    } catch (e) {
+      console.error('Error al guardar asistencia estudiantil', e);
+    }
   };
 
   const handleAddTeacherLog = async (log: TeacherScheduleLog) => {

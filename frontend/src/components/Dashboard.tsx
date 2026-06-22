@@ -5,7 +5,7 @@
 
 import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Student, User, Attendance, Grade, Subject, EvaluationPlan } from '../types';
-import { calculateEvaluationAverage } from '../mockData';
+import { calculateEvaluationAverage } from '../utils/gradeCalculations';
 
 interface DashboardProps {
   students: Student[];
