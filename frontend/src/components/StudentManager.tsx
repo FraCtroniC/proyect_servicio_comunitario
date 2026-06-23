@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Layers, UserPlus, Filter, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
-import { Student, AcademicYear, UserRole, MateriaPendiente } from '../types';
+import { Student, AcademicYear, UserRole, MateriaPendiente, Section } from '../types';
 import { generateConstanciaEstudio } from '../utils/pdfGenerator';
 import { exportStudentsToExcel } from '../utils/excelGenerator';
 import { Modal } from './Modal';
@@ -13,12 +13,13 @@ import { api } from '../services/api';
 
 interface StudentManagerProps {
   students: Student[];
+  sections: Section[];
   currentUserRole: UserRole;
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
 }
 
-export default function StudentManager({ students, currentUserRole, onAddStudent, onUpdateStudentStatus }: StudentManagerProps) {
+export default function StudentManager({ students, sections, currentUserRole, onAddStudent, onUpdateStudentStatus }: StudentManagerProps) {
   // Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(5); // Default showing 5th year for rich showcase
   const [selectedSection, setSelectedSection] = useState<string>('A');
@@ -26,14 +27,25 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
 
   // Register Form states
   const [firstName, setFirstName] = useState('');
+  const [secondName, setSecondName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [secondLastName, setSecondLastName] = useState('');
   const [cedula, setCedula] = useState('');
   const [birthYear, setBirthYear] = useState('2009-05-15');
+  const [gender, setGender] = useState('');
+  const [birthPlace, setBirthPlace] = useState('');
+  const [municipio, setMunicipio] = useState('');
+  const [estado, setEstado] = useState('');
   const [enrollYear, setEnrollYear] = useState<AcademicYear>(5);
   const [enrollSection, setEnrollSection] = useState<string>('A');
-  const [repName, setRepName] = useState('');
+  const [repFirstName, setRepFirstName] = useState('');
+  const [repSecondName, setRepSecondName] = useState('');
+  const [repLastName, setRepLastName] = useState('');
+  const [repSecondLastName, setRepSecondLastName] = useState('');
   const [repCedula, setRepCedula] = useState('');
   const [repPhone, setRepPhone] = useState('');
+  const [repEmail, setRepEmail] = useState('');
+  const [repAddress, setRepAddress] = useState('');
   
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -69,8 +81,8 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !cedula || !repName || !repCedula || !repPhone) {
-      setFormError('Todos los campos solicitados de Alumno y Representante LOPNA son obligatorios.');
+    if (!firstName || !lastName || !cedula || !repFirstName || !repLastName || !repCedula || !repPhone) {
+      setFormError('Todos los campos marcados con * son obligatorios.');
       setFormSuccess('');
       return;
     }
@@ -87,17 +99,26 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
 
     const newStudent: Student = {
       id: 'std-' + Date.now(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
+      firstName: firstName.trim() + (secondName.trim() ? ` ${secondName.trim()}` : ''),
+      lastName: lastName.trim() + (secondLastName.trim() ? ` ${secondLastName.trim()}` : ''),
       cedula: cleanCedula,
       academicYear: enrollYear,
       section: enrollSection,
       status: 'Activo',
-      representativeName: repName.trim(),
+      representativeName: `${repFirstName.trim()}${repSecondName.trim() ? ` ${repSecondName.trim()}` : ''} ${repLastName.trim()}${repSecondLastName.trim() ? ` ${repSecondLastName.trim()}` : ''}`,
       representativeCedula: cleanRepCedula,
       representativePhone: repPhone.trim(),
       dateOfBirth: birthYear,
-      gender: 'M'
+      gender: (gender || 'M') as 'M' | 'F',
+      birthPlace: birthPlace.trim() || undefined,
+      representativeEmail: repEmail.trim() || undefined,
+      representativeAddress: repAddress.trim() || undefined,
+      municipality: municipio.trim() || undefined,
+      state: estado.trim() || undefined,
+      repFirstName: repFirstName.trim(),
+      repSecondName: repSecondName.trim() || undefined,
+      repLastName: repLastName.trim(),
+      repSecondLastName: repSecondLastName.trim() || undefined
     };
 
     onAddStudent(newStudent);
@@ -106,11 +127,22 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
 
     // Clear forms
     setFirstName('');
+    setSecondName('');
     setLastName('');
+    setSecondLastName('');
     setCedula('');
-    setRepName('');
+    setRepFirstName('');
+    setRepSecondName('');
+    setRepLastName('');
+    setRepSecondLastName('');
     setRepCedula('');
     setRepPhone('');
+    setRepEmail('');
+    setRepAddress('');
+    setGender('');
+    setBirthPlace('');
+    setMunicipio('');
+    setEstado('');
     setIsStudentModalOpen(false);
   };
 
@@ -179,8 +211,14 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
               className="text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
             >
               <option value="Todos">Todas las Secciones</option>
-              <option value="A">Sección "A"</option>
-              <option value="B">Sección "B"</option>
+              {sections
+                .filter(s => selectedYear === 0 || s.grade === selectedYear)
+                .sort((a, b) => a.letter.localeCompare(b.letter))
+                .map(s => (
+                  <option key={`${s.grade}-${s.letter}`} value={s.letter}>
+                    Sección "{s.letter}"
+                  </option>
+                ))}
             </select>
 
             {/* Text Search input */}
@@ -301,11 +339,11 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
 
           {/* Form division: student details */}
           <div id="section-form-part1" className="space-y-3">
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha Escolar</span>
+            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Estudiante</span>
             
-            <div id="form-name-flex" className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Nombres *</label>
+                <label className="text-[10px] font-semibold text-slate-500">Primer Nombre *</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Alejandro" 
@@ -315,7 +353,20 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
                 />
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Apellidos *</label>
+                <label className="text-[10px] font-semibold text-slate-500">Segundo Nombre</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. José" 
+                  value={secondName} 
+                  onChange={(e) => setSecondName(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Primer Apellido *</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Gómez" 
@@ -324,11 +375,21 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
                 />
               </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Segundo Apellido</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. López" 
+                  value={secondLastName} 
+                  onChange={(e) => setSecondLastName(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
             </div>
 
-            <div id="form-ids-flex" className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Cédula Alumno *</label>
+                <label className="text-[10px] font-semibold text-slate-500">Cédula Escolar *</label>
                 <input 
                   type="text" 
                   placeholder="e.g. V-32112443" 
@@ -346,9 +407,54 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
                 />
               </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Género</label>
+                <select 
+                  value={gender} 
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                >
+                  <option value="">Seleccionar</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
             </div>
 
-            <div id="form-grade-flex" className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Lugar de Nacimiento</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Caracas" 
+                  value={birthPlace} 
+                  onChange={(e) => setBirthPlace(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Municipio</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Libertador" 
+                  value={municipio} 
+                  onChange={(e) => setMunicipio(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Estado</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Distrito Capital" 
+                  value={estado} 
+                  onChange={(e) => setEstado(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
                 <label className="text-[10px] font-semibold text-slate-500">Año Escolar *</label>
                 <select 
@@ -370,9 +476,14 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
                   onChange={(e) => setEnrollSection(e.target.value)}
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
-                  <option value="A">Sección "A"</option>
-                  <option value="B">Sección "B"</option>
-                  <option value="C">Sección "C"</option>
+                  {sections
+                    .filter(s => s.grade === enrollYear)
+                    .sort((a, b) => a.letter.localeCompare(b.letter))
+                    .map(s => (
+                      <option key={`${s.grade}-${s.letter}`} value={s.letter}>
+                        Sección "{s.letter}"
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -382,18 +493,53 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
           <div id="section-form-part2" className="space-y-3 pt-2">
             <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest block border-b border-amber-50 pb-0.5">Representante Legal (LOPNA)</span>
             
-            <div className="space-y-0.5">
-              <label className="text-[10px] font-semibold text-slate-500">Nombre Completo *</label>
-              <input 
-                type="text" 
-                placeholder="e.g. Carmen de Gómez" 
-                value={repName} 
-                onChange={(e) => setRepName(e.target.value)}
-                className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Primer Nombre *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Carmen" 
+                  value={repFirstName} 
+                  onChange={(e) => setRepFirstName(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Segundo Nombre</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. María" 
+                  value={repSecondName} 
+                  onChange={(e) => setRepSecondName(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
             </div>
 
-            <div id="rep-ids-flex" className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Primer Apellido *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. de Gómez" 
+                  value={repLastName} 
+                  onChange={(e) => setRepLastName(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Segundo Apellido</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. López" 
+                  value={repSecondLastName} 
+                  onChange={(e) => setRepSecondLastName(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
                 <label className="text-[10px] font-semibold text-slate-500">Cédula Rep. *</label>
                 <input 
@@ -412,6 +558,29 @@ export default function StudentManager({ students, currentUserRole, onAddStudent
                   value={repPhone} 
                   onChange={(e) => setRepPhone(e.target.value)}
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium font-mono" 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Correo Rep.</label>
+                <input 
+                  type="email" 
+                  placeholder="ej: carmen@email.com" 
+                  value={repEmail} 
+                  onChange={(e) => setRepEmail(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                />
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-semibold text-slate-500">Dirección Rep.</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Calle 5, Urb. Las Flores" 
+                  value={repAddress} 
+                  onChange={(e) => setRepAddress(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
                 />
               </div>
             </div>

@@ -270,24 +270,36 @@ export default function App() {
 
   const handleAddStudent = async (newStudent: Student) => {
     try {
-      const repPayload = {
+      const repPayload: any = {
         cedula_rep: newStudent.representativeCedula,
-        nombre1: newStudent.representativeName.split(' ')[0],
-        apellido1: newStudent.representativeName.split(' ').slice(1).join(' ') || newStudent.representativeName,
+        nombre1: newStudent.repFirstName || newStudent.representativeName.split(' ')[0] || '',
+        apellido1: newStudent.repLastName || newStudent.representativeName.split(' ').slice(1).join(' ') || '',
         telefono: newStudent.representativePhone
       };
+      if (newStudent.repSecondName) repPayload.nombre2 = newStudent.repSecondName;
+      if (newStudent.repSecondLastName) repPayload.apellido2 = newStudent.repSecondLastName;
+      if (newStudent.representativeEmail) repPayload.correo = newStudent.representativeEmail;
+      if (newStudent.representativeAddress) repPayload.direccion = newStudent.representativeAddress;
+
       const createdRep = await api.post<any>('/api/representantes', repPayload);
       const repId = createdRep.id_representante || createdRep.id;
 
-      const estPayload = {
+      const stuNameParts = newStudent.firstName.trim().split(' ');
+      const stuLastParts = newStudent.lastName.trim().split(' ');
+      const estPayload: any = {
         cedula_escolar: newStudent.cedula,
-        nombre1: newStudent.firstName.split(' ')[0],
-        apellido1: newStudent.lastName.split(' ')[0],
+        nombre1: stuNameParts[0] || '',
+        apellido1: stuLastParts[0] || '',
         fecha_nac: newStudent.dateOfBirth,
-        id_representante: repId
+        id_representante: Number(repId),
+        estatus_estudiante: 'Activo'
       };
-      if (newStudent.firstName.split(' ')[1]) estPayload['nombre2'] = newStudent.firstName.split(' ')[1];
-      if (newStudent.lastName.split(' ')[1]) estPayload['apellido2'] = newStudent.lastName.split(' ')[1];
+      if (stuNameParts.length > 1) estPayload.nombre2 = stuNameParts.slice(1).join(' ');
+      if (stuLastParts.length > 1) estPayload.apellido2 = stuLastParts.slice(1).join(' ');
+      if (newStudent.gender) estPayload.genero = newStudent.gender;
+      if (newStudent.birthPlace) estPayload.lugar_nac = newStudent.birthPlace;
+      if (newStudent.municipality) estPayload.municipio = newStudent.municipality;
+      if (newStudent.state) estPayload.estado = newStudent.state;
 
       const created = await api.post<any>('/api/estudiantes', estPayload);
       const studentId = created.id_estudiante || created.id;
@@ -891,6 +903,7 @@ export default function App() {
               {activeTab === 'students' && (
                 <StudentManager
                   students={students}
+                  sections={sections}
                   currentUserRole={currentUserRole}
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}

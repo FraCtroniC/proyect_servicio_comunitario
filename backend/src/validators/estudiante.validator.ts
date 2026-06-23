@@ -5,6 +5,7 @@ export const validateCrearEstudiante = validateRules([
   { field: 'nombre1', required: true },
   { field: 'apellido1', required: true },
   { field: 'fecha_nac', required: true },
+  { field: 'id_representante', required: true, type: 'number' },
 ]);
 
 export const validateActualizarEstudiante = validateRules([

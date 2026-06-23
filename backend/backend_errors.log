@@ -143,3 +143,23 @@ Error: El correo electrónico no se encuentra registrado en el sistema.
     at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:155:13)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
 
+2026-06-23T02:40:17.095Z
+Error
+    at Query.run (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.insert (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:795:21)
+    at async Representante.save (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\model.js:4154:35)
+    at async Representante.create (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\model.js:2305:12)
+    at async <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\representante.controller.ts:22:20)
+
+2026-06-23T02:48:30.042Z
+Error
+    at Query.run (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.insert (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:795:21)
+    at async Representante.save (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\model.js:4154:35)
+    at async Representante.create (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\model.js:2305:12)
+    at async <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\representante.controller.ts:22:20)
+

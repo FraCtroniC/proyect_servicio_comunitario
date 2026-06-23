@@ -40,15 +40,24 @@ export interface Student {
   id: string;
   firstName: string;
   lastName: string;
-  cedula: string; // e.g., V-28.455.121
+  cedula: string;
   academicYear: AcademicYear;
-  section: string; // 'A', 'B', 'C'
+  section: string;
   status: 'Activo' | 'Inactivo' | 'Retirado';
   representativeName: string;
   representativeCedula: string;
   representativePhone: string;
   dateOfBirth: string;
   gender: 'M' | 'F' | string;
+  birthPlace?: string;
+  municipality?: string;
+  state?: string;
+  representativeEmail?: string;
+  representativeAddress?: string;
+  repFirstName?: string;
+  repSecondName?: string;
+  repLastName?: string;
+  repSecondLastName?: string;
 }
 
 export interface Subject {
