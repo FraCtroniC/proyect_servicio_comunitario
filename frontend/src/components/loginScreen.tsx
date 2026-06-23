@@ -242,14 +242,14 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
             LB
           </div>
           <div>
-            <h1 className="text-white font-black text-sm tracking-widest uppercase block leading-tight">
+            <h1 className="text-white font-black text-base md:text-lg tracking-widest uppercase block leading-tight">
               L. N. F. C. A. ESTILITA OROZCO
             </h1>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
               Liceo Bolivariano • MPPE Venezuela
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 leading-normal max-w-xs mx-auto">
+          <p className="text-xs md:text-sm text-slate-500 leading-normal max-w-xs mx-auto">
             Sistema Integrado de Control de Estudios para Educación Media General.
           </p>
         </div>
@@ -446,7 +446,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                 Correo Electrónico o Cédula
               </label>
               <div className="relative">
@@ -457,20 +457,20 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="Ej: V-10.456.812 o director@liceo..."
-                  className="w-full text-xs pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
+                  className="w-full text-sm pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                   Contraseña
                 </label>
                 <button
                   type="button"
                   onClick={() => { setShowForgotPassword(true); setError(null); }}
-                  className="text-[9px] text-blue-400 hover:text-blue-300 font-bold pointer-events-auto cursor-pointer"
+                  className="text-xs text-blue-400 hover:text-blue-300 font-bold pointer-events-auto cursor-pointer"
                 >
                   ¿Olvidó su contraseña?
                 </button>
@@ -483,7 +483,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full text-xs pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
+                  className="w-full text-sm pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
                 />
                 <button
                   type="button"
@@ -500,7 +500,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               type="submit"
               id="btn-submit-login"
               disabled={isLoading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="h-4 w-4 border-2 border-white/35 border-t-white rounded-full animate-spin"></span>
@@ -516,7 +516,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
 
         {/* Footer info lock indicator */}
         <div id="login-footer-security" className="text-center pt-2 mt-4">
-          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-500 tracking-wider uppercase bg-emerald-500/10 border border-emerald-500/10 px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500 tracking-wider uppercase bg-emerald-500/10 border border-emerald-500/10 px-3 py-1.5 rounded-full">
             <ShieldCheck className="h-3 w-3" /> Conexión Segura al Servidor Institucional
           </span>
         </div>

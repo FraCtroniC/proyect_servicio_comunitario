@@ -10,16 +10,18 @@ import { generateConstanciaEstudio } from '../utils/pdfGenerator';
 import { exportStudentsToExcel } from '../utils/excelGenerator';
 import { Modal } from './Modal';
 import { api } from '../services/api';
+import { getStates, getMunicipalities, getParishes } from '../utils/venezuela';
 
 interface StudentManagerProps {
   students: Student[];
   sections: Section[];
+  classrooms?: import('../types').Classroom[];
   currentUserRole: UserRole;
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
 }
 
-export default function StudentManager({ students, sections, currentUserRole, onAddStudent, onUpdateStudentStatus }: StudentManagerProps) {
+export default function StudentManager({ students, sections, classrooms, currentUserRole, onAddStudent, onUpdateStudentStatus }: StudentManagerProps) {
   // Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(5); // Default showing 5th year for rich showcase
   const [selectedSection, setSelectedSection] = useState<string>('A');
@@ -47,6 +49,10 @@ export default function StudentManager({ students, sections, currentUserRole, on
   const [repEmail, setRepEmail] = useState('');
   const [repAddress, setRepAddress] = useState('');
   
+  const [cedulaType, setCedulaType] = useState('V');
+  const [repCedulaType, setRepCedulaType] = useState('V');
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
@@ -79,23 +85,128 @@ export default function StudentManager({ students, sections, currentUserRole, on
     return matchesYear && matchesSection && matchesSearch;
   });
 
+  const validateName = (val: string) => /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]*$/.test(val);
+  const validateNumber = (val: string) => /^[0-9-]*$/.test(val);
+  const validateCedula = (val: string) => /^[0-9]{7,9}$/.test(val);
+
+  const calculateAge = (dob: string) => {
+    if (!dob) return 0;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const handleFieldChange = (name: string, val: string, setter: (v: string) => void) => {
+    setter(val);
+    const newErrors = { ...errors };
+    if ((name.includes('Name') || name.includes('LastName')) && val && !validateName(val)) {
+      newErrors[name] = 'Solo se permiten letras.';
+    } else {
+      delete newErrors[name];
+    }
+    
+    if (name === 'repPhone' && val && !validateNumber(val)) {
+      newErrors[name] = 'Solo se permiten números y guiones.';
+    } else if (name === 'repPhone') {
+      delete newErrors[name];
+    }
+    
+    setErrors(newErrors);
+  };
+
+  const checkCedula = (val: string, type: 'student' | 'rep', natType: string) => {
+    if (!val) return;
+    const newErrors = { ...errors };
+    if (!validateCedula(val)) {
+      newErrors[type === 'student' ? 'cedula' : 'repCedula'] = 'Formato inválido (Solo 7-9 números)';
+      setErrors(newErrors);
+      return;
+    }
+    
+    let fullCedula = `${natType}-${val.trim()}`;
+    
+    if (type === 'student') {
+      const exists = students.some(s => s.cedula === fullCedula);
+      if (exists) newErrors['cedula'] = 'Esta cédula ya está registrada.';
+      else delete newErrors['cedula'];
+    } else {
+      delete newErrors['repCedula'];
+    }
+    setErrors(newErrors);
+  };
+
+  const checkAge = (val: string) => {
+    if (!val) return;
+    const newErrors = { ...errors };
+    const age = calculateAge(val);
+    if (age < 10) newErrors['birthYear'] = 'Edad ilógica (< 10 años).';
+    else delete newErrors['birthYear'];
+    setErrors(newErrors);
+  };
+
+  const scrollToError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector('.border-rose-400') || document.getElementById('enrollment-error');
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !cedula || !repFirstName || !repLastName || !repCedula || !repPhone) {
-      setFormError('Todos los campos marcados con * son obligatorios.');
+    if (Object.keys(errors).length > 0) {
+      setFormError('Por favor corrija los errores indicados antes de continuar.');
       setFormSuccess('');
+      scrollToError();
       return;
     }
 
-    let cleanCedula = cedula.trim().toUpperCase();
-    if (!cleanCedula.startsWith('V-') && !cleanCedula.startsWith('E-')) {
-      cleanCedula = 'V-' + cleanCedula;
+    // Capacity Check
+    const targetSection = sections.find(s => s.grade === enrollYear && s.letter === enrollSection);
+    if (targetSection && classrooms) {
+      const aula = classrooms.find(c => c.id === targetSection.homeClassroomId);
+      if (aula) {
+        const enrolledCount = students.filter(s => s.academicYear === enrollYear && s.section === enrollSection).length;
+        if (enrolledCount >= aula.capacity) {
+           setFormError(`La Sección "${enrollSection}" de ${enrollYear}° Año ya alcanzó el límite de capacidad de su Aula Base (${aula.name}: ${aula.capacity} pupitres).`);
+           setFormSuccess('');
+           scrollToError();
+           return;
+        }
+      }
     }
 
-    let cleanRepCedula = repCedula.trim().toUpperCase();
-    if (!cleanRepCedula.startsWith('V-') && !cleanRepCedula.startsWith('E-')) {
-      cleanRepCedula = 'V-' + cleanRepCedula;
+    if (!firstName || !lastName || !cedula || !repFirstName || !repLastName || !repCedula || !repPhone) {
+      setFormError('Todos los campos marcados con * son obligatorios.');
+      setFormSuccess('');
+      scrollToError();
+      return;
     }
+
+    const age = calculateAge(birthYear);
+    if (age < 10) {
+      setErrors(prev => ({ ...prev, birthYear: 'El estudiante debe tener al menos 10 años.' }));
+      setFormError('Revisar edad del estudiante.');
+      scrollToError();
+      return;
+    }
+
+    let cleanCedula = `${cedulaType}-${cedula.trim()}`;
+
+    if (students.some(s => s.cedula === cleanCedula)) {
+      setErrors(prev => ({ ...prev, cedula: 'Esta cédula ya está registrada.' }));
+      setFormError('El estudiante ya está registrado.');
+      scrollToError();
+      return;
+    }
+
+    let cleanRepCedula = `${repCedulaType}-${repCedula.trim()}`;
 
     const newStudent: Student = {
       id: 'std-' + Date.now(),
@@ -143,6 +254,7 @@ export default function StudentManager({ students, sections, currentUserRole, on
     setBirthPlace('');
     setMunicipio('');
     setEstado('');
+    setErrors({});
     setIsStudentModalOpen(false);
   };
 
@@ -275,7 +387,7 @@ export default function StudentManager({ students, sections, currentUserRole, on
                         <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold">{s.academicYear}° Año "{s.section}"</span>
                       </td>
                       <td className="py-3">
-                        <span className="text-slate-700 block text-[11px] font-semibold">{s.representativeName}</span>
+                        <span className="text-slate-700 block text-sm font-semibold">{s.representativeName}</span>
                         <span className="text-[10px] text-slate-400 font-medium font-mono">{s.representativeCedula} | {s.representativePhone}</span>
                       </td>
                       <td className="py-3">
@@ -327,140 +439,163 @@ export default function StudentManager({ students, sections, currentUserRole, on
       <Modal isOpen={isStudentModalOpen} onClose={() => setIsStudentModalOpen(false)} title="Matricular Nuevo Alumno">
         <form id="enrollment-form" onSubmit={handleRegister} className="space-y-4">
           {formError && (
-            <div id="enrollment-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-[11px]">
+            <div id="enrollment-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-sm">
               {formError}
             </div>
           )}
           {formSuccess && (
-            <div id="enrollment-success" className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-[11px]">
+            <div id="enrollment-success" className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-sm">
               {formSuccess}
             </div>
           )}
 
           {/* Form division: student details */}
           <div id="section-form-part1" className="space-y-3">
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Estudiante</span>
+            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Estudiante</span>
             
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Primer Nombre *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Alejandro" 
-                  value={firstName} 
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
+                <label className="text-xs font-semibold text-slate-500">Cédula Escolar <span className="text-red-500 font-bold text-sm">*</span></label>
+                <div className="flex">
+                  <select
+                    value={cedulaType}
+                    onChange={(e) => setCedulaType(e.target.value)}
+                    className={`text-sm p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
+                  >
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 32112443" 
+                    value={cedula} 
+                    onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))}
+                    onBlur={(e) => checkCedula(e.target.value, 'student', cedulaType)}
+                    className={`w-full text-sm p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
+                  />
+                </div>
+                {errors.cedula && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.cedula}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Segundo Nombre</label>
+                <label className="text-xs font-semibold text-slate-500">Fecha Nac. <span className="text-red-500 font-bold text-sm">*</span></label>
                 <input 
-                  type="text" 
-                  placeholder="e.g. José" 
-                  value={secondName} 
-                  onChange={(e) => setSecondName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  type="date" 
+                  value={birthYear} 
+                  onChange={(e) => setBirthYear(e.target.value)}
+                  onBlur={(e) => checkAge(e.target.value)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.birthYear ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
+                {errors.birthYear && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.birthYear}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Primer Apellido *</label>
+                <label className="text-xs font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-sm">*</span></label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Alejandro" 
+                  value={firstName} 
+                  onChange={(e) => handleFieldChange('firstName', e.target.value, setFirstName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.firstName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                />
+                {errors.firstName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.firstName}</p>}
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Segundo Nombre</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. José" 
+                  value={secondName} 
+                  onChange={(e) => handleFieldChange('secondName', e.target.value, setSecondName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.secondName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                />
+                {errors.secondName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.secondName}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-sm">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. Gómez" 
                   value={lastName} 
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  onChange={(e) => handleFieldChange('lastName', e.target.value, setLastName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.lastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
+                {errors.lastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.lastName}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Segundo Apellido</label>
+                <label className="text-xs font-semibold text-slate-500">Segundo Apellido</label>
                 <input 
                   type="text" 
                   placeholder="e.g. López" 
                   value={secondLastName} 
-                  onChange={(e) => setSecondLastName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  onChange={(e) => handleFieldChange('secondLastName', e.target.value, setSecondLastName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.secondLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
+                {errors.secondLastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.secondLastName}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Cédula Escolar *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. V-32112443" 
-                  value={cedula} 
-                  onChange={(e) => setCedula(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium font-mono" 
-                />
-              </div>
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Fecha Nac. *</label>
-                <input 
-                  type="date" 
-                  value={birthYear} 
-                  onChange={(e) => setBirthYear(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
-              </div>
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Género</label>
+                <label className="text-xs font-semibold text-slate-500">Estado <span className="text-red-500 font-bold text-sm">*</span></label>
                 <select 
-                  value={gender} 
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                  value={estado} 
+                  onChange={(e) => { setEstado(e.target.value); setMunicipio(''); setBirthPlace(''); }}
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium"
                 >
                   <option value="">Seleccionar</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
+                  {getStates().map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Municipio <span className="text-red-500 font-bold text-sm">*</span></label>
+                <select 
+                  value={municipio} 
+                  onChange={(e) => { setMunicipio(e.target.value); setBirthPlace(''); }}
+                  disabled={!estado}
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium disabled:opacity-50"
+                >
+                  <option value="">Seleccionar</option>
+                  {getMunicipalities(estado).map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Lugar Nac. (Parroquia)</label>
+                <select 
+                  value={birthPlace} 
+                  onChange={(e) => setBirthPlace(e.target.value)}
+                  disabled={!municipio}
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium disabled:opacity-50"
+                >
+                  <option value="">Seleccionar</option>
+                  {getParishes(estado, municipio).map((p: string) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Lugar de Nacimiento</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Caracas" 
-                  value={birthPlace} 
-                  onChange={(e) => setBirthPlace(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
+                <label className="text-xs font-semibold text-slate-500">Género</label>
+                <select 
+                  value={gender} 
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                >
+                  <option value="">Seleccionar</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Municipio</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Libertador" 
-                  value={municipio} 
-                  onChange={(e) => setMunicipio(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
-              </div>
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Estado</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Distrito Capital" 
-                  value={estado} 
-                  onChange={(e) => setEstado(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Año Escolar *</label>
+                <label className="text-xs font-semibold text-slate-500">Año Escolar <span className="text-red-500 font-bold text-sm">*</span></label>
                 <select 
                   value={enrollYear} 
                   onChange={(e) => setEnrollYear(Number(e.target.value) as AcademicYear)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
                   <option value={1}>1er Año</option>
                   <option value={2}>2do Año</option>
@@ -470,11 +605,11 @@ export default function StudentManager({ students, sections, currentUserRole, on
                 </select>
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Sección *</label>
+                <label className="text-xs font-semibold text-slate-500">Sección <span className="text-red-500 font-bold text-sm">*</span></label>
                 <select 
                   value={enrollSection} 
                   onChange={(e) => setEnrollSection(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
                   {sections
                     .filter(s => s.grade === enrollYear)
@@ -491,96 +626,113 @@ export default function StudentManager({ students, sections, currentUserRole, on
 
           {/* Form division: Representative details */}
           <div id="section-form-part2" className="space-y-3 pt-2">
-            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest block border-b border-amber-50 pb-0.5">Representante Legal (LOPNA)</span>
+            <span className="text-xs font-bold text-amber-600 uppercase tracking-widest block border-b border-amber-50 pb-0.5">Representante Legal (LOPNA)</span>
             
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Primer Nombre *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Carmen" 
-                  value={repFirstName} 
-                  onChange={(e) => setRepFirstName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
+                <label className="text-xs font-semibold text-slate-500">Cédula Rep. <span className="text-red-500 font-bold text-sm">*</span></label>
+                <div className="flex">
+                  <select
+                    value={repCedulaType}
+                    onChange={(e) => setRepCedulaType(e.target.value)}
+                    className={`text-sm p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
+                  >
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 12111000" 
+                    value={repCedula} 
+                    onChange={(e) => setRepCedula(e.target.value.replace(/\D/g, ''))}
+                    onBlur={(e) => checkCedula(e.target.value, 'rep', repCedulaType)}
+                    className={`w-full text-sm p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
+                  />
+                </div>
+                {errors.repCedula && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repCedula}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Segundo Nombre</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. María" 
-                  value={repSecondName} 
-                  onChange={(e) => setRepSecondName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Primer Apellido *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. de Gómez" 
-                  value={repLastName} 
-                  onChange={(e) => setRepLastName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
-              </div>
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Segundo Apellido</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. López" 
-                  value={repSecondLastName} 
-                  onChange={(e) => setRepSecondLastName(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Cédula Rep. *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. V-12111000" 
-                  value={repCedula} 
-                  onChange={(e) => setRepCedula(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium font-mono" 
-                />
-              </div>
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Teléfono Rep. *</label>
+                <label className="text-xs font-semibold text-slate-500">Teléfono Rep. <span className="text-red-500 font-bold text-sm">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. 0414-1112233" 
                   value={repPhone} 
-                  onChange={(e) => setRepPhone(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium font-mono" 
+                  onChange={(e) => handleFieldChange('repPhone', e.target.value, setRepPhone)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repPhone ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium font-mono`}
                 />
+                {errors.repPhone && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repPhone}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Correo Rep.</label>
+                <label className="text-xs font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-sm">*</span></label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Carmen" 
+                  value={repFirstName} 
+                  onChange={(e) => handleFieldChange('repFirstName', e.target.value, setRepFirstName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repFirstName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                />
+                {errors.repFirstName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repFirstName}</p>}
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Segundo Nombre</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. María" 
+                  value={repSecondName} 
+                  onChange={(e) => handleFieldChange('repSecondName', e.target.value, setRepSecondName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repSecondName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                />
+                {errors.repSecondName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repSecondName}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-sm">*</span></label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. de Gómez" 
+                  value={repLastName} 
+                  onChange={(e) => handleFieldChange('repLastName', e.target.value, setRepLastName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                />
+                {errors.repLastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repLastName}</p>}
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Segundo Apellido</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. López" 
+                  value={repSecondLastName} 
+                  onChange={(e) => handleFieldChange('repSecondLastName', e.target.value, setRepSecondLastName)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repSecondLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                />
+                {errors.repSecondLastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repSecondLastName}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Correo Rep.</label>
                 <input 
                   type="email" 
                   placeholder="ej: carmen@email.com" 
                   value={repEmail} 
                   onChange={(e) => setRepEmail(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
                 />
               </div>
               <div className="space-y-0.5">
-                <label className="text-[10px] font-semibold text-slate-500">Dirección Rep.</label>
+                <label className="text-xs font-semibold text-slate-500">Dirección Rep.</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Calle 5, Urb. Las Flores" 
                   value={repAddress} 
                   onChange={(e) => setRepAddress(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
                 />
               </div>
             </div>

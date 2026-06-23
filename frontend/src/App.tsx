@@ -399,16 +399,20 @@ export default function App() {
     }
   };
 
-  const handleCreateSection = async (periodId: string, grade: number, letter: string, teacherGuideId: string) => {
+  const handleCreateSection = async (periodId: string, grade: number, letter: string, teacherGuideId: string, homeClassroomId: string) => {
     try {
       const payload = {
         id_periodo: Number(periodId),
         id_grado: grade,
         letra: letter,
-        id_docente_guia: Number(teacherGuideId.replace(/\D/g, '')) || 1
+        id_docente_guia: Number(teacherGuideId.replace(/\D/g, '')) || 1,
+        id_aula: Number(homeClassroomId.replace(/\D/g, '')) || undefined
       };
       const created = await api.post<any>('/api/secciones', payload);
       const newSection = mapSeccionToSection(created);
+      if (homeClassroomId && !newSection.homeClassroomId) {
+         newSection.homeClassroomId = homeClassroomId; // inject locally if backend drops it
+      }
       setSections(p => [...p, newSection]);
       return newSection;
     } catch (e: any) {
@@ -729,7 +733,7 @@ export default function App() {
       <div id="mppe-main-layout" className="flex-1 flex flex-col md:flex-row">
 
         {/* SIDEBAR FOR DESKTOP */}
-        <aside id="mppe-sidebar" className="hidden md:flex w-64 bg-slate-900 text-slate-300 shrink-0 flex-col justify-between border-r border-slate-800 z-15 select-none">
+        <aside id="mppe-sidebar" className="hidden md:flex w-64 bg-slate-900 text-slate-300 shrink-0 flex-col justify-between border-r border-slate-800 z-20 select-none relative">
           <div id="sidebar-top" className="space-y-6 pt-6">
 
             {/* Brand Logo Banner */}
@@ -805,7 +809,7 @@ export default function App() {
         </aside>
 
         {/* MOBILE MENU NAV HEADER */}
-        <header id="mobile-nav-header" className="md:hidden bg-slate-900 text-slate-300 p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 z-20">
+        <header id="mobile-nav-header" className="md:hidden bg-slate-900 text-slate-300 p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 z-50">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 bg-blue-600 text-white text-xs font-black rounded flex items-center justify-center">
               LB
@@ -833,7 +837,7 @@ export default function App() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden bg-slate-900 border-b border-slate-800 text-slate-300 absolute w-full top-[61px] left-0 z-10 px-4 py-6 space-y-4 select-none"
+              className="md:hidden bg-slate-900 border-b border-slate-800 text-slate-300 absolute w-full top-[61px] left-0 z-40 px-4 py-6 space-y-4 select-none shadow-2xl"
             >
               <nav className="space-y-1">
                 {tabs.map(tab => {
@@ -904,6 +908,7 @@ export default function App() {
                 <StudentManager
                   students={students}
                   sections={sections}
+                  classrooms={classrooms}
                   currentUserRole={currentUserRole}
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
@@ -916,6 +921,7 @@ export default function App() {
                   sections={sections}
                   periods={periods}
                   users={users}
+                  classrooms={classrooms}
                   currentUserRole={currentUserRole}
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
@@ -986,6 +992,8 @@ export default function App() {
                 <FacilitiesManager
                   classrooms={classrooms}
                   scheduleEvents={scheduleEvents}
+                  sections={sections}
+                  students={students}
                   currentUserRole={currentUserRole}
                   onAddClassroom={handleAddClassroom}
                   onRemoveClassroom={handleRemoveClassroom}

@@ -178,6 +178,7 @@ export function mapSeccionToSection(dbSeccion: any): Section {
     letter: dbSeccion.letra,
     periodId: String(dbSeccion.id_periodo),
     teacherGuideId: String(dbSeccion.id_docente_guia),
+    homeClassroomId: String(dbSeccion.id_aula || ''),
   };
 }
 

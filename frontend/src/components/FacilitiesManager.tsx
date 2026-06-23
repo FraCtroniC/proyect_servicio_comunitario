@@ -5,12 +5,14 @@
 
 import React, { useState } from 'react';
 import { Home, PlusCircle, Trash, Shield, AlertTriangle, Cpu, Radio, ShieldCheck } from 'lucide-react';
-import { Classroom, ScheduleEvent, UserRole } from '../types';
+import { Classroom, ScheduleEvent, UserRole, Section, Student } from '../types';
 import { Modal } from './Modal';
 
 interface FacilitiesProps {
   classrooms: Classroom[];
   scheduleEvents: ScheduleEvent[];
+  sections?: Section[];
+  students?: Student[];
   currentUserRole: UserRole;
   onAddClassroom: (room: Classroom) => void;
   onRemoveClassroom: (roomId: string) => void;
@@ -19,6 +21,8 @@ interface FacilitiesProps {
 export default function FacilitiesManager({
   classrooms,
   scheduleEvents,
+  sections = [],
+  students = [],
   currentUserRole,
   onAddClassroom,
   onRemoveClassroom
@@ -133,9 +137,32 @@ export default function FacilitiesManager({
                     </div>
 
                     {getCapacityWarning(room.capacity)}
+                    
+                    {(() => {
+                       const assignedSection = sections.find(s => s.homeClassroomId === room.id);
+                       if (assignedSection) {
+                          const enrolled = students.filter(s => s.academicYear === assignedSection.grade && s.section === assignedSection.letter).length;
+                          const percent = Math.min(100, Math.round((enrolled / room.capacity) * 100));
+                          return (
+                             <div className="mt-3 p-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                <span className="text-[10px] font-bold text-indigo-800 uppercase block mb-1">
+                                  Aula Base: Sección {assignedSection.grade}° "{assignedSection.letter}"
+                                </span>
+                                <div className="w-full bg-indigo-200 rounded-full h-1.5 mb-1 overflow-hidden">
+                                  <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${percent}%` }}></div>
+                                </div>
+                                <span className="text-[9px] font-bold text-indigo-700 flex justify-between">
+                                  <span>{enrolled} alumnos inscritos</span>
+                                  <span>{percent}%</span>
+                                </span>
+                             </div>
+                          );
+                       }
+                       return null;
+                    })()}
 
                     {room.resources.length > 0 && (
-                      <div id={`room-resources-${room.id}`} className="space-y-1 pt-1.5 border-t border-slate-150">
+                      <div id={`room-resources-${room.id}`} className="space-y-1 pt-1.5 border-t border-slate-150 mt-2">
                         <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider">Recursos de Inventario:</span>
                         <div className="flex flex-wrap gap-1">
                           {room.resources.map((res, i) => (

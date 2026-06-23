@@ -131,6 +131,7 @@ export interface Section {
   letter: string;
   periodId: string;
   teacherGuideId: string;
+  homeClassroomId: string;
 }
 
 export interface Representative {

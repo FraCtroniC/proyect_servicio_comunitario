@@ -16,11 +16,12 @@ interface AcademicManagerProps {
   currentUserRole: UserRole;
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
-  onCreateSection: (periodId: string, grade: number, letter: string, teacherGuideId: string) => Promise<Section>;
+  onCreateSection: (periodId: string, grade: number, letter: string, teacherGuideId: string, homeClassroomId: string) => Promise<Section>;
+  classrooms: Classroom[];
 }
 
 export default function AcademicManager({
-  students, sections, periods, users, currentUserRole,
+  students, sections, periods, users, classrooms, currentUserRole,
   onAddStudent, onUpdateStudentStatus, onCreateSection
 }: AcademicManagerProps) {
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function AcademicManager({
   const [secGrado, setSecGrado] = useState<number>(1);
   const [secLetra, setSecLetra] = useState<string>('A');
   const [secDocente, setSecDocente] = useState<string>('');
+  const [secAula, setSecAula] = useState<string>('');
   const [secError, setSecError] = useState('');
   const [secSuccess, setSecSuccess] = useState('');
   const [secLoading, setSecLoading] = useState(false);
@@ -55,6 +57,9 @@ export default function AcademicManager({
   const getTeacherName = (teacherGuideId: string) =>
     users.find(u => u.teacherId === teacherGuideId || u.id === teacherGuideId)?.name || `Docente #${teacherGuideId}`;
 
+  const getClassroom = (roomId: string) =>
+    classrooms?.find(c => c.id === roomId);
+
   const handleCreateSection = async (e: React.FormEvent) => {
     e.preventDefault();
     setSecError('');
@@ -63,9 +68,10 @@ export default function AcademicManager({
 
     if (!secPeriodo) { setSecError('Seleccione un periodo académico.'); setSecLoading(false); return; }
     if (!secDocente) { setSecError('Seleccione un docente guía.'); setSecLoading(false); return; }
+    if (!secAula) { setSecError('Seleccione un Aula Base.'); setSecLoading(false); return; }
 
     try {
-      await onCreateSection(secPeriodo, secGrado, secLetra, secDocente);
+      await onCreateSection(secPeriodo, secGrado, secLetra, secDocente, secAula);
       setSecSuccess(`Sección ${secGrado}° "${secLetra}" creada exitosamente.`);
       setTimeout(() => { setIsSectionModalOpen(false); setSecSuccess(''); }, 2000);
     } catch (e: any) {
@@ -124,19 +130,31 @@ export default function AcademicManager({
                 <div key={grade} className="bg-slate-50/50 rounded-lg p-3">
                   <h4 className="text-xs font-bold text-slate-700 mb-2">{grade}° Año</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                    {secs.map(s => (
-                      <div key={s.id} className="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between">
-                        <div>
-                          <span className="text-sm font-black text-indigo-700">Sección "{s.letter}"</span>
-                          <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
-                            <Users className="h-3 w-3" />
-                            <span>{getStudentCount(s.id)} estudiantes</span>
-                            <ChevronRight className="h-3 w-3" />
-                            <span>{getTeacherName(s.teacherGuideId)}</span>
+                    {secs.map(s => {
+                      const aula = getClassroom(s.homeClassroomId);
+                      const cupos = aula ? aula.capacity : 0;
+                      const ocupados = getStudentCount(s.id);
+                      const isFull = cupos > 0 && ocupados >= cupos;
+                      return (
+                        <div key={s.id} className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
+                          <div>
+                            <span className="text-sm font-black text-indigo-700">Sección "{s.letter}"</span>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+                              <Users className="h-3 w-3" />
+                              <span>{ocupados} / {cupos || '?'} cupos</span>
+                              <ChevronRight className="h-3 w-3" />
+                              <span>{getTeacherName(s.teacherGuideId)}</span>
+                            </div>
+                            {aula && (
+                               <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                  <span className="text-[9px] font-bold text-slate-400">Aula Base: <span className="text-slate-700">{aula.name}</span></span>
+                                  {isFull && <span className="text-[9px] text-rose-600 bg-rose-50 px-1 rounded font-bold">LLENO</span>}
+                               </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -201,18 +219,39 @@ export default function AcademicManager({
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
-            <select
-              value={secDocente}
-              onChange={(e) => setSecDocente(e.target.value)}
-              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-            >
-              <option value="">Seleccione un docente</option>
-              {docentes.map(d => (
-                <option key={d.id} value={d.teacherId || d.id}>{d.name} {d.cedula ? `(${d.cedula})` : ''}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
+              <select
+                value={secDocente}
+                onChange={(e) => setSecDocente(e.target.value)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              >
+                <option value="">Seleccione un docente</option>
+                {docentes.map(d => (
+                  <option key={d.id} value={d.teacherId || d.id}>{d.name} {d.cedula ? `(${d.cedula})` : ''}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
+              <select
+                value={secAula}
+                onChange={(e) => setSecAula(e.target.value)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              >
+                <option value="">Seleccione un aula</option>
+                {classrooms?.filter(c => c.type === 'Teórica').map(c => {
+                  const isTaken = sections.some(s => s.homeClassroomId === c.id);
+                  return (
+                    <option key={c.id} value={c.id} disabled={isTaken}>
+                      {c.name} ({c.capacity} cap.) {isTaken ? '- Ya asignada' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           </div>
 
           <button
