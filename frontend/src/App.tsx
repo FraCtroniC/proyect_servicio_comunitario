@@ -974,6 +974,8 @@ export default function App() {
                   subjects={subjects}
                   users={users}
                   classrooms={classrooms}
+                  sections={sections}
+                  referenceData={referenceData}
                   currentUserRole={currentUserRole}
                   onAddScheduleEvent={handleAddScheduleEvent}
                   onRemoveScheduleEvent={handleRemoveScheduleEvent}

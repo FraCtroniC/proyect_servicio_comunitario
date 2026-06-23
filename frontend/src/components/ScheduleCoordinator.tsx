@@ -5,13 +5,15 @@
 
 import React, { useState } from 'react';
 import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter } from 'lucide-react';
-import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole } from '../types';
+import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section } from '../types';
 
 interface ScheduleCoordinatorProps {
   scheduleEvents: ScheduleEvent[];
   subjects: Subject[];
   users: User[];
   classrooms: Classroom[];
+  sections: Section[];
+  referenceData: { dias: any[]; bloques: any[] };
   currentUserRole: UserRole;
   onAddScheduleEvent: (evt: ScheduleEvent) => void;
   onRemoveScheduleEvent: (evtId: string) => void;
@@ -22,6 +24,8 @@ export default function ScheduleCoordinator({
   subjects,
   users,
   classrooms,
+  sections,
+  referenceData,
   currentUserRole,
   onAddScheduleEvent,
   onRemoveScheduleEvent
@@ -35,28 +39,34 @@ export default function ScheduleCoordinator({
 
   // Input states for assigning a block
   const [formDay, setFormDay] = useState<'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes'>('Lunes');
-  const [formBlock, setFormBlock] = useState<string>('07:00 - 07:45');
-  const [formYear, setFormYear] = useState<AcademicYear>(5);
-  const [formSection, setFormSection] = useState<string>('A');
-  const [formSubjectId, setFormSubjectId] = useState<string>('mat');
-  const [formTeacherId, setFormTeacherId] = useState<string>('t-1');
-  const [formClassroomId, setFormClassroomId] = useState<string>('rm-201');
+  const [formBlock, setFormBlock] = useState<string>('');
+  const [formYear, setFormYear] = useState<AcademicYear>(1);
+  const [formSection, setFormSection] = useState<string>('');
+  const [formSubjectId, setFormSubjectId] = useState<string>('');
+  const [formTeacherId, setFormTeacherId] = useState<string>('');
+  const [formClassroomId, setFormClassroomId] = useState<string>('');
 
   // Warning/Conflict reporting
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleSuccess, setScheduleSuccess] = useState('');
 
   // Static timeblocks structured
-  const timeBlocks = [
-    { label: 'Bloque 1', time: '07:00 - 07:45' },
-    { label: 'Bloque 2', time: '07:45 - 08:30' },
-    { label: 'Receso Corto', time: '08:30 - 08:45', isRecess: true },
-    { label: 'Bloque 3', time: '08:45 - 09:30' },
-    { label: 'Bloque 4', time: '09:30 - 10:15' },
-    { label: 'Receso Largo', time: '10:15 - 10:30', isRecess: true },
-    { label: 'Bloque 5', time: '10:30 - 11:15' },
-    { label: 'Bloque 6', time: '11:15 - 12:00' }
-  ];
+  const timeBlocks = referenceData.bloques.length > 0
+    ? referenceData.bloques.map((b: any) => ({
+        label: `Bloque ${b.id_bloque}`,
+        time: `${b.hora_inicio.substring(0, 5)} - ${b.hora_fin.substring(0, 5)}`,
+        isRecess: false
+      }))
+    : [
+        { label: 'Bloque 1', time: '07:00 - 07:45', isRecess: false },
+        { label: 'Bloque 2', time: '07:45 - 08:30', isRecess: false },
+        { label: 'Receso Corto', time: '08:30 - 08:45', isRecess: true },
+        { label: 'Bloque 3', time: '08:45 - 09:30', isRecess: false },
+        { label: 'Bloque 4', time: '09:30 - 10:15', isRecess: false },
+        { label: 'Receso Largo', time: '10:15 - 10:30', isRecess: true },
+        { label: 'Bloque 5', time: '10:30 - 11:15', isRecess: false },
+        { label: 'Bloque 6', time: '11:15 - 12:00', isRecess: false }
+      ];
 
   const days: ('Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes')[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
@@ -68,6 +78,11 @@ export default function ScheduleCoordinator({
     e.preventDefault();
     setScheduleError('');
     setScheduleSuccess('');
+
+    if (!formBlock || !formSection || !formSubjectId || !formTeacherId || !formClassroomId) {
+      setScheduleError('Debes completar todos los campos antes de asignar un bloque horario.');
+      return;
+    }
 
     // --- CONFLICT RESOLUTION ALGORITHM (Strict overlap validation) ---
     // 1. Teacher Double-Booking conflict (Teacher already teaching somewhere else at this day/block?)
@@ -215,6 +230,7 @@ export default function ScheduleCoordinator({
                     onChange={(e) => setFormBlock(e.target.value)}
                     className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
+                    <option value="">Seleccionar...</option>
                     {timeBlocks.filter(b => !b.isRecess).map(b => (
                       <option key={b.time} value={b.time}>{b.time}</option>
                     ))}
@@ -245,8 +261,15 @@ export default function ScheduleCoordinator({
                     onChange={(e) => setFormSection(e.target.value)}
                     className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
-                    <option value="A">Sección "A"</option>
-                    <option value="B">Sección "B"</option>
+                    <option value="">Seleccionar...</option>
+                    {sections
+                      .filter(s => s.grade === formYear)
+                      .sort((a, b) => a.letter.localeCompare(b.letter))
+                      .map(s => (
+                        <option key={`${s.grade}-${s.letter}`} value={s.letter}>
+                          Sección "{s.letter}"
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
@@ -259,6 +282,7 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFormSubjectId(e.target.value)}
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                 >
+                  <option value="">Seleccionar...</option>
                   {subjects.filter(s => s.years.includes(formYear)).map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -273,6 +297,7 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFormTeacherId(e.target.value)}
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                 >
+                  <option value="">Seleccionar...</option>
                   {users.filter(u => u.role === 'docente').map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -287,6 +312,7 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFormClassroomId(e.target.value)}
                   className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                 >
+                  <option value="">Seleccionar...</option>
                   {classrooms.map(c => (
                     <option key={c.id} value={c.id}>{c.name} (Cap. {c.capacity})</option>
                   ))}
@@ -368,8 +394,14 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFilterSection(e.target.value)}
                   className="bg-white border rounded p-1 font-bold focus:outline-hidden"
                 >
-                  <option value="A">Sección "A"</option>
-                  <option value="B">Sección "B"</option>
+                  {sections
+                    .filter(s => s.grade === filterYear)
+                    .sort((a, b) => a.letter.localeCompare(b.letter))
+                    .map(s => (
+                      <option key={`${s.grade}-${s.letter}`} value={s.letter}>
+                        Sección "{s.letter}"
+                      </option>
+                    ))}
                 </select>
               </div>
             )}
