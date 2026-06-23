@@ -41,7 +41,7 @@ import {
 } from './types';
 
 import { api } from './services/api';
-import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToEvaluationPlan, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative } from './services/mappers';
+import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative } from './services/mappers';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -146,7 +146,8 @@ export default function App() {
             diasData,
             bloquesData,
             asistenciasData,
-            asistenciasEstudiantesData
+            asistenciasEstudiantesData,
+            matriculasData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -164,7 +165,8 @@ export default function App() {
             api.get<any[]>('/api/dias').catch(() => []),
             api.get<any[]>('/api/bloques').catch(() => []),
             api.get<any[]>('/api/asistencias').catch(() => []),
-            api.get<any[]>('/api/asistencias-estudiantes').catch(() => [])
+            api.get<any[]>('/api/asistencias-estudiantes').catch(() => []),
+            api.get<any[]>('/api/matriculas').catch(() => ({ data: [] }))
           ]);
           
           const seccionesMap = aulasData.reduce((acc, a) => {
@@ -173,27 +175,17 @@ export default function App() {
           }, {});
 
           setUsers(usuariosData.map(mapUsuarioToUser));
-          setStudents(estudiantesData.map(mapEstudianteToStudent));
+          setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [])));
           setClassrooms(aulasData.map(mapAulaToClassroom));
-          setSubjects(asignaturasData.map(mapAsignaturaToSubject));
+          setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
           
           const studyPlansList = planesData.map(mapPlanToStudyPlanItem);
           setStudyPlans(studyPlansList);
           
-          // Fallback to generated plans ONLY for plans that don't exist in DB
           const dbEvaluationsList = (Array.isArray((evaluacionesPlanesResp as any)?.data) ? (evaluacionesPlanesResp as any).data : (Array.isArray(evaluacionesPlanesResp) ? evaluacionesPlanesResp : [])) || [];
           const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, planesData, seccionesMap);
           
-          const defaultPlans = planesData.map(mapPlanToEvaluationPlan);
-          const finalPlans = [...dbPlans];
-          
-          // Add default plans for any subject/year that wasn't found in dbPlans
-          defaultPlans.forEach(dp => {
-            const exists = dbPlans.some(p => p.subjectId === dp.subjectId && p.year === dp.year && p.section === dp.section && p.lapso === dp.lapso);
-            if (!exists) finalPlans.push(dp);
-          });
-          
-          setEvaluationPlans(finalPlans);
+          setEvaluationPlans(dbPlans);
 
           setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
 
@@ -279,7 +271,7 @@ export default function App() {
   const handleAddStudent = async (newStudent: Student) => {
     try {
       const repPayload = {
-        cedula_representante: newStudent.representativeCedula,
+        cedula_rep: newStudent.representativeCedula,
         nombre1: newStudent.representativeName.split(' ')[0],
         apellido1: newStudent.representativeName.split(' ').slice(1).join(' ') || newStudent.representativeName,
         telefono: newStudent.representativePhone

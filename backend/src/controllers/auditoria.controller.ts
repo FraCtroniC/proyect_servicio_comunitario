@@ -19,6 +19,11 @@ export const AuditoriaController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
+    const { accion, tabla_afectada } = req.body;
+    if (!accion || !tabla_afectada) {
+      res.status(400).json({ error: { message: 'Los campos accion y tabla_afectada son requeridos' } });
+      return;
+    }
     const result = await Auditoria.create(req.body);
     res.status(201).json({ data: result });
   }),

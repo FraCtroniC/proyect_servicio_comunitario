@@ -7,7 +7,7 @@ export function auditLog(accion: string, tablaAfectada: string) {
     const oldJson = _res.json.bind(_res);
 
     _res.json = function (body: any) {
-      if (req.user && _res.statusCode < 400) {
+      if (req.user && req.user.idUsuario && _res.statusCode < 400) {
         const registroId = body?.data?.id || body?.data?.id_usuario || Number(req.params.id) || null;
 
         Auditoria.create({
@@ -18,7 +18,7 @@ export function auditLog(accion: string, tablaAfectada: string) {
           valores_antiguos: null,
           valores_nuevos: ['POST', 'PATCH', 'PUT'].includes(req.method) ? req.body : null,
           ip_direccion: req.ip || req.socket.remoteAddress || null,
-        }).catch((err) => console.error('[Audit] Error al registrar auditoría:', err));
+        }).catch((err) => console.error('[Audit] Error al registrar auditoría:', err.message || err));
       }
 
       return oldJson.call(this, body);

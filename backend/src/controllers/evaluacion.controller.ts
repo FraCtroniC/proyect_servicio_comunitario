@@ -112,11 +112,15 @@ export const EvaluacionController = {
     for (const item of notas_parciales) {
       let { id_matricula, id_estudiante, id_evaluacion, id_escala } = item;
 
+      if (!id_evaluacion) continue;
+
       if (!id_matricula && id_estudiante) {
         const matricula = await Matricula.findOne({ where: { id_estudiante } });
         if (matricula) id_matricula = (matricula as any).id_matricula;
         else continue;
       }
+
+      if (!id_matricula) continue;
 
       const [record, created] = await NotaParcial.findOrCreate({
         where: { id_matricula, id_evaluacion },

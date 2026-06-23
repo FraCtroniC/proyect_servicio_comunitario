@@ -1,4 +1,4 @@
-import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative } from '../types';
+import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative, AcademicYear } from '../types';
 
 export function mapRole(idRol: number): UserRole {
   if (idRol === 1) return 'super_admin';
@@ -27,14 +27,29 @@ export function mapPeriodoToSchoolPeriod(dbPeriodo: any): SchoolPeriod {
   };
 }
 
-export function mapEstudianteToStudent(dbStudent: any): Student {
+export function mapEstudianteToStudent(dbStudent: any, matriculas?: any[], secciones?: any[]): Student {
+  let academicYear: number = 1;
+  let section: string = 'A';
+
+  if (matriculas && secciones) {
+    const studentMatriculas = matriculas.filter((m: any) => m.id_estudiante === dbStudent.id_estudiante);
+    const activeMatricula = studentMatriculas.find((m: any) => m.estatus_matricula === 'Activo') || studentMatriculas[0];
+    if (activeMatricula) {
+      const seccion = secciones.find((s: any) => s.id_seccion === activeMatricula.id_seccion);
+      if (seccion) {
+        academicYear = seccion.grado?.numero || seccion.id_grado || 1;
+        section = seccion.letra || 'A';
+      }
+    }
+  }
+
   return {
     id: String(dbStudent.id_estudiante),
     firstName: dbStudent.nombre1 + (dbStudent.nombre2 ? ` ${dbStudent.nombre2}` : ''),
     lastName: dbStudent.apellido1 + (dbStudent.apellido2 ? ` ${dbStudent.apellido2}` : ''),
     cedula: dbStudent.cedula_escolar,
-    academicYear: 1, 
-    section: 'A', 
+    academicYear: academicYear as AcademicYear,
+    section,
     status: dbStudent.estatus_estudiante === 'Inactivo' ? 'Inactivo' : 
             dbStudent.estatus_estudiante === 'Retirado' ? 'Retirado' : 'Activo',
     representativeName: dbStudent.representante 
@@ -57,12 +72,22 @@ export function mapAulaToClassroom(dbAula: any): Classroom {
   };
 }
 
-export function mapAsignaturaToSubject(dbAsignatura: any): Subject {
+export function mapAsignaturaToSubject(dbAsignatura: any, studyPlans?: any[]): Subject {
+  let years: AcademicYear[] = [1, 2, 3, 4, 5];
+
+  if (studyPlans) {
+    const subjectPlans = studyPlans.filter((p: any) => p.id_asignatura === dbAsignatura.id_asignatura);
+    const uniqueYears = [...new Set(subjectPlans.map((p: any) => (p.grado?.numero || p.id_grado) as AcademicYear).filter(Boolean))] as AcademicYear[];
+    if (uniqueYears.length > 0) {
+      years = uniqueYears.sort((a, b) => a - b);
+    }
+  }
+
   return {
     id: String(dbAsignatura.id_asignatura),
     name: dbAsignatura.nombre,
     shortName: dbAsignatura.nombre.substring(0, 3).toUpperCase(),
-    years: [1, 2, 3, 4, 5] // mock for now
+    years
   };
 }
 

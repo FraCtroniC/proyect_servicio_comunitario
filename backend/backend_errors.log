@@ -84,3 +84,62 @@ SequelizeValidationError: notNull Violation: NotaParcial.id_evaluacion cannot be
     at async NotaParcial.findOrCreate (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2417:25)
     at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\evaluacion.controller.ts:121:33)
 
+2026-06-22T19:46:19.711Z
+Error: Async error
+    at C:/Carpeta de carpetas/Uni/6° semestre/Servicio Comunitario/proyecto/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-22T19:55:37.035Z
+Error: Async error
+    at C:/Carpeta de carpetas/Uni/6° semestre/Servicio Comunitario/proyecto/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-22T20:09:13.208Z
+Error: Async error
+    at C:/Carpeta de carpetas/Uni/6° semestre/Servicio Comunitario/proyecto/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Carpeta%20de%20carpetas/Uni/6%C2%B0%20semestre/Servicio%20Comunitario/proyecto/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-23T01:20:05.610Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:78:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+2026-06-23T01:20:09.577Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:78:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+2026-06-23T01:21:14.846Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:78:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+2026-06-23T01:33:46.933Z
+Error: El correo electrónico no se encuentra registrado en el sistema.
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:155:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+

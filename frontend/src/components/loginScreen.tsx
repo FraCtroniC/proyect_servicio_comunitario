@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { 
   Lock, 
@@ -11,7 +11,8 @@ import {
   UserCheck,
   Mail,
   ArrowLeft,
-  CheckCircle2
+  CheckCircle2,
+  KeyRound
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
@@ -29,6 +30,22 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
+
+  // Password reset from URL token
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setResetToken(token);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
 
 
@@ -122,6 +139,49 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
     }
   };
 
+  const handleResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!newPassword.trim()) {
+      setError('Por favor, introduzca la nueva contraseña.');
+      return;
+    }
+
+    if (newPassword.trim().length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    if (newPassword.trim() !== confirmPassword.trim()) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, password: newPassword.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setError(data.error?.message || data.message || 'No se pudo restablecer la contraseña.');
+        setIsLoading(false);
+        return;
+      }
+
+      setResetSuccess(true);
+    } catch {
+      setError('No se pudo conectar con el servidor.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -194,7 +254,106 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
           </p>
         </div>
 
-        {showForgotPassword ? (
+        {resetToken ? (
+          resetSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs rounded-xl space-y-3"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                <span className="font-bold">Contraseña actualizada</span>
+              </div>
+              <p className="leading-relaxed text-slate-300">
+                Tu contraseña ha sido cambiada exitosamente. Ya puedes iniciar sesión con la nueva contraseña.
+              </p>
+              <button
+                onClick={() => { setResetToken(null); window.location.href = '/'; }}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Iniciar Sesión</span>
+              </button>
+            </motion.div>
+          ) : (
+            <form id="reset-password-form" onSubmit={handleResetPassword} className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-700/60">
+                <KeyRound className="h-4 w-4 text-blue-400" />
+                <h3 className="text-sm font-bold text-white">Nueva Contraseña</h3>
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl flex items-start gap-2"
+                >
+                  <AlertCircle className="h-4.5 w-4.5 text-rose-400 shrink-0 mt-0.5" />
+                  <span className="font-semibold leading-relaxed">{error}</span>
+                </motion.div>
+              )}
+
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Introduzca su nueva contraseña. El enlace es válido por 1 hora.
+              </p>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  Nueva Contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full text-xs pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 pointer-events-auto cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  Confirmar Contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repita la contraseña"
+                    className="w-full text-xs pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+              >
+                {isLoading ? (
+                  <span className="h-4 w-4 border-2 border-white/35 border-t-white rounded-full animate-spin"></span>
+                ) : (
+                  <>
+                    <KeyRound className="h-4 w-4" />
+                    <span>Restablecer Contraseña</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )
+        ) : showForgotPassword ? (
           <form id="forgot-password-form" onSubmit={handleForgotPassword} className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-700/60">
               <button

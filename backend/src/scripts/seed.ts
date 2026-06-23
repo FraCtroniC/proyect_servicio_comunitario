@@ -25,7 +25,7 @@ async function seed() {
     }
     console.log('✅ Roles verificados.');
 
-    // 2. Docentes (10 Docentes)
+    // 2. Docentes (12 Docentes — necesarios para cubrir las 12 secciones del phase2)
     const docentesData = [
       { cedula_docente: 'V-10234567', nombre1: 'Maria', apellido1: 'Perez', especialidad: 'Licenciada en Educación', telefono: '0414-1234567', correo: 'maria.perez@liceo.edu.ve', estatus: 'Activo' },
       { cedula_docente: 'V-12345678', nombre1: 'Jose', apellido1: 'Gonzalez', especialidad: 'Profesor de Matemáticas', telefono: '0412-2345678', correo: 'jose.gonzalez@liceo.edu.ve', estatus: 'Activo' },
@@ -37,6 +37,8 @@ async function seed() {
       { cedula_docente: 'V-18901234', nombre1: 'Carlos', apellido1: 'Diaz', especialidad: 'Profesor de Educación Física', telefono: '0424-8901234', correo: 'carlos.diaz@liceo.edu.ve', estatus: 'Activo' },
       { cedula_docente: 'V-19012345', nombre1: 'Marta', apellido1: 'Torres', especialidad: 'Licenciada en Geografía', telefono: '0414-9012345', correo: 'marta.torres@liceo.edu.ve', estatus: 'Activo' },
       { cedula_docente: 'V-20123456', nombre1: 'Jorge', apellido1: 'Ruiz', especialidad: 'Profesor de Inglés', telefono: '0412-0123456', correo: 'jorge.ruiz@liceo.edu.ve', estatus: 'Activo' },
+      { cedula_docente: 'V-21234567', nombre1: 'Diana', apellido1: 'Morales', especialidad: 'Profesor de Química', telefono: '0414-1122334', correo: 'diana.morales@liceo.edu.ve', estatus: 'Activo' },
+      { cedula_docente: 'V-22345678', nombre1: 'Ricardo', apellido1: 'Navas', especialidad: 'Profesor de Biología', telefono: '0412-2233445', correo: 'ricardo.navas@liceo.edu.ve', estatus: 'Activo' },
     ];
 
     const docentesGenerados = [];
@@ -49,7 +51,7 @@ async function seed() {
     }
     console.log('✅ Docentes insertados.');
 
-    // 3. Usuarios (10 Usuarios)
+    // 3. Usuarios (12 Usuarios — uno por cada docente)
     const passwordHash = await bcrypt.hash('Liceo2026', 10);
     
     // Obtener roles existentes para saber sus IDs reales

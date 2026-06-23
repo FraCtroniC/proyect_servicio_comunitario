@@ -11,5 +11,4 @@ export const validateActualizarEstudiante = validateRules([
   { field: 'cedula_escolar', required: false },
   { field: 'nombre1', required: false },
   { field: 'apellido1', required: false },
-  { field: 'correo', type: 'email', required: false },
 ]);

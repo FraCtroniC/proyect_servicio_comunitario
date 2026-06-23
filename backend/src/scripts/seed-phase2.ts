@@ -81,23 +81,23 @@ async function runSeed() {
     // 6. Días de la semana
     const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
     const diasDb = [];
-    for (let i = 0; i < dias.length; i++) {
+    for (const nombre of dias) {
       const [d] = await DiaSemana.findOrCreate({
-        where: { nombre: dias[i] },
-        defaults: { numero_dia: i + 1 }
+        where: { nombre },
+        defaults: { nombre }
       });
       diasDb.push(d);
     }
 
     // 7. Bloques de horario
     const bloquesData = [
-      { hora_inicio: '07:00:00', hora_fin: '07:45:00', tipo: 'Clase' },
-      { hora_inicio: '07:45:00', hora_fin: '08:30:00', tipo: 'Clase' },
-      { hora_inicio: '08:30:00', hora_fin: '09:15:00', tipo: 'Clase' },
-      { hora_inicio: '09:15:00', hora_fin: '09:45:00', tipo: 'Receso' },
-      { hora_inicio: '09:45:00', hora_fin: '10:30:00', tipo: 'Clase' },
-      { hora_inicio: '10:30:00', hora_fin: '11:15:00', tipo: 'Clase' },
-      { hora_inicio: '11:15:00', hora_fin: '12:00:00', tipo: 'Clase' },
+      { hora_inicio: '07:00:00', hora_fin: '07:45:00', tipo_bloque: 'Clase', numero_bloque: 1 },
+      { hora_inicio: '07:45:00', hora_fin: '08:30:00', tipo_bloque: 'Clase', numero_bloque: 2 },
+      { hora_inicio: '08:30:00', hora_fin: '09:15:00', tipo_bloque: 'Clase', numero_bloque: 3 },
+      { hora_inicio: '09:15:00', hora_fin: '09:45:00', tipo_bloque: 'Receso', numero_bloque: 4 },
+      { hora_inicio: '09:45:00', hora_fin: '10:30:00', tipo_bloque: 'Clase', numero_bloque: 5 },
+      { hora_inicio: '10:30:00', hora_fin: '11:15:00', tipo_bloque: 'Clase', numero_bloque: 6 },
+      { hora_inicio: '11:15:00', hora_fin: '12:00:00', tipo_bloque: 'Clase', numero_bloque: 7 },
     ];
     const bloquesDb = [];
     for (const b of bloquesData) {
@@ -165,8 +165,30 @@ async function runSeed() {
 
     // 11. Escala Calificacion
     const escalas = [
-      { nota_impresa: '20', ponderacion_letra: 'Excelente', nota_literal: 'A', nota_calculo: 20 },
-      { nota_impresa: '15', ponderacion_letra: 'Regular', nota_literal: 'C', nota_calculo: 15 },
+      { nota_impresa: '20', nota_literal: 'VEINTE', nota_calculo: 20, ponderacion_letra: 'A' },
+      { nota_impresa: '19', nota_literal: 'DIECINUEVE', nota_calculo: 19, ponderacion_letra: 'A' },
+      { nota_impresa: '18', nota_literal: 'DIECIOCHO', nota_calculo: 18, ponderacion_letra: 'A' },
+      { nota_impresa: '17', nota_literal: 'DIECISIETE', nota_calculo: 17, ponderacion_letra: 'B' },
+      { nota_impresa: '16', nota_literal: 'DIECISEIS', nota_calculo: 16, ponderacion_letra: 'B' },
+      { nota_impresa: '15', nota_literal: 'QUINCE', nota_calculo: 15, ponderacion_letra: 'B' },
+      { nota_impresa: '14', nota_literal: 'CATORCE', nota_calculo: 14, ponderacion_letra: 'C' },
+      { nota_impresa: '13', nota_literal: 'TRECE', nota_calculo: 13, ponderacion_letra: 'C' },
+      { nota_impresa: '12', nota_literal: 'DOCE', nota_calculo: 12, ponderacion_letra: 'C' },
+      { nota_impresa: '11', nota_literal: 'ONCE', nota_calculo: 11, ponderacion_letra: 'C' },
+      { nota_impresa: '10', nota_literal: 'DIEZ', nota_calculo: 10, ponderacion_letra: 'D' },
+      { nota_impresa: '09', nota_literal: 'NUEVE', nota_calculo: 9, ponderacion_letra: 'D' },
+      { nota_impresa: '08', nota_literal: 'OCHO', nota_calculo: 8, ponderacion_letra: 'D' },
+      { nota_impresa: '07', nota_literal: 'SIETE', nota_calculo: 7, ponderacion_letra: 'D' },
+      { nota_impresa: '06', nota_literal: 'SEIS', nota_calculo: 6, ponderacion_letra: 'D' },
+      { nota_impresa: '05', nota_literal: 'CINCO', nota_calculo: 5, ponderacion_letra: 'D' },
+      { nota_impresa: '04', nota_literal: 'CUATRO', nota_calculo: 4, ponderacion_letra: 'D' },
+      { nota_impresa: '03', nota_literal: 'TRES', nota_calculo: 3, ponderacion_letra: 'D' },
+      { nota_impresa: '02', nota_literal: 'DOS', nota_calculo: 2, ponderacion_letra: 'D' },
+      { nota_impresa: '01', nota_literal: 'UNO', nota_calculo: 1, ponderacion_letra: 'D' },
+      { nota_impresa: '00', nota_literal: 'CERO', nota_calculo: 0, ponderacion_letra: 'D' },
+      { nota_impresa: 'NC', nota_literal: 'NO CURSA', nota_calculo: null, ponderacion_letra: null },
+      { nota_impresa: 'PE', nota_literal: 'PENDIENTE', nota_calculo: null, ponderacion_letra: null },
+      { nota_impresa: '**', nota_literal: 'NO CALIFICA', nota_calculo: null, ponderacion_letra: null },
     ];
     const escalasDb = [];
     for (const e of escalas) {
@@ -182,8 +204,8 @@ async function runSeed() {
     const momentosDb = [];
     for (const l of lapsos) {
       const [m] = await Momento.findOrCreate({
-        where: { nombre: `Lapso ${l}`, id_periodo: periodo.get('id_periodo') },
-        defaults: { fecha_inicio: new Date(), fecha_fin: new Date(), estatus: 'Activo' }
+        where: { id_periodo: periodo.get('id_periodo'), descripcion: `${l}er Lapso` },
+        defaults: { id_periodo: periodo.get('id_periodo'), descripcion: `${l}er Lapso` }
       });
       momentosDb.push(m);
     }
