@@ -5,11 +5,12 @@
 
 import { useState } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert } from 'lucide-react';
-import { Student, Attendance, User, TeacherScheduleLog, AcademicYear, UserRole } from '../types';
+import { Student, Attendance, User, TeacherScheduleLog, AcademicYear, UserRole, Section } from '../types';
 
 interface AttendanceTrackerProps {
   students: Student[];
   users: User[];
+  sections: Section[];
   attendance: Attendance[];
   teacherLogs: TeacherScheduleLog[];
   currentUserRole: UserRole;
@@ -21,6 +22,7 @@ interface AttendanceTrackerProps {
 export default function AttendanceTracker({
   students,
   users,
+  sections,
   attendance,
   teacherLogs,
   currentUserRole,
@@ -34,7 +36,7 @@ export default function AttendanceTracker({
   // Student Attendance Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
   const [selectedSection, setSelectedSection] = useState<string>('A');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-06-17'); // Today simulated
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
   // Teacher clock-in Emulator
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('t-1');
@@ -149,8 +151,14 @@ export default function AttendanceTracker({
                 onChange={(e) => setSelectedSection(e.target.value)}
                 className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value="A">Sección "A"</option>
-                <option value="B">Sección "B"</option>
+                {sections
+                  .filter(s => s.grade === selectedYear)
+                  .sort((a, b) => a.letter.localeCompare(b.letter))
+                  .map(s => (
+                    <option key={`${s.grade}-${s.letter}`} value={s.letter}>
+                      Sección "{s.letter}"
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -350,9 +358,9 @@ export default function AttendanceTracker({
                       return (
                         <tr id={`punch-row-${log.id}`} key={log.id} className="hover:bg-slate-50/40">
                           <td className="py-3">
-                            <span className="font-bold text-slate-800 text-[11px] block">{teacher?.name}</span>
+                            <span className="font-bold text-slate-800 text-[11px] block">{teacher?.name?.split(' ')[0]}</span>
                           </td>
-                          <td className="py-3 font-mono text-[10px] text-slate-500">{teacher?.cedula}</td>
+                          <td className="py-3 font-mono text-[10px] text-slate-500">{teacher?.cedula?.replace(/^[A-Z]-/, '')}</td>
                           <td className="py-3 text-center text-slate-800 font-mono font-bold">{log.clockInTime}</td>
                           <td className="py-3 text-center text-slate-800 font-mono font-bold">{log.clockOutTime || '--:--'}</td>
                           <td className="py-3 text-center">

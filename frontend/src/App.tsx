@@ -408,7 +408,7 @@ export default function App() {
         id_docente_guia: Number(teacherGuideId.replace(/\D/g, '')) || 1
       };
       const created = await api.post<any>('/api/secciones', payload);
-      const newSection = mapSeccionToSection(created.data || created);
+      const newSection = mapSeccionToSection(created);
       setSections(p => [...p, newSection]);
       return newSection;
     } catch (e: any) {
@@ -958,6 +958,7 @@ export default function App() {
                 <AttendanceTracker
                   students={students}
                   users={users}
+                  sections={sections}
                   attendance={attendance}
                   teacherLogs={teacherLogs}
                   currentUserRole={currentUserRole}
