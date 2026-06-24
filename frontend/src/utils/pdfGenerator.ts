@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Student, Grade, Subject, EvaluationPlan } from '../types';
+import { Student, Grade, Subject, EvaluationPlan, Attendance, AcademicYear } from '../types';
 import { calculateSubjectFinalGrade } from './gradeCalculations';
 
 export const generateBoletinPDF = (
@@ -104,4 +104,86 @@ export const generateConstanciaEstudio = (student: Student) => {
   doc.text('Director(a) de la Institución', doc.internal.pageSize.getWidth() / 2, 520, { align: 'center' });
 
   doc.save(`Constancia_${student.cedula}.pdf`);
+};
+
+export const generateReporteAsistencia = (
+  students: Student[],
+  attendance: Attendance[],
+  year: AcademicYear,
+  section: string,
+  fechaDesde: string,
+  fechaHasta: string,
+) => {
+  const doc = new jsPDF('l', 'pt', 'letter');
+
+  // Header
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('REPÚBLICA BOLIVARIANA DE VENEZUELA', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+  doc.text('MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN', doc.internal.pageSize.getWidth() / 2, 58, { align: 'center' });
+  doc.text('LICEO ESTILITA OROZCO', doc.internal.pageSize.getWidth() / 2, 76, { align: 'center' });
+
+  doc.setFontSize(13);
+  doc.text('REPORTE DE ASISTENCIA', doc.internal.pageSize.getWidth() / 2, 110, { align: 'center' });
+
+  // Filters info
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Año: ${year}°  Sección: "${section}"  Desde: ${fechaDesde}  Hasta: ${fechaHasta}`, doc.internal.pageSize.getWidth() / 2, 130, { align: 'center' });
+
+  // Student attendance summary table
+  const tableData = students
+    .filter(s => s.status === 'Activo')
+    .map(student => {
+      const studentRecords = attendance.filter(a => a.studentId === student.id);
+      const presentes = studentRecords.filter(a => a.status === 'P').length;
+      const ausentes = studentRecords.filter(a => a.status === 'A').length;
+      const justificados = studentRecords.filter(a => a.status === 'J').length;
+      const total = studentRecords.length;
+      const porcentaje = total > 0 ? Math.round(((presentes + justificados) / total) * 100) : 100;
+
+      return [
+        `${student.lastName}, ${student.firstName}`,
+        student.cedula,
+        presentes.toString(),
+        ausentes.toString(),
+        justificados.toString(),
+        total.toString(),
+        `${porcentaje}%`
+      ];
+    });
+
+  autoTable(doc, {
+    startY: 150,
+    head: [['Estudiante', 'Cédula', 'Presentes', 'Ausentes', 'Justificados', 'Total', '% Asistencia']],
+    body: tableData,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 200 },
+      1: { cellWidth: 80 },
+      2: { halign: 'center', cellWidth: 60 },
+      3: { halign: 'center', cellWidth: 60 },
+      4: { halign: 'center', cellWidth: 70 },
+      5: { halign: 'center', cellWidth: 50 },
+      6: { halign: 'center', cellWidth: 65 }
+    }
+  });
+
+  // Footer
+  const finalY = (doc as any).lastAutoTable.finalY + 30;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('P: Presente | A: Ausente | J: Justificado', 40, finalY, { align: 'left' });
+
+  const date = new Date();
+  doc.text(`Generado: ${date.toLocaleDateString('es-ES')}`, doc.internal.pageSize.getWidth() - 40, finalY, { align: 'right' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('________________________________', doc.internal.pageSize.getWidth() / 2, finalY + 60, { align: 'center' });
+  doc.text('Director(a) de la Institución', doc.internal.pageSize.getWidth() / 2, finalY + 75, { align: 'center' });
+
+  doc.save(`Reporte_Asistencia_${year}°_${section}_${fechaDesde}.pdf`);
 };

@@ -7,5 +7,5 @@ export const asistenciaDocenteRoutes = Router();
 asistenciaDocenteRoutes.get('/', AsistenciaDocenteController.listar);
 asistenciaDocenteRoutes.get('/:id', AsistenciaDocenteController.obtenerPorId);
 asistenciaDocenteRoutes.post('/', authorize(1, 3), AsistenciaDocenteController.crear);
-asistenciaDocenteRoutes.patch('/:id', AsistenciaDocenteController.actualizar);
+asistenciaDocenteRoutes.patch('/:id', authorize(1, 2, 3), AsistenciaDocenteController.actualizar);
 asistenciaDocenteRoutes.delete('/:id', authorize(1), AsistenciaDocenteController.eliminar);

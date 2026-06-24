@@ -4,8 +4,9 @@
  */
 
 import { useState } from 'react';
-import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert } from 'lucide-react';
+import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText } from 'lucide-react';
 import { Student, Attendance, User, TeacherScheduleLog, AcademicYear, UserRole, Section } from '../types';
+import { generateReporteAsistencia } from '../utils/pdfGenerator';
 
 interface AttendanceTrackerProps {
   students: Student[];
@@ -14,9 +15,10 @@ interface AttendanceTrackerProps {
   attendance: Attendance[];
   teacherLogs: TeacherScheduleLog[];
   currentUserRole: UserRole;
-  onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J') => void;
+  onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', observacion?: string) => void;
   onAddTeacherLog: (log: TeacherScheduleLog) => void;
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
+  onSyncInasistencias?: (matriculaId: string) => void;
 }
 
 export default function AttendanceTracker({
@@ -28,7 +30,8 @@ export default function AttendanceTracker({
   currentUserRole,
   onModifyAttendance,
   onAddTeacherLog,
-  onUpdateTeacherLog
+  onUpdateTeacherLog,
+  onSyncInasistencias
 }: AttendanceTrackerProps) {
   // Navigation
   const [trackerTab, setTrackerTab] = useState<'students' | 'teachers'>('students');
@@ -37,6 +40,9 @@ export default function AttendanceTracker({
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
   const [selectedSection, setSelectedSection] = useState<string>('A');
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+
+  // Observación state per student
+  const [observaciones, setObservaciones] = useState<Record<string, string>>({});
 
   // Teacher clock-in Emulator
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('t-1');
@@ -126,6 +132,44 @@ export default function AttendanceTracker({
       {trackerTab === 'students' && (
         <div id="stud-att-container" className="space-y-6">
 
+          {/* Action buttons */}
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                const desde = new Date();
+                desde.setDate(desde.getDate() - 30);
+                const hasta = new Date();
+                generateReporteAsistencia(
+                  sectionStudents,
+                  attendance,
+                  selectedYear,
+                  selectedSection,
+                  desde.toISOString().split('T')[0],
+                  hasta.toISOString().split('T')[0]
+                );
+              }}
+              className="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer flex items-center gap-1"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Reporte PDF
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm('¿Sincronizar inasistencias de todos los estudiantes visibles en las calificaciones?')) {
+                  sectionStudents.forEach(s => {
+                    const studentAtt = attendance.filter(a => a.studentId === s.id);
+                    if (studentAtt.length > 0) {
+                      onSyncInasistencias?.(s.id);
+                    }
+                  });
+                }
+              }}
+              className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer"
+            >
+              Sincronizar Inasistencias con Calificaciones
+            </button>
+          </div>
+
           {/* Filters Bar */}
           <div id="stud-att-filters" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             
@@ -192,6 +236,7 @@ export default function AttendanceTracker({
                     <th className="py-2.5">Estudiante</th>
                     <th className="py-2.5">Cédula</th>
                     <th className="py-2.5 text-center">Estado de Asistencia</th>
+                    <th className="py-2.5">Observación</th>
                     <th className="py-2.5 text-right">Porcentaje Mes</th>
                   </tr>
                 </thead>
@@ -232,7 +277,7 @@ export default function AttendanceTracker({
                                         alert("Error: Solo los docentes o el cuerpo de Control de Estudios pueden pasar asistencia.");
                                         return;
                                       }
-                                      onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag);
+                                      onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '');
                                     }}
                                     className={`w-10 py-1.5 rounded-lg border border-slate-200 text-xs font-bold transition-all p-0 focus:outline-hidden pointer-events-auto cursor-pointer ${getFlagTheme(flag)}`}
                                     title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
@@ -242,6 +287,16 @@ export default function AttendanceTracker({
                                 );
                               })}
                             </div>
+                          </td>
+                          <td className="py-3">
+                            <input
+                              type="text"
+                              value={observaciones[student.id] || ''}
+                              onChange={(e) => setObservaciones(prev => ({ ...prev, [student.id]: e.target.value }))}
+                              placeholder="Observación"
+                              className="w-24 text-[10px] p-1 bg-slate-50 border border-slate-200 rounded font-mono"
+                              maxLength={255}
+                            />
                           </td>
                           <td className="py-3 text-right">
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${getAttendanceRateColor(rate)}`}>
@@ -253,7 +308,7 @@ export default function AttendanceTracker({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-500 font-bold">
+                      <td colSpan={5} className="py-8 text-center text-slate-500 font-bold">
                         No hay estudiantes matriculados activos en {selectedYear}° Año "{selectedSection}" para tomar asistencia.
                       </td>
                     </tr>

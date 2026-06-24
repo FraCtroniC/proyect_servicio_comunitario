@@ -80,6 +80,7 @@ export default function App() {
   // Persistence arrays from Backend
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [teacherLogs, setTeacherLogs] = useState<TeacherScheduleLog[]>([]);
+  const [matriculasCache, setMatriculasCache] = useState<any[]>([]);
 
   // Simulated login/role permission state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -205,6 +206,10 @@ export default function App() {
             dias: Array.isArray(diasData) ? diasData : [],
             bloques: Array.isArray(bloquesData) ? bloquesData : []
           });
+
+          // Cache matrículas
+          const matriculasList = Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [];
+          setMatriculasCache(matriculasList);
 
           // Set Asistencias
           if (Array.isArray(asistenciasData)) {
@@ -523,60 +528,59 @@ export default function App() {
     }
   };
 
-  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J') => {
+  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string) => {
     try {
       const dbStatus = status === 'P' ? 'Presente' : (status === 'A' ? 'Ausente' : 'Justificado');
       const activePeriod = periods.find(p => p.status === 'Activo');
       const matchingSection = sections.find(s => s.grade === year && s.letter === section);
-      
+
       let matriculaId = null;
-      if (activePeriod && matchingSection) {
-        // Encontrar la matricula
-        const matriculasReq = await api.get<any[]>('/api/matriculas');
-        const matriculas = Array.isArray(matriculasReq) ? matriculasReq : (matriculasReq as any).data || [];
+      if (activePeriod && matchingSection && matriculasCache.length > 0) {
         const numStudentId = Number(studentId.replace(/\D/g, '')) || Number(studentId);
-        const matricula = matriculas.find(m => m.id_estudiante === numStudentId && m.id_periodo === Number(activePeriod.id) && m.id_seccion === Number(matchingSection.id));
+        const matricula = matriculasCache.find(
+          m => m.id_estudiante === numStudentId
+            && m.id_periodo === Number(activePeriod.id)
+            && m.id_seccion === Number(matchingSection.id)
+        );
         if (matricula) matriculaId = matricula.id_matricula;
       }
 
-      if (matriculaId) {
-        const payload = {
-          id_matricula: matriculaId,
-          fecha: date,
-          estatus: dbStatus,
-          observacion: ''
-        };
-        const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date);
-        if (existingAtt && existingAtt.id.startsWith('att-')) {
-           // mock data, create it
-           const created = await api.post<any>('/api/asistencias-estudiantes', payload);
-           setAttendance(p => {
-            const idx = p.findIndex(a => a.studentId === studentId && a.date === date);
-            if (idx >= 0) {
-              const copy = [...p];
-              copy[idx] = { ...copy[idx], status, id: String(created.id_asistencia_est || created.id) };
-              return copy;
-            } else {
-              return [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }];
-            }
-          });
-        } else if (existingAtt && !existingAtt.id.startsWith('att-')) {
-           // existing db record, update
-           await api.patch(`/api/asistencias-estudiantes/${existingAtt.id}`, { estatus: dbStatus });
-           setAttendance(p => {
-             const copy = [...p];
-             const idx = copy.findIndex(a => a.id === existingAtt.id);
-             if (idx >= 0) copy[idx] = { ...copy[idx], status };
-             return copy;
-           });
-        } else {
-           // completely new
-           const created = await api.post<any>('/api/asistencias-estudiantes', payload);
-           setAttendance(p => [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }]);
-        }
+      if (!matriculaId) {
+        console.error('No se encontró matrícula para el estudiante', studentId);
+        alert('Error: No se encontró la matrícula del estudiante. Verifique que esté matriculado en el período activo.');
+        return;
       }
-    } catch (e) {
+
+      const payload = {
+        id_matricula: matriculaId,
+        fecha: date,
+        estatus: dbStatus,
+        observacion: observacion || ''
+      };
+
+      const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date);
+
+      if (existingAtt && existingAtt.id.startsWith('att-')) {
+        const created = await api.post<any>('/api/asistencias-estudiantes', payload);
+        setAttendance(p => {
+          const idx = p.findIndex(a => a.studentId === studentId && a.date === date);
+          if (idx >= 0) {
+            const copy = [...p];
+            copy[idx] = { ...copy[idx], status, id: String(created.id_asistencia_est || created.id) };
+            return copy;
+          }
+          return [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }];
+        });
+      } else if (existingAtt) {
+        await api.patch(`/api/asistencias-estudiantes/${existingAtt.id}`, { estatus: dbStatus, observacion: observacion || '' });
+        setAttendance(p => p.map(a => a.id === existingAtt.id ? { ...a, status } : a));
+      } else {
+        const created = await api.post<any>('/api/asistencias-estudiantes', payload);
+        setAttendance(p => [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }]);
+      }
+    } catch (e: any) {
       console.error('Error al guardar asistencia estudiantil', e);
+      alert('Error al guardar asistencia: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
 
@@ -595,6 +599,17 @@ export default function App() {
     } catch (e) {
       console.error(e);
       setTeacherLogs(p => [log, ...p]);
+    }
+  };
+
+  const handleSyncInasistencias = async (matriculaId: string) => {
+    try {
+      const result = await api.post<any>(`/api/asistencias-estudiantes/sync-inasistencias`, { id_matricula: matriculaId });
+      console.log('Inasistencias sincronizadas:', result);
+      alert('Inasistencias sincronizadas correctamente en las calificaciones.');
+    } catch (e: any) {
+      console.error('Error al sincronizar inasistencias', e);
+      alert('Error al sincronizar inasistencias: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
 
@@ -971,6 +986,7 @@ export default function App() {
                   onModifyAttendance={handleModifyAttendance}
                   onAddTeacherLog={handleAddTeacherLog}
                   onUpdateTeacherLog={handleUpdateTeacherLog}
+                  onSyncInasistencias={handleSyncInasistencias}
                 />
               )}
 
