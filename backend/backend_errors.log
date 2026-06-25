@@ -223,3 +223,611 @@ Error
     at async HorarioDocente.create (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\node_modules\sequelize\src\model.js:2305:12)
     at async <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\horario-docente.controller.ts:34:20)
 
+2026-06-25T19:49:05.588Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T19:51:33.444Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T19:51:55.707Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T19:52:31.616Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T19:53:34.214Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T19:59:34.821Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:41:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:01:00.022Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:01:59.519Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:02:23.769Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:02:33.713Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:02:50.891Z
+Error: test error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/debug-test.test.ts:8:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:03:07.634Z
+Error: DB error
+    at Object.<anonymous> (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/debug-test.test.ts:21:29)
+    at Object.Mock [as findAll] (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/spy/dist/index.js:332:34)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/estudiante.controller.ts:7:37
+    at Object.listar (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/debug-test.test.ts:30:32
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+
+2026-06-25T20:03:27.915Z
+Error: DB error
+    at Object.<anonymous> (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/debug-test.test.ts:21:29)
+    at Object.Mock [as findAll] (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/spy/dist/index.js:332:34)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/estudiante.controller.ts:7:37
+    at Object.listar (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/debug-test.test.ts:30:32
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+
+2026-06-25T20:04:42.460Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:04:44.166Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:05:56.458Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/docente-controller.test.ts:39:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:05:56.484Z
+Error: Docente no encontrado
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/docente.controller.ts:54:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/docente-controller.test.ts:183:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.851Z
+Error: El usuario y la contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:56:13
+    at Object.login (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:48:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:07:42.866Z
+Error: Usuario o contraseña incorrectos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:78:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:63:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.869Z
+Error: Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:83:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:80:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.871Z
+Error: Usuario o contraseña incorrectos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:90:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:109:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.878Z
+Error: El correo electrónico es requerido
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:137:13
+    at Object.solicitarRecuperacion (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:124:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:07:42.881Z
+Error: El correo electrónico no se encuentra registrado en el sistema.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:155:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:138:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.885Z
+Error: Error al procesar el envío del correo electrónico.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:219:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:158:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.888Z
+Error: El token y la nueva contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:232:13
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:172:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:07:42.891Z
+TypeError: Cannot read properties of undefined (reading 'purpose')
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:239:19
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:195:28
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:07:42.909Z
+TypeError: Cannot read properties of undefined (reading 'purpose')
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:239:19
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:213:28
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:08:56.445Z
+Error: El usuario y la contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:56:13
+    at Object.login (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:50:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:08:56.462Z
+Error: Usuario o contraseña incorrectos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:78:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:62:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:08:56.464Z
+Error: Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:83:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:72:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:08:56.468Z
+Error: El correo electrónico es requerido
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:137:13
+    at Object.solicitarRecuperacion (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:104:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:08:56.471Z
+Error: El correo electrónico no se encuentra registrado en el sistema.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:155:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:114:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:08:56.479Z
+Error: El token y la nueva contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:232:13
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:142:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:08:56.484Z
+Error: El enlace ha expirado. Por favor, solicite uno nuevo.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:257:15
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:176:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:09:47.914Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:09:48.836Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:09:48.845Z
+Error: El usuario y la contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:56:13
+    at Object.login (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:50:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:09:48.869Z
+Error: Usuario o contraseña incorrectos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:78:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:62:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:09:48.873Z
+Error: Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:83:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:72:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:09:48.880Z
+Error: El correo electrónico es requerido
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:137:13
+    at Object.solicitarRecuperacion (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:104:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:09:48.890Z
+Error: El correo electrónico no se encuentra registrado en el sistema.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:155:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:114:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:09:48.902Z
+Error: El token y la nueva contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:232:13
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:142:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:09:48.917Z
+Error: El enlace ha expirado. Por favor, solicite uno nuevo.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:257:15
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:176:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:09:48.924Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/docente-controller.test.ts:39:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:09:48.957Z
+Error: Docente no encontrado
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/docente.controller.ts:54:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/docente-controller.test.ts:183:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:13:43.729Z
+TypeError: Cannot read properties of undefined (reading 'id_seccion')
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/matricula.controller.ts:8:19
+    at Object.listar (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/matricula-controller.test.ts:18:31
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:15:10.728Z
+Error: El usuario y la contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:56:13
+    at Object.login (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:50:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:15:10.754Z
+Error: Usuario o contraseña incorrectos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:78:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:62:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:15:10.758Z
+Error: Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:83:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:72:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:15:10.777Z
+Error: El correo electrónico es requerido
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:137:13
+    at Object.solicitarRecuperacion (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:104:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:15:10.786Z
+Error: El correo electrónico no se encuentra registrado en el sistema.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:155:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:114:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:15:10.791Z
+Error: El token y la nueva contraseña son requeridos
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:232:13
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:142:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:15:10.798Z
+Error: El enlace ha expirado. Por favor, solicite uno nuevo.
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/auth.controller.ts:257:15
+    at Object.restablecerPassword (C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/shared/utils/wrapAsync.ts:6:12)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/auth-controller.test.ts:176:28
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+2026-06-25T20:15:10.962Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/docente-controller.test.ts:39:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:15:11.005Z
+Error: Docente no encontrado
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/controllers/docente.controller.ts:54:13
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/docente-controller.test.ts:183:7
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+2026-06-25T20:15:11.333Z
+Error: DB error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/estudiante-controller.test.ts:34:21
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+2026-06-25T20:15:11.905Z
+Error: Async error
+    at C:/Users/Javian/Documents/MIS REPOS/proyect_servicio_comunitario/backend/src/__tests__/wrap-async.test.ts:6:19
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///C:/Users/Javian/Documents/MIS%20REPOS/proyect_servicio_comunitario/backend/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+

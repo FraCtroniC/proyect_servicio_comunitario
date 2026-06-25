@@ -110,7 +110,8 @@ export const EvaluacionController = {
     const affectedLapsos = new Set<string>();
 
     for (const item of notas_parciales) {
-      let { id_matricula, id_estudiante, id_evaluacion, id_escala } = item;
+      let { id_matricula } = item;
+      const { id_estudiante, id_evaluacion, id_escala } = item;
 
       if (!id_evaluacion) continue;
 

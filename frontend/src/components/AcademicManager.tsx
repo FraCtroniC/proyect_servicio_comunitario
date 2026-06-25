@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Layers, ShieldAlert, Users, BookOpen, ChevronRight } from 'lucide-react';
-import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User } from '../types';
+import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User, Classroom } from '../types';
 import { Modal } from './Modal';
 
 interface AcademicManagerProps {

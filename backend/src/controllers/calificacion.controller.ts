@@ -29,7 +29,8 @@ export const CalificacionController = {
 
     const savedRecords = [];
     for (const item of calificaciones) {
-      let { id_matricula, id_estudiante, id_plan, id_momento, id_escala, inasistencias_asignatura } = item;
+      let { id_matricula } = item;
+      const { id_estudiante, id_plan, id_momento, id_escala, inasistencias_asignatura } = item;
       
       // Si se provee id_estudiante en vez de id_matricula (fallback)
       if (!id_matricula && id_estudiante) {
