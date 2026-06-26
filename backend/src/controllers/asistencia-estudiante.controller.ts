@@ -1,15 +1,25 @@
-import { Op } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 import { Request, Response } from 'express';
-import { AsistenciaEstudiante, Matricula, Estudiante, Seccion, Calificacion, PeriodoEscolar } from '../models';
+import { AsistenciaEstudiante, Matricula, Estudiante, Seccion, Calificacion, PeriodoEscolar, sequelize } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
-
-const ALLOWED_STATUSES = ['Presente', 'Ausente', 'Justificado'];
+import { ASISTENCIA_ESTUDIANTE_STATUS } from '../shared/constants';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 const ALLOWED_CREATE_FIELDS = ['id_matricula', 'fecha', 'estatus', 'observacion'];
 const ALLOWED_UPDATE_FIELDS = ['estatus', 'observacion'];
 
+function isValidDate(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  return !isNaN(d.getTime());
+}
+
+function isFutureDate(dateStr: string): boolean {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  return new Date(dateStr) > today;
+}
+
 export const AsistenciaEstudianteController = {
-  // Obtener todas las asistencias de estudiantes
   listar: wrapAsync(async (req: Request, res: Response) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
@@ -18,25 +28,32 @@ export const AsistenciaEstudianteController = {
     const where: any = {};
     if (req.query.fecha) where.fecha = String(req.query.fecha);
     if (req.query.id_matricula) where.id_matricula = Number(req.query.id_matricula);
+    if (req.query.estatus) where.estatus = String(req.query.estatus);
+
+    if (req.query.fecha_desde || req.query.fecha_hasta) {
+      where.fecha = {};
+      if (req.query.fecha_desde) where.fecha[Op.gte] = String(req.query.fecha_desde);
+      if (req.query.fecha_hasta) where.fecha[Op.lte] = String(req.query.fecha_hasta);
+    }
+
+    const include: any[] = [
+      {
+        model: Matricula,
+        as: 'matricula',
+        include: [
+          { model: Estudiante, as: 'estudiante' },
+          { model: Seccion, as: 'seccion' }
+        ]
+      }
+    ];
+
+    if (req.query.id_seccion) {
+      include[0].where = { id_seccion: Number(req.query.id_seccion) };
+    }
 
     const { count, rows } = await AsistenciaEstudiante.findAndCountAll({
       where,
-      include: [
-        {
-          model: Matricula,
-          as: 'matricula',
-          include: [
-            {
-              model: Estudiante,
-              as: 'estudiante'
-            },
-            {
-              model: Seccion,
-              as: 'seccion'
-            }
-          ]
-        }
-      ],
+      include,
       limit,
       offset,
       order: [['fecha', 'DESC'], ['id_asistencia_est', 'DESC']]
@@ -44,8 +61,7 @@ export const AsistenciaEstudianteController = {
     res.json({ data: rows, meta: { total: count, page, limit, pages: Math.ceil(count / limit) } });
   }),
 
-  // Crear asistencia
-  crear: wrapAsync(async (req: Request, res: Response) => {
+  crear: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const payload: any = {};
     for (const field of ALLOWED_CREATE_FIELDS) {
       if (req.body[field] !== undefined) payload[field] = req.body[field];
@@ -56,9 +72,23 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
-    if (payload.estatus && !ALLOWED_STATUSES.includes(payload.estatus)) {
-      res.status(400).json({ error: { message: 'estatus debe ser: Presente, Ausente o Justificado' } });
+    if (!isValidDate(payload.fecha)) {
+      res.status(400).json({ error: { message: 'fecha no es una fecha válida' } });
       return;
+    }
+
+    if (isFutureDate(payload.fecha)) {
+      res.status(400).json({ error: { message: 'No se puede registrar asistencia en una fecha futura' } });
+      return;
+    }
+
+    if (payload.estatus && !ASISTENCIA_ESTUDIANTE_STATUS.includes(payload.estatus)) {
+      res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}` } });
+      return;
+    }
+
+    if (payload.observacion === '') {
+      payload.observacion = null;
     }
 
     const existing = await AsistenciaEstudiante.findOne({
@@ -69,74 +99,131 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
+    payload.id_usuario_crea = req.user!.idUsuario;
     const nueva = await AsistenciaEstudiante.create(payload);
     res.status(201).json(nueva);
   }),
 
-  // Estadísticas de asistencia
+  crearBatch: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
+    const { registros } = req.body;
+
+    if (!Array.isArray(registros) || registros.length === 0) {
+      res.status(400).json({ error: { message: 'registros debe ser un array no vacío' } });
+      return;
+    }
+
+    if (registros.some((r: any) => !r.id_matricula || !r.fecha)) {
+      res.status(400).json({ error: { message: 'Cada registro debe tener id_matricula y fecha' } });
+      return;
+    }
+
+    for (const r of registros) {
+      if (r.estatus && !ASISTENCIA_ESTUDIANTE_STATUS.includes(r.estatus)) {
+        res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}` } });
+        return;
+      }
+      if (!isValidDate(r.fecha)) {
+        res.status(400).json({ error: { message: `fecha ${r.fecha} no es válida` } });
+        return;
+      }
+      if (isFutureDate(r.fecha)) {
+        res.status(400).json({ error: { message: `No se puede registrar asistencia en fecha futura: ${r.fecha}` } });
+        return;
+      }
+    }
+
+    const idUsuario = req.user!.idUsuario;
+    const result = await sequelize.transaction(async (t) => {
+      const creados: any[] = [];
+      for (const r of registros) {
+        const payload = {
+          id_matricula: r.id_matricula,
+          fecha: r.fecha,
+          estatus: r.estatus || 'Presente',
+          observacion: r.observacion || null,
+          id_usuario_crea: idUsuario,
+        };
+
+        const [registro, created] = await AsistenciaEstudiante.findOrCreate({
+          where: { id_matricula: payload.id_matricula, fecha: payload.fecha },
+          defaults: payload,
+          transaction: t,
+        });
+
+        if (!created) {
+          await registro.update({ estatus: payload.estatus, observacion: payload.observacion }, { transaction: t });
+        }
+        creados.push(registro);
+      }
+      return creados;
+    });
+
+    res.status(201).json({ data: result, meta: { total: result.length } });
+  }),
+
   estadisticas: wrapAsync(async (req: Request, res: Response) => {
     const { id_matricula, id_seccion, fecha_desde, fecha_hasta } = req.query;
 
-    const where: any = {};
-    if (id_matricula) where.id_matricula = Number(id_matricula);
-    if (fecha_desde || fecha_hasta) {
-      where.fecha = {};
-      if (fecha_desde) where.fecha[Op.gte] = String(fecha_desde);
-      if (fecha_hasta) where.fecha[Op.lte] = String(fecha_hasta);
+    const whereConditions: string[] = [];
+    const replacements: any[] = [];
+
+    if (id_matricula) {
+      whereConditions.push('ae.id_matricula = ?');
+      replacements.push(Number(id_matricula));
     }
-
-    const include: any[] = [
-      {
-        model: Matricula,
-        as: 'matricula',
-        attributes: ['id_matricula', 'id_estudiante', 'id_seccion'],
-        include: [
-          { model: Estudiante, as: 'estudiante', attributes: ['id_estudiante', 'nombre', 'apellido', 'cedula'] },
-          { model: Seccion, as: 'seccion', attributes: ['id_seccion', 'id_grado', 'letra'] }
-        ]
-      }
-    ];
-
     if (id_seccion) {
-      include[0].where = { id_seccion: Number(id_seccion) };
+      whereConditions.push('m.id_seccion = ?');
+      replacements.push(Number(id_seccion));
+    }
+    if (fecha_desde) {
+      whereConditions.push('ae.fecha >= ?');
+      replacements.push(String(fecha_desde));
+    }
+    if (fecha_hasta) {
+      whereConditions.push('ae.fecha <= ?');
+      replacements.push(String(fecha_hasta));
     }
 
-    const records = await AsistenciaEstudiante.findAll({ where, include });
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
-    // Agrupar por estudiante
-    const statsMap: Record<number, any> = {};
-    for (const r of records) {
-      const row = r as any;
-      const estId = row.matricula?.id_estudiante;
-      if (!estId) continue;
-      if (!statsMap[estId]) {
-        statsMap[estId] = {
-          id_estudiante: estId,
-          nombre: `${row.matricula.estudiante?.apellido || ''}, ${row.matricula.estudiante?.nombre || ''}`,
-          cedula: row.matricula.estudiante?.cedula || '',
-          seccion: `${row.matricula.seccion?.id_grado || '?'}° "${row.matricula.seccion?.letra || '?'}"`,
-          presente: 0,
-          ausente: 0,
-          justificado: 0,
-          total: 0
-        };
-      }
-      const s = statsMap[estId];
-      s.total++;
-      if (r.estatus === 'Presente') s.presente++;
-      else if (r.estatus === 'Ausente') s.ausente++;
-      else if (r.estatus === 'Justificado') s.justificado++;
-    }
+    const query = `
+      SELECT
+        m.id_estudiante,
+        CONCAT(e.apellido, ', ', e.nombre) AS nombre,
+        e.cedula,
+        CONCAT(s.id_grado, '° "', s.letra, '"') AS seccion,
+        SUM(CASE WHEN ae.estatus = 'Presente' THEN 1 ELSE 0 END) AS presente,
+        SUM(CASE WHEN ae.estatus = 'Ausente' THEN 1 ELSE 0 END) AS ausente,
+        SUM(CASE WHEN ae.estatus = 'Justificado' THEN 1 ELSE 0 END) AS justificado,
+        COUNT(*) AS total
+      FROM asistencia_estudiante ae
+      INNER JOIN matricula m ON m.id_matricula = ae.id_matricula
+      INNER JOIN estudiantes e ON e.id_estudiante = m.id_estudiante
+      INNER JOIN secciones s ON s.id_seccion = m.id_seccion
+      ${whereClause}
+      GROUP BY m.id_estudiante, e.apellido, e.nombre, e.cedula, s.id_grado, s.letra
+      ORDER BY e.apellido, e.nombre
+    `;
 
-    const stats = Object.values(statsMap).map((s: any) => ({
-      ...s,
-      porcentaje_asistencia: s.total > 0 ? Math.round(((s.presente + s.justificado) / s.total) * 100) : 100
+    const [results]: any = await sequelize.query(query, { replacements });
+
+    const stats = results.map((s: any) => ({
+      id_estudiante: s.id_estudiante,
+      nombre: s.nombre,
+      cedula: s.cedula,
+      seccion: s.seccion,
+      presente: Number(s.presente),
+      ausente: Number(s.ausente),
+      justificado: Number(s.justificado),
+      total: Number(s.total),
+      porcentaje_asistencia: Number(s.total) > 0
+        ? Math.round(((Number(s.presente) + Number(s.justificado)) / Number(s.total)) * 100)
+        : 100
     }));
 
     res.json({ data: stats });
   }),
 
-  // Sincronizar inasistencias en calificaciones
   syncInasistencias: wrapAsync(async (req: Request, res: Response) => {
     const { id_matricula, id_periodo } = req.body;
 
@@ -158,31 +245,91 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
-    // Contar ausencias (no justificadas) del estudiante en el período
-    const ausenciasCount = await AsistenciaEstudiante.count({
-      where: {
-        id_matricula: Number(id_matricula),
-        estatus: 'Ausente'
-      },
-      include: [{
-        model: Matricula,
-        as: 'matricula',
-        where: { id_periodo: periodo.id_periodo },
-        attributes: []
-      }]
+    await sequelize.transaction(async (t) => {
+      const ausenciasCount = await AsistenciaEstudiante.count({
+        where: {
+          id_matricula: Number(id_matricula),
+          estatus: 'Ausente'
+        },
+        include: [{
+          model: Matricula,
+          as: 'matricula',
+          where: { id_periodo: periodo.id_periodo },
+          attributes: []
+        }],
+        transaction: t,
+      });
+
+      await Calificacion.update(
+        { inasistencias_asignatura: ausenciasCount },
+        { where: { id_matricula: Number(id_matricula) }, transaction: t }
+      );
     });
 
-    // Actualizar todas las calificaciones del estudiante en este período
-    await Calificacion.update(
-      { inasistencias_asignatura: ausenciasCount },
-      { where: { id_matricula: Number(id_matricula) } }
-    );
-
-    res.json({ data: { id_matricula: Number(id_matricula), inasistencias: ausenciasCount } });
+    res.json({ data: { id_matricula: Number(id_matricula) } });
   }),
 
-  // Actualizar asistencia
-  actualizar: wrapAsync(async (req: Request, res: Response) => {
+  syncInasistenciasBatch: wrapAsync(async (req: Request, res: Response) => {
+    const { ids_matricula, id_periodo } = req.body;
+
+    if (!Array.isArray(ids_matricula) || ids_matricula.length === 0) {
+      res.status(400).json({ error: { message: 'ids_matricula debe ser un array no vacío' } });
+      return;
+    }
+
+    const periodoId = Number(id_periodo) || null;
+    let periodo: any = null;
+    if (!periodoId) {
+      periodo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+    } else {
+      periodo = await PeriodoEscolar.findByPk(periodoId);
+    }
+
+    if (!periodo) {
+      res.status(400).json({ error: { message: 'No se encontró un período activo' } });
+      return;
+    }
+
+    const ids = ids_matricula.map(Number);
+
+    const results = await sequelize.transaction(async (t) => {
+      const counts = await AsistenciaEstudiante.findAll({
+        attributes: ['id_matricula', [fn('COUNT', col('AsistenciaEstudiante.id_asistencia_est')), 'total_ausencias']],
+        where: {
+          id_matricula: { [Op.in]: ids },
+          estatus: 'Ausente'
+        },
+        include: [{
+          model: Matricula,
+          as: 'matricula',
+          where: { id_periodo: periodo.id_periodo },
+          attributes: []
+        }],
+        group: ['id_matricula'],
+        transaction: t,
+        raw: true,
+      });
+
+      const countMap: Record<number, number> = {};
+      for (const r of counts as any[]) {
+        countMap[r.id_matricula] = Number(r.total_ausencias);
+      }
+
+      for (const id of ids) {
+        const ausencias = countMap[id] || 0;
+        await Calificacion.update(
+          { inasistencias_asignatura: ausencias },
+          { where: { id_matricula: id }, transaction: t }
+        );
+      }
+
+      return ids.map(id => ({ id_matricula: id, inasistencias: countMap[id] || 0 }));
+    });
+
+    res.json({ data: results, meta: { total: results.length } });
+  }),
+
+  actualizar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const record = await AsistenciaEstudiante.findByPk(id);
     if (!record) {
@@ -195,11 +342,16 @@ export const AsistenciaEstudianteController = {
       if (req.body[field] !== undefined) payload[field] = req.body[field];
     }
 
-    if (payload.estatus && !ALLOWED_STATUSES.includes(payload.estatus)) {
-      res.status(400).json({ error: { message: 'estatus debe ser: Presente, Ausente o Justificado' } });
+    if (payload.estatus && !ASISTENCIA_ESTUDIANTE_STATUS.includes(payload.estatus)) {
+      res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}` } });
       return;
     }
 
+    if (payload.observacion === '') {
+      payload.observacion = null;
+    }
+
+    payload.id_usuario_modifica = req.user!.idUsuario;
     await record.update(payload);
     res.json(record);
   })

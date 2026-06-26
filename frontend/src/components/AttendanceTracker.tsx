@@ -18,7 +18,7 @@ interface AttendanceTrackerProps {
   onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', observacion?: string) => void;
   onAddTeacherLog: (log: TeacherScheduleLog) => void;
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
-  onSyncInasistencias?: (matriculaId: string) => void;
+  onSyncInasistencias?: (ids_matricula: string[]) => void;
 }
 
 export default function AttendanceTracker({
@@ -55,32 +55,25 @@ export default function AttendanceTracker({
   const activeTeachers = users.filter(u => u.role === 'docente');
 
   const handleTeacherClockIn = () => {
-    // Check if already checked in today
     const exists = teacherLogs.find(l => l.teacherId === selectedTeacherId && l.date === selectedDate);
     if (exists) {
       alert("El docente elegido ya posee un registro de entrada cargado para la fecha simulada asignada.");
       return;
     }
 
-    // Capture hours (simulation current hour is ~07:00 or late)
-    const nowHour = new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5); // "07:15"
-    const parsedHour = parseInt(nowHour.split(':')[0]);
-    const parsedMin = parseInt(nowHour.split(':')[1]);
-    
-    // In Venezuela high schools, teachers usually sign in before 07:00 AM. Anything after 07:05 is Late.
-    const status = (parsedHour < 7 || (parsedHour === 7 && parsedMin <= 5)) ? 'OnTime' : 'Late';
+    const nowHour = new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
 
     const newLog: TeacherScheduleLog = {
       id: 'log-' + Date.now(),
       teacherId: selectedTeacherId,
       date: selectedDate,
       clockInTime: nowHour || '07:00',
-      status
+      status: 'OnTime'
     };
 
     onAddTeacherLog(newLog);
     const teacherName = users.find(u => u.id === selectedTeacherId)?.name || "Docente";
-    setClockSuccessMsg(`Entrada registrada para ${teacherName} a las ${newLog.clockInTime} (${newLog.status === 'OnTime' ? 'A Tiempo' : 'Con Retardo'}).`);
+    setClockSuccessMsg(`Entrada registrada para ${teacherName} a las ${newLog.clockInTime}.`);
     setTimeout(() => setClockSuccessMsg(''), 5000);
   };
 
@@ -156,12 +149,17 @@ export default function AttendanceTracker({
             <button
               onClick={() => {
                 if (window.confirm('¿Sincronizar inasistencias de todos los estudiantes visibles en las calificaciones?')) {
-                  sectionStudents.forEach(s => {
-                    const studentAtt = attendance.filter(a => a.studentId === s.id);
-                    if (studentAtt.length > 0) {
-                      onSyncInasistencias?.(s.id);
-                    }
-                  });
+                  const ids_matricula = sectionStudents
+                    .map(s => {
+                      const att = attendance.find(a => a.studentId === s.id);
+                      return att?.matriculaId;
+                    })
+                    .filter((id): id is string => !!id);
+                  if (ids_matricula.length > 0) {
+                    onSyncInasistencias?.(ids_matricula);
+                  } else {
+                    alert('No hay registros de asistencia para sincronizar. Marque asistencia primero.');
+                  }
                 }
               }}
               className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer"

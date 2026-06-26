@@ -101,6 +101,7 @@ export interface Grade {
 export interface Attendance {
   id: string;
   studentId: string;
+  matriculaId?: string;
   date: string;         // YYYY-MM-DD
   academicYear: AcademicYear;
   section: string;

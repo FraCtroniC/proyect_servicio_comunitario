@@ -13,7 +13,8 @@
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/scripts/seed.ts",
-    "seed:phase2": "tsx src/scripts/seed-phase2.ts"
+    "seed:phase2": "tsx src/scripts/seed-phase2.ts",
+    "migrate": "tsx scripts/run-migrations.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

@@ -126,6 +126,12 @@ export default function App() {
     sessionStorage.removeItem('frontend_new_user');
   };
 
+  const daysAgo = (days: number): string => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().split('T')[0];
+  };
+
   useEffect(() => {
     if (isLoggedIn) {
       const loadInitialData = async () => {
@@ -165,8 +171,8 @@ export default function App() {
             api.get<any[]>('/api/representantes').catch(() => []),
             api.get<any[]>('/api/dias').catch(() => []),
             api.get<any[]>('/api/bloques').catch(() => []),
-            api.get<any[]>('/api/asistencias').catch(() => []),
-            api.get<any[]>('/api/asistencias-estudiantes').catch(() => []),
+            api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
+            api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/matriculas').catch(() => ({ data: [] }))
           ]);
           
@@ -227,6 +233,7 @@ export default function App() {
             setAttendance(asistenciasEstudiantesData.map((a: any) => ({
               id: String(a.id_asistencia_est),
               studentId: String(a.matricula?.id_estudiante || ''),
+              matriculaId: String(a.id_matricula),
               date: a.fecha,
               academicYear: a.matricula?.seccion?.id_grado || 1,
               section: a.matricula?.seccion?.letra || 'A',
@@ -528,21 +535,29 @@ export default function App() {
     }
   };
 
+  const resolveMatriculaId = (studentId: string, year: number, section: string): number | null => {
+    const activePeriod = periods.find(p => p.status === 'Activo');
+    const matchingSection = sections.find(s => s.grade === year && s.letter === section);
+    if (!activePeriod || !matchingSection) return null;
+
+    const numStudentId = Number(studentId.replace(/\D/g, '')) || Number(studentId);
+    const matricula = matriculasCache.find(
+      m => m.id_estudiante === numStudentId
+        && m.id_periodo === Number(activePeriod.id)
+        && m.id_seccion === Number(matchingSection.id)
+    );
+    return matricula ? matricula.id_matricula : null;
+  };
+
   const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string) => {
     try {
       const dbStatus = status === 'P' ? 'Presente' : (status === 'A' ? 'Ausente' : 'Justificado');
-      const activePeriod = periods.find(p => p.status === 'Activo');
-      const matchingSection = sections.find(s => s.grade === year && s.letter === section);
 
-      let matriculaId = null;
-      if (activePeriod && matchingSection && matriculasCache.length > 0) {
-        const numStudentId = Number(studentId.replace(/\D/g, '')) || Number(studentId);
-        const matricula = matriculasCache.find(
-          m => m.id_estudiante === numStudentId
-            && m.id_periodo === Number(activePeriod.id)
-            && m.id_seccion === Number(matchingSection.id)
-        );
-        if (matricula) matriculaId = matricula.id_matricula;
+      // Try to get matriculaId from existing record first, then resolve from cache
+      const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date);
+      let matriculaId: number | null = existingAtt?.matriculaId ? Number(existingAtt.matriculaId) : null;
+      if (!matriculaId) {
+        matriculaId = resolveMatriculaId(studentId, year, section);
       }
 
       if (!matriculaId) {
@@ -551,14 +566,14 @@ export default function App() {
         return;
       }
 
-      const payload = {
+      const payload: any = {
         id_matricula: matriculaId,
         fecha: date,
         estatus: dbStatus,
-        observacion: observacion || ''
       };
-
-      const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date);
+      if (observacion) {
+        payload.observacion = observacion;
+      }
 
       if (existingAtt && existingAtt.id.startsWith('att-')) {
         const created = await api.post<any>('/api/asistencias-estudiantes', payload);
@@ -569,14 +584,14 @@ export default function App() {
             copy[idx] = { ...copy[idx], status, id: String(created.id_asistencia_est || created.id) };
             return copy;
           }
-          return [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }];
+          return [...p, { id: String(created.id_asistencia_est || created.id), studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }];
         });
       } else if (existingAtt) {
-        await api.patch(`/api/asistencias-estudiantes/${existingAtt.id}`, { estatus: dbStatus, observacion: observacion || '' });
-        setAttendance(p => p.map(a => a.id === existingAtt.id ? { ...a, status } : a));
+        await api.patch(`/api/asistencias-estudiantes/${existingAtt.id}`, { estatus: dbStatus, ...(observacion ? { observacion } : {}) });
+        setAttendance(p => p.map(a => a.id === existingAtt.id ? { ...a, status, matriculaId: String(matriculaId) } : a));
       } else {
         const created = await api.post<any>('/api/asistencias-estudiantes', payload);
-        setAttendance(p => [...p, { id: String(created.id_asistencia_est || created.id), studentId, date, academicYear: year as any, section, status }]);
+        setAttendance(p => [...p, { id: String(created.id_asistencia_est || created.id), studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }]);
       }
     } catch (e: any) {
       console.error('Error al guardar asistencia estudiantil', e);
@@ -592,21 +607,22 @@ export default function App() {
         id_docente: idDocente,
         fecha: log.date,
         hora_entrada: log.clockInTime,
-        estatus: log.status === 'OnTime' ? 'Puntual' : 'Retardo'
       };
       const created = await api.post<any>('/api/asistencias', payload);
-      setTeacherLogs(p => [{ ...log, id: String(created.id_asistencia || created.id) }, ...p]);
+      const serverStatus = created?.data?.estatus === 'Puntual' ? 'OnTime' : 'Late';
+      setTeacherLogs(p => [{ ...log, id: String(created.id_asistencia || created.id), status: serverStatus }, ...p]);
     } catch (e) {
       console.error(e);
       setTeacherLogs(p => [log, ...p]);
     }
   };
 
-  const handleSyncInasistencias = async (matriculaId: string) => {
+  const handleSyncInasistencias = async (ids_matricula: string[]) => {
+    if (ids_matricula.length === 0) return;
     try {
-      const result = await api.post<any>(`/api/asistencias-estudiantes/sync-inasistencias`, { id_matricula: matriculaId });
+      const result = await api.post<any>(`/api/asistencias-estudiantes/sync-inasistencias-batch`, { ids_matricula });
       console.log('Inasistencias sincronizadas:', result);
-      alert('Inasistencias sincronizadas correctamente en las calificaciones.');
+      alert(`Inasistencias sincronizadas correctamente para ${ids_matricula.length} estudiante(s).`);
     } catch (e: any) {
       console.error('Error al sincronizar inasistencias', e);
       alert('Error al sincronizar inasistencias: ' + (e?.response?.data?.error?.message || e.message));
@@ -619,8 +635,10 @@ export default function App() {
       if (id) {
         await api.patch(`/api/asistencias/${id}`, { hora_salida: clockOut });
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error('Error al registrar salida:', e);
+      alert('Error al registrar salida: ' + (e?.response?.data?.error?.message || e.message));
+      return;
     }
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
   };
