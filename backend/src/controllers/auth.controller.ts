@@ -111,7 +111,7 @@ export const AuthController = {
         rol: usuario.rol ? (usuario.rol as any).nombre : null,
       },
       environment.jwtSecret,
-      { expiresIn: '8h' }
+      { expiresIn: '2h' }
     );
 
     // Actualizar último acceso

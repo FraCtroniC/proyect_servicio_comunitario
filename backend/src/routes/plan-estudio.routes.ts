@@ -8,5 +8,5 @@ export const planEstudioRoutes = Router();
 planEstudioRoutes.get('/', PlanEstudioController.listar);
 planEstudioRoutes.get('/:id', PlanEstudioController.obtenerPorId);
 planEstudioRoutes.post('/', authorize(1, 3), validateCrearPlanEstudio, PlanEstudioController.crear);
-planEstudioRoutes.patch('/:id', PlanEstudioController.actualizar);
+planEstudioRoutes.patch('/:id', authorize(1, 3), PlanEstudioController.actualizar);
 planEstudioRoutes.delete('/:id', authorize(1), PlanEstudioController.eliminar);

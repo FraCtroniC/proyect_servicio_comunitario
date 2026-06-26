@@ -3,7 +3,6 @@ export interface UsuarioDto {
   idRol: number;
   idDocente: number | null;
   username: string;
-  passwordHash: string;
   estatus: string | null;
   correo: string | null;
   ultimoAcceso: Date | null;

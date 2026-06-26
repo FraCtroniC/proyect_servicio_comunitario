@@ -8,5 +8,5 @@ export const matriculaRoutes = Router();
 matriculaRoutes.get('/', MatriculaController.listar);
 matriculaRoutes.get('/:id', MatriculaController.obtenerPorId);
 matriculaRoutes.post('/', authorize(1, 3), validateCrearMatricula, MatriculaController.crear);
-matriculaRoutes.patch('/:id', MatriculaController.actualizar);
+matriculaRoutes.patch('/:id', authorize(1, 3), MatriculaController.actualizar);
 matriculaRoutes.delete('/:id', authorize(1), MatriculaController.eliminar);

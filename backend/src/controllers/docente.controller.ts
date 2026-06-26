@@ -4,6 +4,17 @@ import { Docente } from '../models/Docente';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { NotFoundError } from '../shared/errors';
 
+const ALLOWED_CREATE_FIELDS = ['cedula_docente', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'especialidad', 'telefono', 'correo'];
+const ALLOWED_UPDATE_FIELDS = ['cedula_docente', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'especialidad', 'telefono', 'correo'];
+
+function pick(body: any, fields: string[]): any {
+  const result: any = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) result[field] = body[field];
+  }
+  return result;
+}
+
 export const DocenteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
     const result = await Docente.findAll();
@@ -21,7 +32,7 @@ export const DocenteController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const result = await Docente.create(req.body);
+    const result = await Docente.create(pick(req.body, ALLOWED_CREATE_FIELDS));
     res.status(201).json({ data: result });
   }),
 
@@ -32,7 +43,7 @@ export const DocenteController = {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    await record.update(req.body);
+    await record.update(pick(req.body, ALLOWED_UPDATE_FIELDS));
     res.json({ data: record });
   }),
 

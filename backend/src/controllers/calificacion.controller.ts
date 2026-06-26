@@ -2,6 +2,17 @@ import { Request, Response } from 'express';
 import { Calificacion, PlanEstudio, Asignatura, EscalaCalificacion, Matricula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
+const ALLOWED_CREATE_FIELDS = ['id_matricula', 'id_plan', 'id_momento', 'id_escala', 'inasistencias_asignatura'];
+const ALLOWED_UPDATE_FIELDS = ['id_escala', 'inasistencias_asignatura'];
+
+function pick(body: any, fields: string[]): any {
+  const result: any = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) result[field] = body[field];
+  }
+  return result;
+}
+
 export const CalificacionController = {
   listar: wrapAsync(async (req: Request, res: Response) => {
     const where: any = {};
@@ -74,7 +85,7 @@ export const CalificacionController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const result = await Calificacion.create(req.body);
+    const result = await Calificacion.create(pick(req.body, ALLOWED_CREATE_FIELDS));
     res.status(201).json({ data: result });
   }),
 
@@ -85,7 +96,7 @@ export const CalificacionController = {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    await record.update(req.body);
+    await record.update(pick(req.body, ALLOWED_UPDATE_FIELDS));
     res.json({ data: record });
   }),
 

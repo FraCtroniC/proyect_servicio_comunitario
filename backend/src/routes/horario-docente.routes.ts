@@ -7,5 +7,5 @@ export const horarioDocenteRoutes = Router();
 horarioDocenteRoutes.get('/', HorarioDocenteController.listar);
 horarioDocenteRoutes.get('/:id', HorarioDocenteController.obtenerPorId);
 horarioDocenteRoutes.post('/', authorize(1, 3), HorarioDocenteController.crear);
-horarioDocenteRoutes.patch('/:id', HorarioDocenteController.actualizar);
+horarioDocenteRoutes.patch('/:id', authorize(1, 3), HorarioDocenteController.actualizar);
 horarioDocenteRoutes.delete('/:id', authorize(1), HorarioDocenteController.eliminar);

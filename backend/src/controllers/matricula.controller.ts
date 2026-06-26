@@ -2,6 +2,17 @@ import { Request, Response } from 'express';
 import { Matricula, Estudiante } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
+const ALLOWED_CREATE_FIELDS = ['id_estudiante', 'id_seccion', 'id_periodo', 'numero_lista'];
+const ALLOWED_UPDATE_FIELDS = ['numero_lista'];
+
+function pick(body: any, fields: string[]): any {
+  const result: any = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) result[field] = body[field];
+  }
+  return result;
+}
+
 export const MatriculaController = {
   listar: wrapAsync(async (req: Request, res: Response) => {
     const where: any = {};
@@ -26,7 +37,7 @@ export const MatriculaController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const result = await Matricula.create(req.body);
+    const result = await Matricula.create(pick(req.body, ALLOWED_CREATE_FIELDS));
     res.status(201).json({ data: result });
   }),
 
@@ -37,7 +48,7 @@ export const MatriculaController = {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    await record.update(req.body);
+    await record.update(pick(req.body, ALLOWED_UPDATE_FIELDS));
     res.json({ data: record });
   }),
 

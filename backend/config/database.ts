@@ -22,7 +22,7 @@ export const databaseConfig: Record<string, Options> = {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false,
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
       },
     },
     pool: {

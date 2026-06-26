@@ -8,5 +8,5 @@ export const estudianteRoutes = Router();
 estudianteRoutes.get('/', EstudianteController.listar);
 estudianteRoutes.get('/:id', EstudianteController.obtenerPorId);
 estudianteRoutes.post('/', authorize(1, 3), validateCrearEstudiante, EstudianteController.crear);
-estudianteRoutes.patch('/:id', EstudianteController.actualizar);
+estudianteRoutes.patch('/:id', authorize(1, 3), EstudianteController.actualizar);
 estudianteRoutes.delete('/:id', authorize(1), EstudianteController.eliminar);

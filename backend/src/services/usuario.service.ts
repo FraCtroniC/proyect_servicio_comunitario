@@ -11,7 +11,6 @@ function mapModelToDto(model: UsuarioModel): UsuarioDto {
     idRol: model.id_rol,
     idDocente: model.id_docente,
     username: model.username,
-    passwordHash: model.password_hash,
     estatus: model.estatus,
     correo: model.correo,
     ultimoAcceso: model.ultimo_acceso,
@@ -24,6 +23,7 @@ function mapModelToDto(model: UsuarioModel): UsuarioDto {
 export const UsuarioService = {
   async listar(): Promise<UsuarioDto[]> {
     const usuarios = await UsuarioModel.findAll({
+      attributes: { exclude: ['password_hash'] },
       order: [['id_usuario', 'ASC']],
       include: [
         { model: Rol, as: 'rol' },
@@ -33,7 +33,9 @@ export const UsuarioService = {
   },
 
   async obtenerPorId(id: number): Promise<UsuarioDto> {
-    const usuario = await UsuarioModel.findByPk(id);
+    const usuario = await UsuarioModel.findByPk(id, {
+      attributes: { exclude: ['password_hash'] },
+    });
     if (!usuario) {
       throw new NotFoundError(`Usuario con id ${id} no encontrado`);
     }

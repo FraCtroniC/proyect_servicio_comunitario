@@ -7,5 +7,5 @@ export const justificacionRoutes = Router();
 justificacionRoutes.get('/', JustificacionController.listar);
 justificacionRoutes.get('/:id', JustificacionController.obtenerPorId);
 justificacionRoutes.post('/', authorize(1, 3, 4), JustificacionController.crear);
-justificacionRoutes.patch('/:id', JustificacionController.actualizar);
+justificacionRoutes.patch('/:id', authorize(1, 3, 4), JustificacionController.actualizar);
 justificacionRoutes.delete('/:id', authorize(1), JustificacionController.eliminar);

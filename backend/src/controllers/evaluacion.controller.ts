@@ -11,7 +11,6 @@ export const EvaluacionController = {
 
   // Guardar plan de evaluación (sobrescribe cortes anteriores para ese plan/seccion/momento)
   upsertPlan: wrapAsync(async (req: Request, res: Response) => {
-    console.log('[upsertPlan] req.body:', JSON.stringify(req.body, null, 2));
     const { id_plan, id_seccion, id_momento, evaluaciones } = req.body;
     
     if (!id_plan || !id_seccion || !id_momento || !Array.isArray(evaluaciones)) {
@@ -98,7 +97,6 @@ export const EvaluacionController = {
 
   // Guardar notas parciales en bloque
   upsertNotas: wrapAsync(async (req: Request, res: Response) => {
-    console.log('[upsertNotas] req.body:', JSON.stringify(req.body, null, 2));
     const { notas_parciales } = req.body;
     if (!Array.isArray(notas_parciales)) {
       res.status(400).json({ error: { message: 'notas_parciales debe ser un arreglo' } });

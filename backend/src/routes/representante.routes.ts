@@ -8,5 +8,5 @@ export const representanteRoutes = Router();
 representanteRoutes.get('/', RepresentanteController.listar);
 representanteRoutes.get('/:id', RepresentanteController.obtenerPorId);
 representanteRoutes.post('/', authorize(1, 3), validateCrearRepresentante, RepresentanteController.crear);
-representanteRoutes.patch('/:id', RepresentanteController.actualizar);
+representanteRoutes.patch('/:id', authorize(1, 3), RepresentanteController.actualizar);
 representanteRoutes.delete('/:id', authorize(1), RepresentanteController.eliminar);

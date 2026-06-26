@@ -11,6 +11,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export async function sendPasswordResetEmail(
   destinatario: string,
   username: string,
@@ -35,11 +44,11 @@ export async function sendPasswordResetEmail(
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
         <h2 style="color: #1a237e; margin-bottom: 8px;">Recuperación de contraseña</h2>
-        <p style="color: #333;">Hola <strong>${username}</strong>,</p>
+        <p style="color: #333;">Hola <strong>${escapeHtml(username)}</strong>,</p>
         <p style="color: #333;">Tu código de recuperación es:</p>
         <div style="text-align: center; margin: 24px 0;">
           <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1a237e; background: #e8eaf6; padding: 12px 24px; border-radius: 6px;">
-            ${code}
+            ${escapeHtml(code)}
           </span>
         </div>
         <p style="color: #666; font-size: 14px;">Este código vence en <strong>${expiresInMinutes} minutos</strong>.</p>
@@ -65,9 +74,9 @@ export async function sendAcademicAlert(
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
         <h2 style="color: #c62828; margin-bottom: 8px;">Notificación de Control de Estudios</h2>
         <p style="color: #333;">Estimado representante,</p>
-        <p style="color: #333;">Le informamos que el estudiante <strong>${studentName}</strong> presenta una alerta en su rendimiento académico.</p>
-        <p style="color: #333;"><strong>Detalle:</strong> ${subjectName}</p>
-        <p style="color: #333;"><strong>Observaciones:</strong> ${notes}</p>
+        <p style="color: #333;">Le informamos que el estudiante <strong>${escapeHtml(studentName)}</strong> presenta una alerta en su rendimiento académico.</p>
+        <p style="color: #333;"><strong>Detalle:</strong> ${escapeHtml(subjectName)}</p>
+        <p style="color: #333;"><strong>Observaciones:</strong> ${escapeHtml(notes)}</p>
         <br/>
         <p style="color: #333;">Le sugerimos presentarse a la coordinación académica a la brevedad posible.</p>
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin-top: 24px;" />

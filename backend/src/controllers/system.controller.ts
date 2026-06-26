@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { environment } from '../../config/environment';
@@ -18,9 +18,7 @@ export const SystemController = {
       
       // Execute pg_dump
       // We assume pg_dump is available in the system PATH
-      const command = `pg_dump "${dbUrl}" -f "${backupPath}"`;
-
-      exec(command, (error, stdout, stderr) => {
+      execFile('pg_dump', [dbUrl, '-f', backupPath], (error, stdout, stderr) => {
         if (error) {
           console.error(`Backup error: ${error.message}`);
           return res.status(500).json({ message: 'Error generating backup.' });
