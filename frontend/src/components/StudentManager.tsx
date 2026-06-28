@@ -19,9 +19,11 @@ interface StudentManagerProps {
   currentUserRole: UserRole;
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
+  onUpdateStudentProfile?: (studentId: string, studentData: any) => Promise<void>;
+  onNavigateToPending?: (studentId: string) => void;
 }
 
-export default function StudentManager({ students, sections, classrooms, currentUserRole, onAddStudent, onUpdateStudentStatus }: StudentManagerProps) {
+export default function StudentManager({ students, sections, classrooms, currentUserRole, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending }: StudentManagerProps) {
   // Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(5); // Default showing 5th year for rich showcase
   const [selectedSection, setSelectedSection] = useState<string>('A');
@@ -58,6 +60,8 @@ export default function StudentManager({ students, sections, classrooms, current
 
   // Tab & Modal states
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create'|'edit'>('create');
+  const [editingStudentId, setEditingStudentId] = useState('');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [pendingSubjects, setPendingSubjects] = useState<MateriaPendiente[]>([]);
@@ -71,6 +75,91 @@ export default function StudentManager({ students, sections, classrooms, current
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleOpenCreate = () => {
+    setModalMode('create');
+    setEditingStudentId('');
+    setFirstName('');
+    setSecondName('');
+    setLastName('');
+    setSecondLastName('');
+    setCedula('');
+    setCedulaType('V');
+    setBirthYear('2009-05-15');
+    setGender('');
+    setEstado('');
+    setMunicipio('');
+    setBirthPlace('');
+    setEnrollYear(5);
+    setEnrollSection('A');
+    setRepFirstName('');
+    setRepSecondName('');
+    setRepLastName('');
+    setRepSecondLastName('');
+    setRepCedula('');
+    setRepCedulaType('V');
+    setRepPhone('');
+    setRepEmail('');
+    setRepAddress('');
+    setErrors({});
+    setFormError('');
+    setFormSuccess('');
+    setIsStudentModalOpen(true);
+  };
+
+  const handleOpenEdit = (s: Student) => {
+    setModalMode('edit');
+    setEditingStudentId(s.id);
+    
+    // Parse student names
+    const sNames = s.firstName.split(' ');
+    const lNames = s.lastName.split(' ');
+    setFirstName(sNames[0] || '');
+    setSecondName(sNames.slice(1).join(' ') || '');
+    setLastName(lNames[0] || '');
+    setSecondLastName(lNames.slice(1).join(' ') || '');
+    
+    // Parse Cedula
+    const parts = s.cedula.split('-');
+    if (parts.length > 1) {
+      setCedulaType(parts[0]);
+      setCedula(parts[1]);
+    } else {
+      setCedulaType('V');
+      setCedula(s.cedula);
+    }
+    
+    setBirthYear(s.dateOfBirth);
+    setGender(s.gender);
+    setEstado(s.state || '');
+    setMunicipio(s.municipality || '');
+    setBirthPlace(s.birthPlace || '');
+    setEnrollYear(s.academicYear);
+    setEnrollSection(s.section);
+    
+    setRepFirstName(s.repFirstName || '');
+    setRepSecondName(s.repSecondName || '');
+    setRepLastName(s.repLastName || '');
+    setRepSecondLastName(s.repSecondLastName || '');
+    
+    const repParts = s.representativeCedula.split('-');
+    if (repParts.length > 1) {
+      setRepCedulaType(repParts[0]);
+      setRepCedula(repParts[1]);
+    } else {
+      setRepCedulaType('V');
+      setRepCedula(s.representativeCedula);
+    }
+    
+    setRepPhone(s.representativePhone);
+    setRepEmail(s.representativeEmail || '');
+    setRepAddress(s.representativeAddress || '');
+    
+    setErrors({});
+    setFormError('');
+    setFormSuccess('');
+    setIsStudentModalOpen(true);
   };
 
   // Filter students array
@@ -158,7 +247,7 @@ export default function StudentManager({ students, sections, classrooms, current
     }, 100);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (Object.keys(errors).length > 0) {
       setFormError('Por favor corrija los errores indicados antes de continuar.');
@@ -167,17 +256,19 @@ export default function StudentManager({ students, sections, classrooms, current
       return;
     }
 
-    // Capacity Check
-    const targetSection = sections.find(s => s.grade === enrollYear && s.letter === enrollSection);
-    if (targetSection && classrooms) {
-      const aula = classrooms.find(c => c.id === targetSection.homeClassroomId);
-      if (aula) {
-        const enrolledCount = students.filter(s => s.academicYear === enrollYear && s.section === enrollSection).length;
-        if (enrolledCount >= aula.capacity) {
-           setFormError(`La Sección "${enrollSection}" de ${enrollYear}° Año ya alcanzó el límite de capacidad de su Aula Base (${aula.name}: ${aula.capacity} pupitres).`);
-           setFormSuccess('');
-           scrollToError();
-           return;
+    // Capacity Check (only on create)
+    if (modalMode === 'create') {
+      const targetSection = sections.find(s => s.grade === enrollYear && s.letter === enrollSection);
+      if (targetSection && classrooms) {
+        const aula = classrooms.find(c => c.id === targetSection.homeClassroomId);
+        if (aula) {
+          const enrolledCount = students.filter(s => s.academicYear === enrollYear && s.section === enrollSection).length;
+          if (enrolledCount >= aula.capacity) {
+             setFormError(`La Sección "${enrollSection}" de ${enrollYear}° Año ya alcanzó el límite de capacidad de su Aula Base (${aula.name}: ${aula.capacity} pupitres).`);
+             setFormSuccess('');
+             scrollToError();
+             return;
+          }
         }
       }
     }
@@ -199,9 +290,16 @@ export default function StudentManager({ students, sections, classrooms, current
 
     let cleanCedula = `${cedulaType}-${cedula.trim()}`;
 
-    if (students.some(s => s.cedula === cleanCedula)) {
+    if (modalMode === 'create' && students.some(s => s.cedula === cleanCedula)) {
       setErrors(prev => ({ ...prev, cedula: 'Esta cédula ya está registrada.' }));
       setFormError('El estudiante ya está registrado.');
+      scrollToError();
+      return;
+    }
+    
+    if (modalMode === 'edit' && students.some(s => s.cedula === cleanCedula && s.id !== editingStudentId)) {
+      setErrors(prev => ({ ...prev, cedula: 'Esta cédula ya está registrada por otro alumno.' }));
+      setFormError('La cédula ingresada ya está en uso.');
       scrollToError();
       return;
     }
@@ -232,30 +330,41 @@ export default function StudentManager({ students, sections, classrooms, current
       repSecondLastName: repSecondLastName.trim() || undefined
     };
 
-    onAddStudent(newStudent);
-    setFormSuccess(`Estudiante ${newStudent.firstName} ${newStudent.lastName} matriculado correctamente en ${newStudent.academicYear}° Año Secc. ${newStudent.section}.`);
-    setFormError('');
-
-    // Clear forms
-    setFirstName('');
-    setSecondName('');
-    setLastName('');
-    setSecondLastName('');
-    setCedula('');
-    setRepFirstName('');
-    setRepSecondName('');
-    setRepLastName('');
-    setRepSecondLastName('');
-    setRepCedula('');
-    setRepPhone('');
-    setRepEmail('');
-    setRepAddress('');
-    setGender('');
-    setBirthPlace('');
-    setMunicipio('');
-    setEstado('');
-    setErrors({});
-    setIsStudentModalOpen(false);
+    if (modalMode === 'create') {
+      onAddStudent(newStudent);
+      setFormSuccess(`Estudiante ${newStudent.firstName} ${newStudent.lastName} matriculado correctamente en ${newStudent.academicYear}° Año Secc. ${newStudent.section}.`);
+      
+      // Clear forms
+      setFirstName('');
+      setSecondName('');
+      setLastName('');
+      setSecondLastName('');
+      setCedula('');
+      setRepFirstName('');
+      setRepSecondName('');
+      setRepLastName('');
+      setRepSecondLastName('');
+      setRepCedula('');
+      setRepPhone('');
+      setRepEmail('');
+      setRepAddress('');
+      setGender('');
+      setBirthPlace('');
+      setMunicipio('');
+      setEstado('');
+      setErrors({});
+    } else {
+      if (onUpdateStudentProfile) {
+        try {
+          await onUpdateStudentProfile(editingStudentId, newStudent);
+          setFormSuccess('Datos del estudiante actualizados exitosamente.');
+          setTimeout(() => setIsStudentModalOpen(false), 1500);
+        } catch (err: any) {
+          setFormError(err.message || 'Error al actualizar el estudiante');
+          scrollToError();
+        }
+      }
+    }
   };
 
   const getStatusStyle = (status: string) => {
@@ -352,7 +461,7 @@ export default function StudentManager({ students, sections, classrooms, current
 
             {['super_admin', 'control_estudios'].includes(currentUserRole) && (
               <button
-                onClick={() => setIsStudentModalOpen(true)}
+                onClick={handleOpenCreate}
                 className="md:ml-auto flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
               >
                 <UserPlus className="w-4 h-4" />
@@ -396,7 +505,14 @@ export default function StudentManager({ students, sections, classrooms, current
                       {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                         <td className="py-3 text-right flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleOpenProfile(s)}
+                            onClick={() => handleOpenEdit(s)}
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                            title="Editar Registro"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                          </button>
+                          <button
+                            onClick={() => onNavigateToPending ? onNavigateToPending(s.id) : handleOpenProfile(s)}
                             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                             title="Materias Pendientes"
                           >
@@ -436,8 +552,12 @@ export default function StudentManager({ students, sections, classrooms, current
       </div>
 
       {/* Modal Estudiantes */}
-      <Modal isOpen={isStudentModalOpen} onClose={() => setIsStudentModalOpen(false)} title="Matricular Nuevo Alumno">
-        <form id="enrollment-form" onSubmit={handleRegister} className="space-y-4">
+      <Modal 
+        isOpen={isStudentModalOpen} 
+        onClose={() => setIsStudentModalOpen(false)} 
+        title={modalMode === 'create' ? "Inscripción y Matriculación Inicial" : "Editar Registro del Estudiante"}
+      >
+        <form onSubmit={handleRegister} className="space-y-6">
           {formError && (
             <div id="enrollment-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-sm">
               {formError}
@@ -742,7 +862,7 @@ export default function StudentManager({ students, sections, classrooms, current
             type="submit" 
             className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer text-center"
           >
-            Inscribir y Matricular
+            {modalMode === 'create' ? 'Inscribir y Matricular' : 'Guardar Cambios'}
           </button>
         </form>
       </Modal>

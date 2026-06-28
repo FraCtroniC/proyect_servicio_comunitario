@@ -4,11 +4,12 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash } from 'lucide-react';
-import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole } from '../types';
+import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash, ScrollText, Download, Search } from 'lucide-react';
+import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole, StudyPlanItem, SchoolPeriod, Section } from '../types';
 import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../utils/gradeCalculations';
 import { generateBoletinPDF } from '../utils/pdfGenerator';
 import { exportGradesToExcel } from '../utils/excelGenerator';
+import { api } from '../services/api';
 
 interface GradeManagerProps {
   students: Student[];
@@ -17,6 +18,9 @@ interface GradeManagerProps {
   grades: Grade[];
   auditLogs: any[];
   currentUserRole: UserRole;
+  studyPlans: StudyPlanItem[];
+  periods: SchoolPeriod[];
+  sections: Section[];
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
   onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => Promise<void>;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
@@ -29,12 +33,15 @@ export default function GradeManager({
   grades,
   auditLogs,
   currentUserRole,
+  studyPlans,
+  periods,
+  sections,
   onUpdateGrade,
   onSaveGrades,
   onUpdateEvaluationPlan
 }: GradeManagerProps) {
   // Navigation inside Grade Module
-  const [activeSubTab, setActiveSubTab] = useState<'carga' | 'sabana' | 'boletin'>('carga');
+  const [activeSubTab, setActiveSubTab] = useState<'carga' | 'sabana' | 'boletin' | 'certificadas'>('carga');
 
   // Filters for Carga / Sábana
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
@@ -70,6 +77,153 @@ export default function GradeManager({
   // Evaluation Plan modify states
   const [isModifyingPlan, setIsModifyingPlan] = useState(false);
   const [planEvaluations, setPlanEvaluations] = useState<any[]>([]);
+
+  // === Notas Certificadas State ===
+  const [certSelectedStudentId, setCertSelectedStudentId] = useState<string>('');
+  const [certPlanCode, setCertPlanCode] = useState<string>('31059');
+  const [certHistorico, setCertHistorico] = useState<any[]>([]);
+  const [certLoading, setCertLoading] = useState(false);
+  const [certExcelLoading, setCertExcelLoading] = useState(false);
+  const [certSearchQuery, setCertSearchQuery] = useState('');
+  // Carga modal
+  const [isCertLoadModalOpen, setIsCertLoadModalOpen] = useState(false);
+  const [certLoadStudentId, setCertLoadStudentId] = useState<string>('');
+  const [certLoadGrado, setCertLoadGrado] = useState<number>(1);
+  const [certLoadPeriodId, setCertLoadPeriodId] = useState<string>('');
+  const [certLoadInstitucion, setCertLoadInstitucion] = useState('L.N. Estilita Orozco');
+  const [certLoadNotas, setCertLoadNotas] = useState<Record<string, { id_escala: number; value: string }>>({});
+  const [certLoadSaving, setCertLoadSaving] = useState(false);
+  const [certLoadError, setCertLoadError] = useState('');
+  const [certLoadSuccess, setCertLoadSuccess] = useState('');
+
+  // Fetch certified grades history when student changes
+  useEffect(() => {
+    if (certSelectedStudentId && activeSubTab === 'certificadas') {
+      setCertLoading(true);
+      api.historicoNotas.getByStudent(certSelectedStudentId)
+        .then((resp: any) => {
+          setCertHistorico(Array.isArray(resp) ? resp : (resp?.data || []));
+        })
+        .catch((e: any) => {
+          console.error('Error al cargar histórico:', e);
+          setCertHistorico([]);
+        })
+        .finally(() => setCertLoading(false));
+    }
+  }, [certSelectedStudentId, activeSubTab]);
+
+  // Filtered students for cert search
+  const certFilteredStudents = useMemo(() => {
+    if (!certSearchQuery.trim()) return students;
+    const q = certSearchQuery.toLowerCase();
+    return students.filter(s =>
+      s.firstName.toLowerCase().includes(q) ||
+      s.lastName.toLowerCase().includes(q) ||
+      s.cedula.toLowerCase().includes(q)
+    );
+  }, [students, certSearchQuery]);
+
+  // Group certified grades by grado
+  const certHistoricoByGrado = useMemo(() => {
+    const map: Record<number, any[]> = {};
+    for (const nota of certHistorico) {
+      const gradoNum = nota.grado?.numero || nota.id_grado || 0;
+      if (!map[gradoNum]) map[gradoNum] = [];
+      map[gradoNum].push(nota);
+    }
+    return map;
+  }, [certHistorico]);
+
+  // Get study plan subjects for a specific grade
+  const getSubjectsForGrade = (grado: number) => {
+    return studyPlans
+      .filter(p => Number(p.year) === grado)
+      .map(p => {
+        const sub = subjects.find(s => s.id === p.subjectId);
+        return { ...p, subjectName: sub?.name || p.subjectName, tipoCalificacion: sub ? (sub as any).tipoCalificacion || 'Cuantitativa' : 'Cuantitativa' };
+      });
+  };
+
+  // Handle loading notas for cert modal
+  const handleOpenCertLoadModal = () => {
+    setCertLoadStudentId(certSelectedStudentId || (students[0]?.id || ''));
+    setCertLoadGrado(1);
+    setCertLoadPeriodId(periods[0]?.id || '');
+    setCertLoadInstitucion('L.N. Estilita Orozco');
+    setCertLoadNotas({});
+    setCertLoadError('');
+    setCertLoadSuccess('');
+    setIsCertLoadModalOpen(true);
+  };
+
+  // Map numeric score (1-20) to escala id
+  const mapScoreToEscalaId = (score: number): number => {
+    // Direct mapping: id_escala typically equals the numeric score
+    return Math.max(1, Math.min(20, Math.round(score)));
+  };
+
+  // Map literal (A/B/C/D) to escala id
+  const mapLiteralToEscalaId = (literal: string): number => {
+    // Convention: A=21, B=22, C=23, D=24 in the escala table
+    // Fallback: use numeric mapping
+    const literalMap: Record<string, number> = { 'A': 21, 'B': 22, 'C': 23, 'D': 24 };
+    return literalMap[literal.toUpperCase()] || 21;
+  };
+
+  const handleSaveCertifiedGrades = async () => {
+    setCertLoadError('');
+    setCertLoadSuccess('');
+    setCertLoadSaving(true);
+
+    try {
+      const notasArray = Object.entries(certLoadNotas)
+        .filter(([_, val]: [string, any]) => val.value.trim() !== '')
+        .map(([subjectId, val]: [string, any]) => ({
+          id_estudiante: Number(certLoadStudentId),
+          id_grado: certLoadGrado,
+          id_asignatura: Number(subjectId),
+          id_periodo: Number(certLoadPeriodId),
+          id_escala: val.id_escala,
+          institucion_origen: certLoadInstitucion,
+        }));
+
+      if (notasArray.length === 0) {
+        setCertLoadError('Debe ingresar al menos una calificación.');
+        setCertLoadSaving(false);
+        return;
+      }
+
+      await api.historicoNotas.createBulk({ notas: notasArray });
+      setCertLoadSuccess(`${notasArray.length} nota(s) certificada(s) guardadas exitosamente.`);
+
+      // Refresh history if viewing same student
+      if (certSelectedStudentId === certLoadStudentId) {
+        const resp: any = await api.historicoNotas.getByStudent(certSelectedStudentId);
+        setCertHistorico(Array.isArray(resp) ? resp : (resp?.data || []));
+      }
+
+      setTimeout(() => {
+        setIsCertLoadModalOpen(false);
+        setCertLoadSuccess('');
+      }, 2000);
+    } catch (e: any) {
+      setCertLoadError(e.message || 'Error al guardar notas certificadas');
+    } finally {
+      setCertLoadSaving(false);
+    }
+  };
+
+  const handleDownloadCertExcel = async () => {
+    if (!certSelectedStudentId) return;
+    setCertExcelLoading(true);
+    try {
+      await api.historicoNotas.downloadExcel(certSelectedStudentId, certPlanCode);
+    } catch (e: any) {
+      alert('Error al descargar Excel: ' + (e.message || 'Error desconocido'));
+    } finally {
+      setCertExcelLoading(false);
+    }
+  };
 
   const activePlan = evaluationPlans.find(p => p.subjectId === selectedSubjectId && p.year === selectedYear && p.section === selectedSection && p.lapso === selectedLapso);
   const activeSubject = subjects.find(s => s.id === selectedSubjectId);
@@ -283,6 +437,18 @@ export default function GradeManager({
         >
           <FileText className="h-4 w-4" />
           <span>Boletín Informativo</span>
+        </button>
+        <button
+          id="btn-subtab-certificadas"
+          onClick={() => setActiveSubTab('certificadas')}
+          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+            activeSubTab === 'certificadas' 
+              ? 'border-amber-600 text-amber-700' 
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <ScrollText className="h-4 w-4" />
+          <span>Notas Certificadas</span>
         </button>
       </div>
 
@@ -1044,6 +1210,402 @@ export default function GradeManager({
             );
           })()}
 
+        </div>
+      )}
+
+      {/**************** TAB 4: NOTAS CERTIFICADAS ***************/}
+      {activeSubTab === 'certificadas' && (
+        <div id="tab-certificadas-container" className="space-y-6">
+
+          {/* Controls Bar */}
+          <div id="cert-controls" className="bg-white p-5 rounded-xl border border-slate-200/80 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <ScrollText className="h-5 w-5 text-amber-600" />
+                <h3 className="text-sm font-bold text-slate-800">Histórico de Notas Certificadas</h3>
+              </div>
+              {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+                <button
+                  onClick={handleOpenCertLoadModal}
+                  className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  Registrar Notas Certificadas
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-4 items-end">
+              {/* Student search + selector */}
+              <div className="flex flex-col gap-1 flex-1 min-w-[280px]">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Buscar Estudiante</span>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={certSearchQuery}
+                    onChange={(e) => setCertSearchQuery(e.target.value)}
+                    placeholder="Buscar por cédula o nombre..."
+                    className="w-full text-xs p-2.5 pl-8 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                  />
+                </div>
+                <select
+                  value={certSelectedStudentId}
+                  onChange={(e) => setCertSelectedStudentId(e.target.value)}
+                  className="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
+                >
+                  <option value="">Seleccione un estudiante</option>
+                  {certFilteredStudents.map(s => (
+                    <option key={s.id} value={s.id}>
+                      [{s.academicYear}° "{s.section}"] {s.lastName}, {s.firstName} — {s.cedula}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Plan selector */}
+              <div className="flex flex-col gap-1 min-w-[260px]">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Plan de Estudio</span>
+                <select
+                  value={certPlanCode}
+                  onChange={(e) => setCertPlanCode(e.target.value)}
+                  className="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
+                >
+                  <option value="31059">Plan 31059 — EMG Vigente (2017+)</option>
+                  <option value="32011">Plan 32011/31018 — Antiguo (pre-2017)</option>
+                </select>
+              </div>
+
+              {/* Download Excel */}
+              <button
+                onClick={handleDownloadCertExcel}
+                disabled={!certSelectedStudentId || certExcelLoading}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                {certExcelLoading ? 'Generando...' : 'Generar Excel Certificado'}
+              </button>
+            </div>
+          </div>
+
+          {/* History Table */}
+          {certSelectedStudentId ? (
+            certLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="h-8 w-8 rounded-full border-4 border-amber-100 border-t-amber-600 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Student header card */}
+                {(() => {
+                  const student = students.find(s => s.id === certSelectedStudentId);
+                  if (!student) return null;
+                  return (
+                    <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-4 flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-black text-sm">
+                        {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-800 text-sm block">{student.lastName}, {student.firstName}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">C.I.: {student.cedula} | {student.academicYear}° Año "{student.section}"</span>
+                      </div>
+                      <div className="ml-auto text-right">
+                        <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">
+                          {certHistorico.length} nota(s) certificada(s)
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Grades grouped by year */}
+                {Object.keys(certHistoricoByGrado).length > 0 ? (
+                  Object.entries(certHistoricoByGrado)
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([grado, notas]: [string, any[]]) => (
+                      <div key={grado} className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+                        <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
+                          <h4 className="text-xs font-bold text-slate-700">
+                            {grado}° Año de Educación Media
+                            <span className="ml-2 text-[10px] font-normal text-slate-400">
+                              ({notas.length} asignatura{notas.length !== 1 ? 's' : ''})
+                            </span>
+                          </h4>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="border-b border-slate-100 text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                                <th className="px-5 py-3">Asignatura</th>
+                                <th className="px-4 py-3 text-center w-24">Nota</th>
+                                <th className="px-4 py-3 text-center w-24">Tipo</th>
+                                <th className="px-4 py-3 w-40">Período</th>
+                                <th className="px-4 py-3 w-48">Institución Origen</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                              {notas.map((nota: any, idx: number) => {
+                                const asig = nota.asignatura;
+                                const escala = nota.escala;
+                                const isCualitativa = asig?.tipo_calificacion === 'Cualitativa';
+                                const notaDisplay = isCualitativa
+                                  ? (escala?.ponderacion_letra || escala?.nota_impresa || '--')
+                                  : (escala?.nota_impresa || escala?.nota_calculo || '--');
+                                const notaNum = escala?.nota_calculo;
+                                const isAprobada = isCualitativa ? true : (notaNum !== null && notaNum >= 10);
+
+                                return (
+                                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-5 py-3 font-semibold text-slate-800">
+                                      {asig?.nombre || `Asignatura #${nota.id_asignatura}`}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-black font-mono ${
+                                        isCualitativa
+                                          ? 'bg-violet-100 text-violet-800 border border-violet-200'
+                                          : isAprobada
+                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                            : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                      }`}>
+                                        {notaDisplay}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                        isCualitativa
+                                          ? 'bg-violet-50 text-violet-600'
+                                          : 'bg-blue-50 text-blue-600'
+                                      }`}>
+                                        {isCualitativa ? 'Cualitativa' : 'Cuantitativa'}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600 text-[11px]">
+                                      {nota.periodo?.nombre || `Período #${nota.id_periodo}`}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-500 text-[11px] italic">
+                                      {nota.institucion_origen}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center">
+                    <ScrollText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-400">No hay notas certificadas registradas para este estudiante.</p>
+                    <p className="text-xs text-slate-400 mt-1">Use el botón "Registrar Notas Certificadas" para cargar el histórico académico.</p>
+                  </div>
+                )}
+              </div>
+            )
+          ) : (
+            <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center">
+              <Search className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-400">Seleccione un estudiante para consultar su historial de notas certificadas.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal: Carga de Notas Certificadas */}
+      {isCertLoadModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-amber-50">
+              <div className="flex items-center gap-2">
+                <ScrollText className="h-5 w-5 text-amber-600" />
+                <h3 className="font-bold text-slate-800">Registrar Notas Certificadas</h3>
+              </div>
+              <button
+                onClick={() => setIsCertLoadModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors text-lg font-bold pointer-events-auto cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {certLoadError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
+                  {certLoadError}
+                </div>
+              )}
+              {certLoadSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-xs font-medium flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  {certLoadSuccess}
+                </div>
+              )}
+
+              {/* Selectors */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Estudiante</label>
+                  <select
+                    value={certLoadStudentId}
+                    onChange={(e) => setCertLoadStudentId(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                  >
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.lastName}, {s.firstName} — {s.cedula}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Año / Grado</label>
+                  <select
+                    value={certLoadGrado}
+                    onChange={(e) => { setCertLoadGrado(Number(e.target.value)); setCertLoadNotas({}); }}
+                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                  >
+                    {[1,2,3,4,5].map(g => (
+                      <option key={g} value={g}>{g}° Año</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Período Escolar</label>
+                  <select
+                    value={certLoadPeriodId}
+                    onChange={(e) => setCertLoadPeriodId(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                  >
+                    <option value="">Seleccione un período</option>
+                    {periods.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Institución de Origen</label>
+                  <input
+                    type="text"
+                    value={certLoadInstitucion}
+                    onChange={(e) => setCertLoadInstitucion(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              {/* Subjects table for selected grade */}
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200">
+                  <h4 className="text-[11px] font-bold text-slate-700">
+                    Asignaturas del Plan de Estudio — {certLoadGrado}° Año
+                  </h4>
+                </div>
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                      <th className="px-4 py-2.5">Asignatura</th>
+                      <th className="px-4 py-2.5 text-center w-32">Tipo</th>
+                      <th className="px-4 py-2.5 text-center w-40">Calificación</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {(() => {
+                      const gradeSubs = getSubjectsForGrade(certLoadGrado);
+                      if (gradeSubs.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-6 text-center text-slate-400 font-medium">
+                              No hay asignaturas en el plan de estudio para {certLoadGrado}° Año.
+                            </td>
+                          </tr>
+                        );
+                      }
+                      return gradeSubs.map(planItem => {
+                        const isCualitativa = planItem.tipoCalificacion === 'Cualitativa';
+                        const currentVal = certLoadNotas[planItem.subjectId]?.value || '';
+
+                        return (
+                          <tr key={planItem.subjectId} className="hover:bg-slate-50/50">
+                            <td className="px-4 py-3 font-semibold text-slate-800">
+                              {planItem.subjectName}
+                              {planItem.codigo && (
+                                <span className="ml-1.5 text-[9px] text-slate-400 font-mono">({planItem.codigo})</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                isCualitativa ? 'bg-violet-50 text-violet-600' : 'bg-blue-50 text-blue-600'
+                              }`}>
+                                {isCualitativa ? 'Cualitativa' : 'Cuantitativa'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {isCualitativa ? (
+                                <select
+                                  value={currentVal}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setCertLoadNotas(prev => ({
+                                      ...prev,
+                                      [planItem.subjectId]: {
+                                        id_escala: val ? mapLiteralToEscalaId(val) : 0,
+                                        value: val,
+                                      }
+                                    }));
+                                  }}
+                                  className="text-xs p-2 bg-violet-50 border border-violet-200 rounded font-bold text-center w-20 focus:outline-hidden focus:border-violet-500"
+                                >
+                                  <option value="">--</option>
+                                  <option value="A">A</option>
+                                  <option value="B">B</option>
+                                  <option value="C">C</option>
+                                  <option value="D">D</option>
+                                </select>
+                              ) : (
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={20}
+                                  value={currentVal}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const num = Number(val);
+                                    setCertLoadNotas(prev => ({
+                                      ...prev,
+                                      [planItem.subjectId]: {
+                                        id_escala: val && !isNaN(num) ? mapScoreToEscalaId(num) : 0,
+                                        value: val,
+                                      }
+                                    }));
+                                  }}
+                                  placeholder="1-20"
+                                  className="text-xs p-2 bg-slate-50 border border-slate-200 rounded font-bold text-center w-20 font-mono focus:outline-hidden focus:border-amber-500"
+                                />
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+              <button
+                onClick={() => setIsCertLoadModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors pointer-events-auto cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveCertifiedGrades}
+                disabled={certLoadSaving || !certLoadPeriodId}
+                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+              >
+                {certLoadSaving ? 'Guardando...' : 'Guardar Notas Certificadas'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

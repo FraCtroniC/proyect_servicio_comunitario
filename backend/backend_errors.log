@@ -996,3 +996,300 @@ Error
     at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
     at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
 
+2026-06-28T16:58:51.008Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async Usuario.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Object.listar (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\services\usuario.service.ts:25:22)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\usuario.controller.ts:18:22)
+
+2026-06-28T16:59:02.002Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.rawSelect (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1043:18)
+    at async AsistenciaDocente.aggregate (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2067:19)
+    at async AsistenciaDocente.count (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2124:20)
+    at async Promise.all (index 0)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T16:59:02.047Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T17:51:56.620Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T17:51:56.879Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T18:20:50.433Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.rawSelect (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1043:18)
+    at async AsistenciaDocente.aggregate (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2067:19)
+    at async AsistenciaDocente.count (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2124:20)
+    at async Promise.all (index 0)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T18:20:50.657Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T18:24:46.659Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.rawSelect (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1043:18)
+    at async AsistenciaDocente.aggregate (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2067:19)
+    at async AsistenciaDocente.count (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2124:20)
+    at async Promise.all (index 0)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T18:24:47.415Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T18:35:23.085Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T18:35:24.061Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T18:54:26.745Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T18:54:27.772Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T18:55:47.621Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T18:55:48.391Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T19:01:19.851Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async Usuario.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Object.listar (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\services\usuario.service.ts:25:22)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\usuario.controller.ts:18:22)
+
+2026-06-28T19:01:29.092Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T19:01:29.196Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T19:21:16.539Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T19:21:17.106Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T19:27:37.575Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.rawSelect (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1043:18)
+    at async AsistenciaDocente.aggregate (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2067:19)
+    at async AsistenciaDocente.count (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2124:20)
+    at async Promise.all (index 0)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T19:27:38.285Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T20:28:22.848Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T20:28:22.997Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-28T20:28:36.391Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async Estudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\estudiante.controller.ts:18:20)
+
+2026-06-28T20:28:36.843Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaDocente.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaDocente.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-docente.controller.ts:46:29)
+
+2026-06-28T20:28:37.113Z
+Error
+    at Query.run (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresQueryInterface.select (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+

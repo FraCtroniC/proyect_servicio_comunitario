@@ -17,6 +17,19 @@ export interface User {
   teacherId?: string;
 }
 
+export interface Docente {
+  id: string;
+  cedula: string;
+  firstName: string;
+  secondName?: string;
+  lastName: string;
+  secondLastName?: string;
+  specialty?: string;
+  phone?: string;
+  email?: string;
+  status: 'Activo' | 'Inactivo';
+}
+
 export interface MateriaPendiente {
   id_materia_pendiente: number;
   id_estudiante: number;
@@ -152,4 +165,21 @@ export interface ScheduleEvent {
   subjectId: string;
   teacherId: string;    // Docente
   classroomId: string;  // Classroom
+}
+
+export interface PendingSubject {
+  id: string;
+  studentId: string;
+  subjectId: string;
+  periodId: string;
+  evaluatorTeacherId?: string;
+  finalGrade?: number;
+  status: 'Cursando' | 'Aprobada' | 'Aplazada';
+  createdAt?: string;
+  
+  // Relations mapped from DB
+  student?: any;
+  subject?: any;
+  period?: any;
+  evaluator?: any;
 }

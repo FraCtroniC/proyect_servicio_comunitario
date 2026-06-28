@@ -3,7 +3,7 @@ import { Estudiante } from '../models/Estudiante';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 const ALLOWED_CREATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'id_representante'];
-const ALLOWED_UPDATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero'];
+const ALLOWED_UPDATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'estatus_estudiante'];
 
 function pick(body: any, fields: string[]): any {
   const result: any = {};

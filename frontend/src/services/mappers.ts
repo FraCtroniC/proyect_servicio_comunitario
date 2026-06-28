@@ -1,4 +1,4 @@
-import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative, AcademicYear } from '../types';
+import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative, AcademicYear, Docente } from '../types';
 
 export function mapRole(idRol: number): UserRole {
   if (idRol === 1) return 'super_admin';
@@ -16,6 +16,21 @@ export function mapUsuarioToUser(dbUser: any): User {
     active: dbUser.estatus === 'Activo',
     cedula: dbUser.cedula || dbUser.docente?.cedula_docente || undefined,
     teacherId: dbUser.id_docente ? String(dbUser.id_docente) : undefined,
+  };
+}
+
+export function mapDocenteToDocenteType(dbDocente: any): Docente {
+  return {
+    id: String(dbDocente.id_docente || dbDocente.id),
+    cedula: dbDocente.cedula_docente,
+    firstName: dbDocente.nombre1,
+    secondName: dbDocente.nombre2 || undefined,
+    lastName: dbDocente.apellido1,
+    secondLastName: dbDocente.apellido2 || undefined,
+    specialty: dbDocente.especialidad || undefined,
+    phone: dbDocente.telefono || undefined,
+    email: dbDocente.correo || undefined,
+    status: dbDocente.estatus || 'Activo',
   };
 }
 
@@ -59,6 +74,15 @@ export function mapEstudianteToStudent(dbStudent: any, matriculas?: any[], secci
     representativePhone: dbStudent.representante?.telefono || '',
     dateOfBirth: dbStudent.fecha_nac,
     gender: dbStudent.genero || 'M',
+    birthPlace: dbStudent.lugar_nac || undefined,
+    municipality: dbStudent.municipio || undefined,
+    state: dbStudent.estado || undefined,
+    representativeEmail: dbStudent.representante?.correo || undefined,
+    representativeAddress: dbStudent.representante?.direccion || undefined,
+    repFirstName: dbStudent.representante?.nombre1 || undefined,
+    repSecondName: dbStudent.representante?.nombre2 || undefined,
+    repLastName: dbStudent.representante?.apellido1 || undefined,
+    repSecondLastName: dbStudent.representante?.apellido2 || undefined,
   };
 }
 

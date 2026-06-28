@@ -21,7 +21,8 @@ import {
   Lock,
   ClipboardCheck,
   Book,
-  CalendarDays
+  CalendarDays,
+  Briefcase
 } from 'lucide-react';
 
 import {
@@ -37,11 +38,12 @@ import {
   UserRole,
   StudyPlanItem,
   SchoolPeriod,
-  Section
+  Section,
+  Docente
 } from './types';
 
 import { api } from './services/api';
-import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative } from './services/mappers';
+import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative, mapDocenteToDocenteType } from './services/mappers';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -49,6 +51,7 @@ import UserManager from './components/UserManager';
 import AcademicManager from './components/AcademicManager';
 import StudentManager from './components/StudentManager';
 import StaffManager from './components/StaffManager';
+import DocenteManager from './components/DocenteManager';
 import GradeManager from './components/GradeManager';
 import AttendanceTracker from './components/AttendanceTracker';
 import ScheduleCoordinator from './components/ScheduleCoordinator';
@@ -57,11 +60,13 @@ import DocumentationView from './components/DocumentationView';
 import LoginScreen from './components/loginScreen';
 import SubjectManager from './components/SubjectManager';
 import PeriodManager from './components/PeriodManager';
+import PendingSubjectsManager from './components/PendingSubjectsManager';
 
 export default function App() {
   // Global States loaded with seed data representing a Venezuelan Liceo
   const [users, setUsers] = useState<User[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [docentes, setDocentes] = useState<Docente[]>([]);
   
   // Phase 2 Seed arrays from Backend
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -87,6 +92,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>('super_admin'); // SuperAdmin by default so everything is unlocked
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -154,7 +160,8 @@ export default function App() {
             bloquesData,
             asistenciasData,
             asistenciasEstudiantesData,
-            matriculasData
+            matriculasData,
+            docentesData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -173,7 +180,8 @@ export default function App() {
             api.get<any[]>('/api/bloques').catch(() => []),
             api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
-            api.get<any[]>('/api/matriculas').catch(() => ({ data: [] }))
+            api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
+            api.get<any[]>('/api/docentes').catch(() => ({ data: [] }))
           ]);
           
           const seccionesMap = aulasData.reduce((acc, a) => {
@@ -182,6 +190,8 @@ export default function App() {
           }, {});
 
           setUsers(usuariosData.map(mapUsuarioToUser));
+          const parsedDocentes = (Array.isArray(docentesData) ? docentesData : (docentesData as any)?.data || []).map(mapDocenteToDocenteType);
+          setDocentes(parsedDocentes);
           setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [])));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
@@ -250,6 +260,57 @@ export default function App() {
   }, [isLoggedIn]);
 
   // --- PERSISTENCE ACTIONS PASSED DOWN ---
+  const handleAddDocente = async (newDocente: Omit<Docente, 'id'>) => {
+    try {
+      const payload = {
+        cedula_docente: newDocente.cedula.replace('V-', '').replace('E-', ''), // backend handles raw
+        nombre1: newDocente.firstName,
+        nombre2: newDocente.secondName,
+        apellido1: newDocente.lastName,
+        apellido2: newDocente.secondLastName,
+        especialidad: newDocente.specialty,
+        telefono: newDocente.phone,
+        correo: newDocente.email
+      };
+      const createdDocente = await api.post<any>('/api/docentes', payload);
+      
+      const parsedDocente = mapDocenteToDocenteType(createdDocente);
+      setDocentes(p => [parsedDocente, ...p]);
+
+      // Automatically create user for login
+      if (newDocente.email) {
+        const tempPassword = 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
+        const userDto = {
+          username: newDocente.email.split('@')[0],
+          password: tempPassword,
+          idRol: 2, // Docente
+          idDocente: createdDocente.id_docente || createdDocente.id,
+          correo: newDocente.email
+        };
+        const createdUser = await api.post<any>('/api/usuarios', userDto).catch(e => console.warn('Error creating user for docente:', e.message));
+        if (createdUser) {
+          setUsers(p => [mapUsuarioToUser(createdUser), ...p]);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      throw new Error(e.response?.data?.error?.message || 'Error al crear docente en BD');
+    }
+  };
+
+  const handleToggleDocenteActive = async (docenteId: string) => {
+    try {
+      const docente = docentes.find(d => d.id === docenteId);
+      if (docente) {
+        const newStatus = docente.status === 'Activo' ? 'Inactivo' : 'Activo';
+        await api.patch(`/api/docentes/${stripId(docenteId)}`, { estatus: newStatus });
+        setDocentes(p => p.map(d => d.id === docenteId ? { ...d, status: newStatus } : d));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleAddUser = async (newUser: User) => {
     try {
       const tempPassword = 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
@@ -340,6 +401,52 @@ export default function App() {
       setStudents(p => p.map(s => s.id === studentId ? { ...s, status } : s));
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleUpdateStudentProfile = async (studentId: string, updatedData: Student) => {
+    try {
+      const realId = stripId(studentId);
+      
+      const stuNameParts = updatedData.firstName.trim().split(' ');
+      const stuLastParts = updatedData.lastName.trim().split(' ');
+      const estPayload: any = {
+        cedula_escolar: updatedData.cedula,
+        nombre1: stuNameParts[0] || '',
+        nombre2: stuNameParts.slice(1).join(' ') || undefined,
+        apellido1: stuLastParts[0] || '',
+        apellido2: stuLastParts.slice(1).join(' ') || undefined,
+        fecha_nac: updatedData.dateOfBirth,
+        genero: updatedData.gender,
+        lugar_nac: updatedData.birthPlace,
+        municipio: updatedData.municipality,
+        estado: updatedData.state,
+        estatus_estudiante: updatedData.status
+      };
+      
+      const stuResp = await api.get<any>(`/api/estudiantes/${realId}`);
+      const repId = stuResp.data?.id_representante;
+      
+      await api.patch(`/api/estudiantes/${realId}`, estPayload);
+      
+      if (repId) {
+        const repPayload: any = {
+          cedula_rep: updatedData.representativeCedula,
+          nombre1: updatedData.repFirstName || updatedData.representativeName.split(' ')[0],
+          nombre2: updatedData.repSecondName || undefined,
+          apellido1: updatedData.repLastName || updatedData.representativeName.split(' ').slice(1).join(' ') || 'N/A',
+          apellido2: updatedData.repSecondLastName || undefined,
+          telefono: updatedData.representativePhone,
+          correo: updatedData.representativeEmail,
+          direccion: updatedData.representativeAddress
+        };
+        await api.patch(`/api/representantes/${repId}`, repPayload);
+      }
+      
+      setStudents(p => p.map(s => s.id === studentId ? { ...s, ...updatedData } : s));
+    } catch (e) {
+      console.error(e);
+      throw e;
     }
   };
 
@@ -728,7 +835,9 @@ export default function App() {
       items: [
         { id: 'students', label: 'Estudiantes', icon: Users },
         { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap },
+        { id: 'docentes', label: 'Gestión de Docentes', icon: Briefcase },
         { id: 'grades', label: 'Calificaciones', icon: Award },
+        { id: 'pendientes', label: 'Materias Pendientes', icon: BookOpen },
         { id: 'attendance', label: 'Control Asistencia', icon: Calendar }
       ]
     },
@@ -744,7 +853,6 @@ export default function App() {
       group: 'Administración',
       items: [
         { id: 'facilities', label: 'Salones & Aulas', icon: Home },
-        { id: 'staff', label: 'Directorio Personal', icon: BookOpen },
         { id: 'users', label: 'Roles de Acceso', icon: Shield }
       ]
     },
@@ -798,30 +906,18 @@ export default function App() {
           <div id="sidebar-top" className="flex-1 flex flex-col min-h-0 pt-6">
 
             {/* Brand Logo Banner */}
-            <div id="mppe-logo-banner" className="px-6 mb-6 flex items-center gap-2.5 shrink-0">
-              <div className="h-9 w-9 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-lg tracking-wider border border-blue-500">
-                EO
+            <div id="mppe-logo-banner" className="px-5 mb-8 flex items-center gap-3 shrink-0 relative mt-2">
+              <div className="absolute left-3 top-0 w-10 h-10 bg-blue-500/30 blur-xl rounded-full"></div>
+              <div className="h-11 w-11 bg-white rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-white/10 relative z-10 overflow-hidden">
+                <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-cover" />
               </div>
-              <div>
-                <span className="block font-black text-white text-xs tracking-wider uppercase leading-none">Estilita Orozco</span>
-                <span className="block text-[9px] text-slate-500 font-bold uppercase mt-1">Liceo de Formación Cultural para las Artes</span>
-              </div>
-            </div>
-
-            {/* Simulated Active Account */}
-            <div id="sidebar-account" className="mx-4 mb-6 p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-xs flex items-center gap-2.5 shrink-0">
-              <div className="h-7 w-7 rounded-full bg-blue-500/10 flex items-center justify-center font-bold text-blue-400 border border-blue-500/20 uppercase overflow-hidden">
-                {currentUser?.avatarUrl ? (
-                  <img src={currentUser.avatarUrl} alt={currentUser.name} className="h-full w-full object-cover" />
-                ) : (
-                  currentUserRole.substring(0, 2)
-                )}
-              </div>
-              <div className="min-w-0">
-                <span className="block text-white font-bold leading-none truncate mb-1">
-                  {currentUser?.name || 'Usuario'}
+              <div className="relative z-10">
+                <span className="block font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-sm tracking-widest uppercase leading-none mb-1">
+                  Estilita Orozco
                 </span>
-                <span className="block text-[9px] text-slate-500 font-bold uppercase tracking-tight">{currentRoleLabel}</span>
+                <span className="block text-[8.5px] text-indigo-300/80 font-bold uppercase tracking-widest leading-tight">
+                  Liceo de Formación<br/>Cultural para las Artes
+                </span>
               </div>
             </div>
 
@@ -865,13 +961,33 @@ export default function App() {
           </div>
 
           {/* Quick Resets and Logout simulation */}
-          <div id="sidebar-footer" className="p-4 border-t border-slate-800/60 space-y-2">
-            <button
-              onClick={handleLogout}
-              className="w-full py-2 text-center text-[10px] text-slate-300 hover:text-white font-bold tracking-wide uppercase bg-slate-800/40 hover:bg-slate-700/60 rounded-lg border border-slate-700 hover:border-slate-500 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
-            >
-              <LogOut className="h-3 w-3" /> Cerrar Sesión
-            </button>
+          <div id="sidebar-footer" className="p-4 border-t border-slate-800/60 space-y-3">
+            {/* Simulated Active Account */}
+            <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/50 flex flex-col gap-3">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="h-9 w-9 shrink-0 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-blue-400 border border-blue-500/30 uppercase overflow-hidden">
+                  {currentUser?.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt={currentUser.name} className="h-full w-full object-cover" />
+                  ) : (
+                    currentUserRole.substring(0, 2)
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-white font-bold text-xs leading-none truncate mb-1">
+                    {currentUser?.name || 'Usuario'}
+                  </span>
+                  <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-tight truncate">{currentRoleLabel}</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className="w-full py-2 px-3 bg-rose-600/90 hover:bg-rose-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg shadow-sm border border-rose-500/50 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Cerrar Sesión
+              </button>
+            </div>
+            
             <div className="text-[9px] text-slate-600 text-center font-mono leading-relaxed px-2">
               Homologación MPPE Venezuela © 2026. LOPNA compilado.
             </div>
@@ -880,13 +996,13 @@ export default function App() {
 
         {/* MOBILE MENU NAV HEADER */}
         <header id="mobile-nav-header" className="md:hidden bg-slate-900 text-slate-300 p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 z-50">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 bg-blue-600 text-white text-xs font-black rounded flex items-center justify-center">
-              LB
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 bg-white shadow-md shadow-blue-500/20 rounded-lg flex items-center justify-center border border-white/10 overflow-hidden">
+              <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-cover" />
             </div>
             <div>
-              <span className="block text-xs font-bold text-white uppercase tracking-wider">LB José A. Anzoátegui</span>
-              <span className="block text-[8px] text-slate-500 font-bold uppercase">{currentRoleLabel}</span>
+              <span className="block text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-200 uppercase tracking-widest leading-none mb-0.5">Estilita Orozco</span>
+              <span className="block text-[8px] text-indigo-300/80 font-bold uppercase tracking-widest">{currentRoleLabel}</span>
             </div>
           </div>
 
@@ -946,7 +1062,7 @@ export default function App() {
                   handleLogout();
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full py-2.5 text-center text-xs text-slate-300 font-bold uppercase bg-slate-800 rounded-xl border border-slate-700 pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
+                className="w-full py-3 text-center text-xs text-white font-black uppercase bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm border border-rose-500 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
               >
                 <LogOut className="h-4 w-4" /> Cerrar Sesión
               </button>
@@ -989,6 +1105,11 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
+                  onUpdateStudentProfile={handleUpdateStudentProfile}
+                  onNavigateToPending={(id) => {
+                    setViewPendingStudentId(id);
+                    setActiveTab('pendientes');
+                  }}
                 />
               )}
 
@@ -1031,9 +1152,22 @@ export default function App() {
                   grades={grades}
                   auditLogs={auditLogs}
                   currentUserRole={currentUserRole}
+                  studyPlans={studyPlans}
+                  periods={periods}
+                  sections={sections}
                   onUpdateGrade={handleUpdateGrade}
                   onSaveGrades={handleSaveGrades}
                   onUpdateEvaluationPlan={handleUpdateEvaluationPlan}
+                />
+              )}
+
+              {activeTab === 'pendientes' && (
+                <PendingSubjectsManager
+                  students={students}
+                  subjects={subjects}
+                  periods={periods}
+                  users={users}
+                  defaultStudentId={viewPendingStudentId}
                 />
               )}
 
@@ -1078,13 +1212,12 @@ export default function App() {
                 />
               )}
 
-              {activeTab === 'staff' && (
-                <StaffManager
-                  users={users}
+              {activeTab === 'docentes' && (
+                <DocenteManager
+                  docentes={docentes}
                   currentUserRole={currentUserRole}
-                  onSetUserRole={setCurrentUserRole}
-                  onAddUser={handleAddUser}
-                  onToggleUserActive={handleToggleUserActive}
+                  onAddDocente={handleAddDocente}
+                  onToggleDocenteActive={handleToggleDocenteActive}
                 />
               )}
 

@@ -4,6 +4,10 @@ import { authorize } from '../middlewares/rbac.middleware';
 
 export const historicoNotaCertificadaRoutes = Router();
 
+// Must be before /:id to avoid conflict with dynamic param
+historicoNotaCertificadaRoutes.get('/estudiante/:estudianteId', HistoricoNotaCertificadaController.listarPorEstudiante);
+historicoNotaCertificadaRoutes.post('/bulk', authorize(1, 3), HistoricoNotaCertificadaController.crearBulk);
+
 historicoNotaCertificadaRoutes.get('/', HistoricoNotaCertificadaController.listar);
 historicoNotaCertificadaRoutes.get('/:id', HistoricoNotaCertificadaController.obtenerPorId);
 historicoNotaCertificadaRoutes.get('/:id/generar-excel', HistoricoNotaCertificadaController.generarExcel);

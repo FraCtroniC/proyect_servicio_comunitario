@@ -78,11 +78,36 @@ export const api = {
     request<T>(url, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(url: string) => request<T>(url, { method: 'DELETE' }),
   materiasPendientes: {
+    getAll: () => request('/api/materias-pendientes'),
     getByStudent: (id: string) => request(`/api/materias-pendientes/estudiante/${id}`),
     create: (data: any) => request('/api/materias-pendientes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request(`/api/materias-pendientes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
   notificaciones: {
     alertaAcademica: (data: any) => request('/api/notificaciones/alerta-academica', { method: 'POST', body: JSON.stringify(data) })
+  },
+  historicoNotas: {
+    getByStudent: (id: string) => request(`/api/historicos/estudiante/${id}`),
+    createBulk: (data: any) => request('/api/historicos/bulk', { method: 'POST', body: JSON.stringify(data) }),
+    downloadExcel: async (estudianteId: string, plan: string) => {
+      const token = getSessionToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`/api/historicos/${estudianteId}/generar-excel?plan=${plan}`, { headers });
+      if (!res.ok) {
+        let msg = 'Error al generar el Excel';
+        try { const err = await res.json(); msg = err.error?.message || msg; } catch {}
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Notas_Certificadas_${estudianteId}_Plan_${plan}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   }
 };
