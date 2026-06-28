@@ -86,7 +86,7 @@ export default function FacilitiesManager({
 
   return (
     <>
-      <div id="facilities-root" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
+      <div id="facilities-root" className="space-y-6 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
       {/* Header */}
       <div id="facilities-header" className="border-b border-slate-100 pb-4">
         <h1 id="facilities-title" className="text-xl font-bold text-slate-800 flex items-center gap-2">

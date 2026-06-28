@@ -7,7 +7,7 @@ import { BookOpen, Database, Layers, Milestone, Calculator, FileCheck } from 'lu
 
 export default function DocumentationView() {
   return (
-    <div id="doc-view-container" className="space-y-8 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 selection:bg-blue-100 selection:text-blue-900">
+    <div id="doc-view-container" className="space-y-8 max-w-[2200px] mx-auto p-4 md:p-6 lg:p-8 selection:bg-blue-100 selection:text-blue-900">
       {/* Title */}
       <div id="doc-header" className="border-b border-slate-100 pb-6">
         <h1 id="doc-title" className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">

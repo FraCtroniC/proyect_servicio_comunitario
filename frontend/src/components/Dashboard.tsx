@@ -104,7 +104,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
   };
 
   return (
-    <div id="dashboard-container" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-blue-100 selection:text-blue-900">
+    <div id="dashboard-container" className="space-y-6 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-blue-100 selection:text-blue-900">
       
       {/* Welcome Banner */}
       <div id="welcome-banner" className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">

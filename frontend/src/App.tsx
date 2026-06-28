@@ -715,21 +715,49 @@ export default function App() {
     }
   };
 
-  // Tabs structure definitions
-  const tabs = [
-    { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard },
-    { id: 'students', label: 'Matrícula Estudiantes', icon: Users },
-    { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap },
-    { id: 'periods', label: 'Periodos Escolares', icon: CalendarDays },
-    { id: 'subjects', label: 'Plan de Estudio', icon: Book },
-    { id: 'grades', label: 'Notas Calificación', icon: Award },
-    { id: 'attendance', label: 'Control Asistencia', icon: Calendar },
-    { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck },
-    { id: 'facilities', label: 'Salones & Aulas', icon: Home },
-    { id: 'staff', label: 'Directorio Personal', icon: BookOpen },
-    { id: 'users', label: 'Roles Acceso', icon: Shield },
-    { id: 'documentation', label: 'Tesis Arquitectura', icon: BookOpen }
+  // Tabs structure definitions grouped hierarchically
+  const tabGroups = [
+    {
+      group: 'Principal',
+      items: [
+        { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard }
+      ]
+    },
+    {
+      group: 'Académico',
+      items: [
+        { id: 'students', label: 'Estudiantes', icon: Users },
+        { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap },
+        { id: 'grades', label: 'Calificaciones', icon: Award },
+        { id: 'attendance', label: 'Control Asistencia', icon: Calendar }
+      ]
+    },
+    {
+      group: 'Planificación',
+      items: [
+        { id: 'periods', label: 'Periodos Escolares', icon: CalendarDays },
+        { id: 'subjects', label: 'Plan de Estudio', icon: Book },
+        { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck }
+      ]
+    },
+    {
+      group: 'Administración',
+      items: [
+        { id: 'facilities', label: 'Salones & Aulas', icon: Home },
+        { id: 'staff', label: 'Directorio Personal', icon: BookOpen },
+        { id: 'users', label: 'Roles de Acceso', icon: Shield }
+      ]
+    },
+    {
+      group: 'Sistema',
+      items: [
+        { id: 'documentation', label: 'Documentación', icon: BookOpen }
+      ]
+    }
   ];
+
+  // Flattened for easy lookup if needed
+  const tabs = tabGroups.flatMap(g => g.items);
 
   // Helper definitions for side-roles indicators
   const getRoleLabelAndColor = (role: UserRole) => {
@@ -767,10 +795,10 @@ export default function App() {
 
         {/* SIDEBAR FOR DESKTOP */}
         <aside id="mppe-sidebar" className="hidden md:flex w-64 bg-slate-900 text-slate-300 shrink-0 flex-col justify-between border-r border-slate-800 z-20 select-none relative">
-          <div id="sidebar-top" className="space-y-6 pt-6">
+          <div id="sidebar-top" className="flex-1 flex flex-col min-h-0 pt-6">
 
             {/* Brand Logo Banner */}
-            <div id="mppe-logo-banner" className="px-6 flex items-center gap-2.5">
+            <div id="mppe-logo-banner" className="px-6 mb-6 flex items-center gap-2.5 shrink-0">
               <div className="h-9 w-9 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-lg tracking-wider border border-blue-500">
                 EO
               </div>
@@ -781,7 +809,7 @@ export default function App() {
             </div>
 
             {/* Simulated Active Account */}
-            <div id="sidebar-account" className="mx-4 p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-xs flex items-center gap-2.5">
+            <div id="sidebar-account" className="mx-4 mb-6 p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-xs flex items-center gap-2.5 shrink-0">
               <div className="h-7 w-7 rounded-full bg-blue-500/10 flex items-center justify-center font-bold text-blue-400 border border-blue-500/20 uppercase overflow-hidden">
                 {currentUser?.avatarUrl ? (
                   <img src={currentUser.avatarUrl} alt={currentUser.name} className="h-full w-full object-cover" />
@@ -798,32 +826,41 @@ export default function App() {
             </div>
 
             {/* Navigation options */}
-            <nav id="sidebar-nav" className="px-3 space-y-1">
-              {tabs.map(tab => {
-                const isActive = activeTab === tab.id;
-                const Icon = tab.icon;
+            <nav id="sidebar-nav" className="px-3 pb-6 flex-1 overflow-y-auto">
+              {tabGroups.map((group, idx) => (
+                <div key={idx} className="mb-6 last:mb-0">
+                  <h3 className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    {group.group}
+                  </h3>
+                  <div className="space-y-1">
+                    {group.items.map(tab => {
+                      const isActive = activeTab === tab.id;
+                      const Icon = tab.icon;
 
-                return (
-                  <button
-                    id={`sidebar-tab-${tab.id}`}
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold font-sans transition-all flex items-center justify-between pointer-events-auto cursor-pointer ${isActive
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                        : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
-                      }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <Icon className="h-4.5 w-4.5 shrink-0" />
-                      <span>{tab.label}</span>
-                    </span>
-                    {isActive && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
-                  </button>
-                );
-              })}
+                      return (
+                        <button
+                          id={`sidebar-tab-${tab.id}`}
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold font-sans transition-all flex items-center justify-between pointer-events-auto cursor-pointer ${isActive
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                              : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
+                            }`}
+                        >
+                          <span className="flex items-center gap-3">
+                            <Icon className="h-4.5 w-4.5 shrink-0" />
+                            <span>{tab.label}</span>
+                          </span>
+                          {isActive && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
           </div>
 
@@ -872,29 +909,36 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               className="md:hidden bg-slate-900 border-b border-slate-800 text-slate-300 absolute w-full top-[61px] left-0 z-40 px-4 py-6 space-y-4 select-none shadow-2xl"
             >
-              <nav className="space-y-1">
-                {tabs.map(tab => {
-                  const isActive = activeTab === tab.id;
-                  const Icon = tab.icon;
+              <nav className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
+                {tabGroups.map((group, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <h3 className="px-3 mb-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      {group.group}
+                    </h3>
+                    {group.items.map(tab => {
+                      const isActive = activeTab === tab.id;
+                      const Icon = tab.icon;
 
-                  return (
-                    <button
-                      id={`mobile-tab-${tab.id}`}
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-3 pointer-events-auto cursor-pointer ${isActive
-                          ? 'bg-blue-600 text-white'
-                          : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
-                        }`}
-                    >
-                      <Icon className="h-4.5 w-4.5" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
+                      return (
+                        <button
+                          id={`mobile-tab-${tab.id}`}
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-3 pointer-events-auto cursor-pointer ${isActive
+                              ? 'bg-blue-600 text-white'
+                              : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
+                            }`}
+                        >
+                          <Icon className="h-4.5 w-4.5" />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </nav>
 
               <button

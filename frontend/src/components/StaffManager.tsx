@@ -79,7 +79,7 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
 
   return (
     <>
-      <div id="user-manager-container" className="space-y-8 max-w-6xl mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
+      <div id="user-manager-container" className="space-y-8 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
 
 
       {successMsg && (

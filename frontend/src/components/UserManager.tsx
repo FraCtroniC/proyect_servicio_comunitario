@@ -41,7 +41,7 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
 
   return (
     <>
-      <div id="user-manager-container" className="space-y-8 max-w-6xl mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
+      <div id="user-manager-container" className="space-y-8 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
       {/* Simulation Persona Selector */}
       <div id="persona-selector-header" className="bg-indigo-50 border border-indigo-200/60 p-5 rounded-2xl">
         <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">

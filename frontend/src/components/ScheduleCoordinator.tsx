@@ -160,7 +160,7 @@ export default function ScheduleCoordinator({
   });
 
   return (
-    <div id="schedule-coordinator-root" className="space-y-6 max-w-6xl mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
+    <div id="schedule-coordinator-root" className="space-y-6 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
       
       {/* Title */}
       <div id="schedule-header" className="border-b border-slate-100 pb-4">
