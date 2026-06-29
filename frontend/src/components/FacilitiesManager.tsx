@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { Home, PlusCircle, Trash, Shield, AlertTriangle, Cpu, Radio, ShieldCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Classroom, ScheduleEvent, UserRole, Section, Student } from '../types';
 import { Modal } from './Modal';
 
@@ -182,7 +183,7 @@ export default function FacilitiesManager({
                         id={`btn-del-room-${room.id}`}
                         onClick={() => {
                           if (bookingCount > 0) {
-                            alert("No se puede desincorporar este salón ya que posee bloques horarios planificados pendientes.");
+                            toast.error("No se puede desincorporar este salón ya que posee bloques horarios planificados pendientes.");
                             return;
                           }
                           if (!window.confirm(`¿Está seguro de desincorporar "${room.name}"? Esta acción no se puede deshacer.`)) return;

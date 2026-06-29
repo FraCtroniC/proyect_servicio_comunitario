@@ -24,7 +24,8 @@ export interface Docente {
   secondName?: string;
   lastName: string;
   secondLastName?: string;
-  specialty?: string;
+  id_especialidad?: number;
+  dateOfBirth?: string;
   phone?: string;
   email?: string;
   status: 'Activo' | 'Inactivo';
@@ -47,6 +48,12 @@ export interface SchoolPeriod {
   id: string;
   name: string;
   status: 'Activo' | 'Cerrado' | 'Planificación';
+}
+
+export interface Especialidad {
+  id_especialidad: number;
+  nombre: string;
+  estatus: 'Activa' | 'Inactiva';
 }
 
 export interface Student {
@@ -128,7 +135,16 @@ export interface TeacherScheduleLog {
   date: string;          // YYYY-MM-DD
   clockInTime: string;   // HH:MM
   clockOutTime?: string; // HH:MM
-  status: 'OnTime' | 'Late' | 'Absent';
+  status: 'OnTime' | 'Late' | 'Absent' | 'Justified';
+  justificaciones?: JustificacionDocente[];
+}
+
+export interface JustificacionDocente {
+  id: number;
+  id_asistencia: number;
+  motivo: string;
+  soporte_digital: string | null;
+  created_at: string;
 }
 
 export interface Classroom {

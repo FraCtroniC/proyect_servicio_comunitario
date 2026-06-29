@@ -3,6 +3,7 @@ import { databaseConfig } from '../../config/database';
 import { environment } from '../../config/environment';
 
 import { initRol, Rol } from './Rol';
+import { initEspecialidad, Especialidad } from './Especialidad';
 import { initDocente, Docente } from './Docente';
 import { initUsuario, Usuario } from './Usuario';
 import { initPeriodoEscolar, PeriodoEscolar } from './PeriodoEscolar';
@@ -40,6 +41,7 @@ const sequelize = new Sequelize(environment.databaseUrl, config);
 
 // Inicializar todos los modelos
 initRol(sequelize);
+initEspecialidad(sequelize);
 initDocente(sequelize);
 initUsuario(sequelize);
 initPeriodoEscolar(sequelize);
@@ -68,6 +70,7 @@ initMateriaPendiente(sequelize);
 
 const models = {
   Rol,
+  Especialidad,
   Docente,
   Usuario,
   PeriodoEscolar,
@@ -106,6 +109,7 @@ export {
   sequelize,
   Sequelize,
   Rol,
+  Especialidad,
   Docente,
   Usuario,
   PeriodoEscolar,

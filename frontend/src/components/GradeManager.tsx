@@ -5,11 +5,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash, ScrollText, Download, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole, StudyPlanItem, SchoolPeriod, Section } from '../types';
 import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../utils/gradeCalculations';
 import { generateBoletinPDF } from '../utils/pdfGenerator';
 import { exportGradesToExcel } from '../utils/excelGenerator';
 import { api } from '../services/api';
+import { SearchableSelect } from './SearchableSelect';
 
 interface GradeManagerProps {
   students: Student[];
@@ -56,6 +58,7 @@ export default function GradeManager({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [lastSavedPayload, setLastSavedPayload] = useState<string>('');
+  const [unsavedChanges, setUnsavedChanges] = useState<Record<string, boolean>>({});
 
   // Audit logs pagination
   const [visibleAuditLogsCount, setVisibleAuditLogsCount] = useState(3);
@@ -219,7 +222,8 @@ export default function GradeManager({
     try {
       await api.historicoNotas.downloadExcel(certSelectedStudentId, certPlanCode);
     } catch (e: any) {
-      alert('Error al descargar Excel: ' + (e.message || 'Error desconocido'));
+      console.error(e);
+      toast.error('Error al descargar Excel: ' + (e.message || 'Error desconocido'));
     } finally {
       setCertExcelLoading(false);
     }
@@ -268,12 +272,14 @@ export default function GradeManager({
 
   const handleSavePlan = () => {
     const sum = planEvaluations.reduce((acc, curr) => acc + (Number(curr.percentage) || 0), 0);
+    const hasZero = planEvaluations.some(ev => !ev.percentage || ev.percentage <= 0);
+    
     if (sum !== 100) {
-      alert(`Error: La sumatoria de las ponderaciones debe ser exactamente el 100%. Actualmente suma ${sum}%.`);
+      toast.error(`Error: La sumatoria de las ponderaciones debe ser exactamente el 100%. Actualmente suma ${sum}%.`);
       return;
     }
-    if (planEvaluations.some(ev => !ev.percentage || ev.percentage <= 0)) {
-      alert('Error: Todas las actividades deben tener un porcentaje mayor a 0%.');
+    if (hasZero) {
+      toast.error('Error: Todas las actividades deben tener un porcentaje mayor a 0%.');
       return;
     }
     onUpdateEvaluationPlan(selectedSubjectId, selectedYear, selectedSection, selectedLapso, planEvaluations);
@@ -288,14 +294,15 @@ export default function GradeManager({
   };
 
   const handleSaveGrade = (stdId: string, evId: string, moveToNext: boolean = false) => {
-    const scoreNum = Math.floor(Number(tempGradeValue));
-    if (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 20) {
-      alert("Calificación inválida. El formato de notas reglamentario venezolano del MPPE exige un rango estricto de 1 a 20 puntos.");
+    const numValue = Number(tempGradeValue);
+    if (isNaN(numValue) || numValue < 1 || numValue > 20) {
+      toast.error("Calificación inválida. El formato de notas reglamentario venezolano del MPPE exige un rango estricto de 1 a 20 puntos.");
       setEditingGradeCell(null);
       return;
     }
     
-    onUpdateGrade(stdId, selectedSubjectId, selectedLapso, evId, scoreNum);
+    onUpdateGrade(stdId, selectedSubjectId, selectedLapso, evId, numValue);
+    setUnsavedChanges(prev => ({ ...prev, [`${stdId}-${evId}`]: true }));
     
     if (moveToNext) {
       const currentIndex = activeSectionStudents.findIndex(s => s.id === stdId);
@@ -326,13 +333,15 @@ export default function GradeManager({
     );
 
     if (gradesToSave.length === 0) {
-      alert("No hay calificaciones cargadas para guardar en este periodo.");
+      toast.error("No hay calificaciones cargadas para guardar en este periodo.");
       return;
     }
 
     const currentPayload = JSON.stringify(gradesToSave);
-    if (currentPayload === lastSavedPayload) {
-      alert("No se detectaron cambios. Las calificaciones actuales ya se encuentran guardadas.");
+    const hasChanges = Object.keys(unsavedChanges).length > 0;
+    
+    if (!hasChanges) {
+      toast.error("No se detectaron cambios. Las calificaciones actuales ya se encuentran guardadas.");
       return;
     }
 
@@ -355,13 +364,15 @@ export default function GradeManager({
       await onSaveGrades(gradesToSave, subjectName, selectedYear, selectedSection, selectedLapso, detalles, activePlan?.evaluations || []);
       setLastSavedPayload(currentPayload);
       setSaveSuccess(true);
+      setUnsavedChanges({});
+      toast.success("Calificaciones guardadas exitosamente en la base de datos.");
       setTimeout(() => {
         setSaveSuccess(false);
         setIsSaving(false);
       }, 2000); // Muestra el check por 2 segundos antes de cerrar
     } catch (e) {
       console.error(e);
-      alert("Ocurrió un error al guardar las calificaciones.");
+      toast.error("Ocurrió un error al guardar las calificaciones.");
       setIsSaving(false);
     }
   };
@@ -488,15 +499,11 @@ export default function GradeManager({
 
             <div id="filter-subject-group" className="flex flex-col gap-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase">Asignatura</span>
-              <select
+              <SearchableSelect
+                options={subjects.filter(s => s.years.includes(selectedYear)).map(s => ({ value: s.id, label: s.name }))}
                 value={selectedSubjectId}
-                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
-              >
-                {subjects.filter(s => s.years.includes(selectedYear)).map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedSubjectId(String(val))}
+              />
             </div>
 
             <div id="filter-lapso-group" className="flex flex-col gap-1">
@@ -1020,17 +1027,11 @@ export default function GradeManager({
           <div id="boletin-student-controls" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             <div id="boletin-student-group" className="flex flex-col gap-1 w-72">
               <span className="text-[9px] font-bold text-slate-400 uppercase">Seleccione Alumno Matriculado</span>
-              <select
+              <SearchableSelect
+                options={students.map(s => ({ value: s.id, label: `[${s.academicYear}° Año "${s.section}"] - ${s.lastName}, ${s.firstName} (${s.cedula})` }))}
                 value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
-              >
-                {students.map(s => (
-                  <option key={s.id} value={s.id}>
-                    [{s.academicYear}° Año "{s.section}"] - {s.lastName}, {s.firstName} ({s.cedula})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedStudentId(String(val))}
+              />
             </div>
 
             <p className="text-[11px] text-slate-400 italic max-w-xs mt-3">
@@ -1238,29 +1239,13 @@ export default function GradeManager({
             <div className="flex flex-wrap gap-4 items-end">
               {/* Student search + selector */}
               <div className="flex flex-col gap-1 flex-1 min-w-[280px]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Buscar Estudiante</span>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={certSearchQuery}
-                    onChange={(e) => setCertSearchQuery(e.target.value)}
-                    placeholder="Buscar por cédula o nombre..."
-                    className="w-full text-xs p-2.5 pl-8 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
-                  />
-                </div>
-                <select
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Seleccionar Estudiante</span>
+                <SearchableSelect
+                  options={students.map(s => ({ value: s.id, label: `[${s.academicYear}° "${s.section}"] ${s.lastName}, ${s.firstName} — ${s.cedula}` }))}
                   value={certSelectedStudentId}
-                  onChange={(e) => setCertSelectedStudentId(e.target.value)}
-                  className="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
-                >
-                  <option value="">Seleccione un estudiante</option>
-                  {certFilteredStudents.map(s => (
-                    <option key={s.id} value={s.id}>
-                      [{s.academicYear}° "{s.section}"] {s.lastName}, {s.firstName} — {s.cedula}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setCertSelectedStudentId(String(val))}
+                  placeholder="Seleccione un estudiante"
+                />
               </div>
 
               {/* Plan selector */}

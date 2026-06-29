@@ -5,12 +5,14 @@
 
 import React, { useState } from 'react';
 import { Layers, UserPlus, Filter, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Student, AcademicYear, UserRole, MateriaPendiente, Section } from '../types';
 import { generateConstanciaEstudio } from '../utils/pdfGenerator';
 import { exportStudentsToExcel } from '../utils/excelGenerator';
 import { Modal } from './Modal';
 import { api } from '../services/api';
 import { getStates, getMunicipalities, getParishes } from '../utils/venezuela';
+import { SearchableSelect } from './SearchableSelect';
 
 interface StudentManagerProps {
   students: Student[];
@@ -662,38 +664,32 @@ export default function StudentManager({ students, sections, classrooms, current
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
                 <label className="text-xs font-semibold text-slate-500">Estado <span className="text-red-500 font-bold text-sm">*</span></label>
-                <select 
-                  value={estado} 
-                  onChange={(e) => { setEstado(e.target.value); setMunicipio(''); setBirthPlace(''); }}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium"
-                >
-                  <option value="">Seleccionar</option>
-                  {getStates().map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SearchableSelect
+                  options={getStates().map(s => ({ value: s, label: s }))}
+                  value={estado}
+                  onChange={(val) => { setEstado(String(val)); setMunicipio(''); setBirthPlace(''); }}
+                  placeholder="Seleccionar"
+                />
               </div>
               <div className="space-y-0.5">
                 <label className="text-xs font-semibold text-slate-500">Municipio <span className="text-red-500 font-bold text-sm">*</span></label>
-                <select 
-                  value={municipio} 
-                  onChange={(e) => { setMunicipio(e.target.value); setBirthPlace(''); }}
+                <SearchableSelect
+                  options={estado ? getMunicipalities(estado).map(m => ({ value: m, label: m })) : []}
+                  value={municipio}
+                  onChange={(val) => { setMunicipio(String(val)); setBirthPlace(''); }}
                   disabled={!estado}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium disabled:opacity-50"
-                >
-                  <option value="">Seleccionar</option>
-                  {getMunicipalities(estado).map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
+                  placeholder="Seleccionar"
+                />
               </div>
               <div className="space-y-0.5">
                 <label className="text-xs font-semibold text-slate-500">Lugar Nac. (Parroquia)</label>
-                <select 
-                  value={birthPlace} 
-                  onChange={(e) => setBirthPlace(e.target.value)}
+                <SearchableSelect
+                  options={(estado && municipio) ? getParishes(estado, municipio).map((p: string) => ({ value: p, label: p })) : []}
+                  value={birthPlace}
+                  onChange={(val) => setBirthPlace(String(val))}
                   disabled={!municipio}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium disabled:opacity-50"
-                >
-                  <option value="">Seleccionar</option>
-                  {getParishes(estado, municipio).map((p: string) => <option key={p} value={p}>{p}</option>)}
-                </select>
+                  placeholder="Seleccionar"
+                />
               </div>
             </div>
 
@@ -919,10 +915,10 @@ export default function StudentManager({ students, sections, classrooms, current
                         id_asignatura: asigId,
                         id_periodo: 1 // Por defecto periodo activo
                       });
-                      alert('Materia pendiente matriculada con éxito.');
+                      toast.success('Materia pendiente matriculada con éxito.');
                       handleOpenProfile(selectedStudent);
                     } catch (e) {
-                      alert('Error matriculando materia pendiente.');
+                      toast.error('Error matriculando materia pendiente.');
                     }
                   }
                 }}

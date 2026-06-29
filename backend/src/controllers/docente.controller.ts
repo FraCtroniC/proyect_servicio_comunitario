@@ -4,8 +4,8 @@ import { Docente } from '../models/Docente';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { NotFoundError } from '../shared/errors';
 
-const ALLOWED_CREATE_FIELDS = ['cedula_docente', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'especialidad', 'telefono', 'correo'];
-const ALLOWED_UPDATE_FIELDS = ['cedula_docente', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'especialidad', 'telefono', 'correo'];
+const ALLOWED_CREATE_FIELDS = ['cedula_docente', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'id_especialidad', 'fecha_nac', 'telefono', 'correo'];
+const ALLOWED_UPDATE_FIELDS = ['cedula_docente', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'id_especialidad', 'fecha_nac', 'telefono', 'correo'];
 
 function pick(body: any, fields: string[]): any {
   const result: any = {};

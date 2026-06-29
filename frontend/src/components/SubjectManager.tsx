@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Book, Plus, Filter } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { StudyPlanItem, UserRole } from '../types';
 import { Modal } from './Modal';
 
@@ -32,7 +33,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre.trim() || !codigo.trim()) {
-      alert("El nombre y el código son requeridos");
+      toast.error("El nombre y el código son requeridos");
       return;
     }
 

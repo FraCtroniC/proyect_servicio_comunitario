@@ -9,7 +9,7 @@ interface ModalProps {
   maxWidth?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-xl' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-3xl' }: ModalProps) {
   // Manejar cierre con ESC y prevenir scroll en el body cuando está abierto
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CalendarDays, Plus, Lock, CheckCircle2, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { SchoolPeriod, UserRole } from '../types';
 import { Modal } from './Modal';
 
@@ -31,7 +32,7 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) {
-      alert('El nombre del periodo es requerido (ej. 2026-2027)');
+      toast.error('El nombre del periodo es requerido (ej. 2026-2027)');
       return;
     }
     onAddPeriod(newName, newStatus);
@@ -47,11 +48,12 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
   const handleCloseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (confirmText !== 'CERRAR') {
-      alert('Debes escribir la palabra CERRAR exactamente igual para confirmar.');
+      toast.error('Debes escribir la palabra CERRAR exactamente igual para confirmar.');
       return;
     }
     if (selectedPeriod) {
       onUpdatePeriodStatus(selectedPeriod.id, 'Cerrado');
+      toast.success(`Periodo ${selectedPeriod.name} cerrado exitosamente.`);
     }
     setIsCloseModalOpen(false);
   };

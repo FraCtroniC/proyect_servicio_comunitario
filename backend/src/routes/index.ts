@@ -28,11 +28,22 @@ import { asistenciaEstudianteRoutes } from './asistencia-estudiante.routes';
 import { systemRoutes } from './system.routes';
 import { notificacionRoutes } from './notificacion.routes';
 import { materiaPendienteRoutes } from './materia-pendiente.routes';
+import { especialidadRoutes } from './especialidad.routes';
 
 export const routes = Router();
 
 // Auth routes are public (no auth middleware)
 routes.use('/auth', authRoutes);
+
+routes.get('/test-docentes', async (req, res) => {
+  try {
+    const { Docente } = require('../models/Docente');
+    const result = await Docente.findAll();
+    res.json({ data: result });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message, stack: e.stack });
+  }
+});
 
 // All other routes require authentication
 routes.use(authMiddleware);
@@ -64,3 +75,4 @@ routes.use('/evaluaciones', evaluacionRoutes);
 routes.use('/system', systemRoutes);
 routes.use('/notificaciones', notificacionRoutes);
 routes.use('/materias-pendientes', materiaPendienteRoutes);
+routes.use('/especialidades', especialidadRoutes);

@@ -109,5 +109,9 @@ export const api = {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
+  },
+  especialidades: {
+    getAll: () => request('/api/especialidades'),
+    create: (data: { nombre: string }) => request('/api/especialidades', { method: 'POST', body: JSON.stringify(data) })
   }
 };

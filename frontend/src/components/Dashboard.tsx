@@ -4,6 +4,7 @@
  */
 
 import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock, Database } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Student, User, Attendance, Grade, Subject, EvaluationPlan, UserRole } from '../types';
 import { calculateEvaluationAverage } from '../utils/gradeCalculations';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -98,7 +99,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
       a.click();
       a.remove();
     } catch (e) {
-      alert("Error al descargar el respaldo.");
+      toast.error("Error al descargar el respaldo.");
       console.error(e);
     }
   };
@@ -284,15 +285,19 @@ export default function Dashboard({ students, users, attendance, grades, subject
                           onClick={async () => {
                             if (window.confirm(`¿Enviar alerta al representante de ${s.firstName}?`)) {
                               try {
-                                await api.notificaciones.alertaAcademica({
+                                const success = await api.notificaciones.alertaAcademica({
                                   emailRepresentante: 'representante.demo@gmail.com', // Demo, en prod usar s.representativeEmail
                                   studentName: `${s.firstName} ${s.lastName}`,
                                   subjectName: 'Bajo Rendimiento General',
                                   notes: 'Promedio actual inferior a 10 ptos.'
                                 });
-                                alert('Alerta enviada correctamente');
+                                if (success) {
+                                  toast.success('Alerta enviada correctamente');
+                                } else {
+                                  toast.error('Error enviando alerta');
+                                }
                               } catch (e) {
-                                alert('Error enviando alerta');
+                                toast.error('Error enviando alerta');
                               }
                             }
                           }}

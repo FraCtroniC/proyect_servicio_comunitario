@@ -5,6 +5,6 @@ export const ROLES = {
 } as const;
 
 export const ASISTENCIA_ESTUDIANTE_STATUS = ['Presente', 'Ausente', 'Justificado'] as const;
-export const ASISTENCIA_DOCENTE_STATUS = ['Puntual', 'Retardo', 'Ausente'] as const;
+export const ASISTENCIA_DOCENTE_STATUS = ['Puntual', 'Retardo', 'Ausente', 'Justificado'] as const;
 
 export const HORA_LIMITE_PUNTUAL = '07:05';

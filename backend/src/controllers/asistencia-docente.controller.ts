@@ -32,7 +32,7 @@ export const AsistenciaDocenteController = {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
     const offset = (page - 1) * limit;
 
-    const where: any = { fecha_anulacion: null };
+    const where: any = {};
     if (req.query.fecha) where.fecha = String(req.query.fecha);
     if (req.query.id_docente) where.id_docente = Number(req.query.id_docente);
     if (req.query.estatus) where.estatus = String(req.query.estatus);
@@ -64,7 +64,7 @@ export const AsistenciaDocenteController = {
         { model: Docente, as: 'docente' }
       ]
     });
-    if (!result || result.fecha_anulacion) {
+    if (!result) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
@@ -111,7 +111,6 @@ export const AsistenciaDocenteController = {
       return;
     }
 
-    payload.id_usuario_crea = req.user!.idUsuario;
     const result = await AsistenciaDocente.create(payload);
     res.status(201).json({ data: result });
   }),
@@ -119,7 +118,7 @@ export const AsistenciaDocenteController = {
   actualizar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const id = Number(req.params.id);
     const record = await AsistenciaDocente.findByPk(id);
-    if (!record || record.fecha_anulacion) {
+    if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
@@ -142,7 +141,6 @@ export const AsistenciaDocenteController = {
       return;
     }
 
-    payload.id_usuario_modifica = req.user!.idUsuario;
     await record.update(payload);
     res.json({ data: record });
   }),
@@ -150,18 +148,18 @@ export const AsistenciaDocenteController = {
   eliminar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const id = Number(req.params.id);
     const record = await AsistenciaDocente.findByPk(id);
-    if (!record || record.fecha_anulacion) {
+    if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    await record.update({ fecha_anulacion: new Date(), id_usuario_modifica: req.user!.idUsuario });
+    await record.destroy();
     res.status(204).send();
   }),
 
   estadisticas: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { id_docente, fecha_desde, fecha_hasta } = req.query;
 
-    const whereConditions: string[] = ['ad.fecha_anulacion IS NULL'];
+    const whereConditions: string[] = [];
     const replacements: any[] = [];
 
     if (id_docente) {
@@ -177,7 +175,7 @@ export const AsistenciaDocenteController = {
       replacements.push(String(fecha_hasta));
     }
 
-    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     const query = `
       SELECT

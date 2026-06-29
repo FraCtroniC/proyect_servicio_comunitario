@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Layers, ShieldAlert, Users, BookOpen, ChevronRight } from 'lucide-react';
 import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User, Classroom } from '../types';
 import { Modal } from './Modal';
+import { SearchableSelect } from './SearchableSelect';
 
 interface AcademicManagerProps {
   students: Student[];
@@ -222,35 +223,29 @@ export default function AcademicManager({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
-              <select
+              <SearchableSelect
+                options={docentes.map(d => ({ value: d.teacherId || d.id, label: `${d.name} ${d.cedula ? `(${d.cedula})` : ''}` }))}
                 value={secDocente}
-                onChange={(e) => setSecDocente(e.target.value)}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-              >
-                <option value="">Seleccione un docente</option>
-                {docentes.map(d => (
-                  <option key={d.id} value={d.teacherId || d.id}>{d.name} {d.cedula ? `(${d.cedula})` : ''}</option>
-                ))}
-              </select>
+                onChange={(val) => setSecDocente(String(val))}
+                placeholder="Seleccione un docente"
+              />
             </div>
             
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
-              <select
-                value={secAula}
-                onChange={(e) => setSecAula(e.target.value)}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-              >
-                <option value="">Seleccione un aula</option>
-                {classrooms?.filter(c => c.type === 'Teórica').map(c => {
+              <SearchableSelect
+                options={(classrooms || []).filter(c => c.type === 'Teórica').map(c => {
                   const isTaken = sections.some(s => s.homeClassroomId === c.id);
-                  return (
-                    <option key={c.id} value={c.id} disabled={isTaken}>
-                      {c.name} ({c.capacity} cap.) {isTaken ? '- Ya asignada' : ''}
-                    </option>
-                  );
+                  return {
+                    value: c.id,
+                    label: `${c.name} (${c.capacity} cap.) ${isTaken ? '- Ya asignada' : ''}`,
+                    disabled: isTaken
+                  };
                 })}
-              </select>
+                value={secAula}
+                onChange={(val) => setSecAula(String(val))}
+                placeholder="Seleccione un aula"
+              />
             </div>
           </div>
 

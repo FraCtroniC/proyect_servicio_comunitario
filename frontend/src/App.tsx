@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import toast, { Toaster } from 'react-hot-toast';
 import {
   Users,
   GraduationCap,
@@ -235,7 +236,8 @@ export default function App() {
               date: a.fecha,
               clockInTime: a.hora_entrada,
               clockOutTime: a.hora_salida,
-              status: a.estatus === 'Puntual' ? 'OnTime' : 'Late'
+              status: a.estatus === 'Puntual' ? 'OnTime' : a.estatus === 'Retardo' ? 'Late' : a.estatus === 'Justificado' ? 'Justified' : 'Absent',
+              justificaciones: a.justificaciones || []
             })));
           }
 
@@ -252,7 +254,7 @@ export default function App() {
           }
         } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
-          alert("Error al cargar datos desde el backend: " + error.message);
+          toast.error("Error al cargar datos desde el backend: " + error.message);
         }
       };
       loadInitialData();
@@ -268,7 +270,8 @@ export default function App() {
         nombre2: newDocente.secondName,
         apellido1: newDocente.lastName,
         apellido2: newDocente.secondLastName,
-        especialidad: newDocente.specialty,
+        id_especialidad: newDocente.id_especialidad,
+        fecha_nac: newDocente.dateOfBirth,
         telefono: newDocente.phone,
         correo: newDocente.email
       };
@@ -323,7 +326,7 @@ export default function App() {
       setUsers(p => [mapUsuarioToUser(created), ...p]);
     } catch (e) {
       console.error(e);
-      alert('Error al crear usuario en BD');
+      toast.error('Error al crear usuario en BD');
     }
   };
 
@@ -391,7 +394,7 @@ export default function App() {
       setStudents(p => [{ ...newStudent, id: String(studentId) }, ...p]);
     } catch (e) {
       console.error(e);
-      alert('Error al crear estudiante en BD');
+      toast.error('Error al crear estudiante en BD');
     }
   };
 
@@ -481,7 +484,7 @@ export default function App() {
       setStudyPlans(p => [...p, newItem]);
     } catch (e) {
       console.error(e);
-      alert('Error al añadir la materia al plan de estudio en la BD');
+      toast.error('Error al añadir la materia al plan de estudio en la BD');
     }
   };
 
@@ -491,7 +494,7 @@ export default function App() {
       setSubjects(p => p.map(s => s.id === id ? { ...s, name, shortName: name.substring(0, 3).toUpperCase() } : s));
     } catch (e) {
       console.error(e);
-      alert('Error al actualizar la asignatura en la base de datos');
+      toast.error('Error al actualizar la asignatura en la base de datos');
     }
   };
 
@@ -504,7 +507,7 @@ export default function App() {
       setPeriods(p => [...p, mapPeriodoToSchoolPeriod(resp)]);
     } catch (e) {
       console.error(e);
-      alert('Error al crear periodo escolar');
+      toast.error('Error al crear periodo escolar');
     }
   };
 
@@ -514,7 +517,7 @@ export default function App() {
       setPeriods(p => p.map(per => per.id === id ? { ...per, status: newStatus } : per));
     } catch (e) {
       console.error(e);
-      alert('Error al actualizar periodo escolar');
+      toast.error('Error al actualizar periodo escolar');
     }
   };
 
@@ -583,11 +586,11 @@ export default function App() {
     } catch (e: any) {
       console.error("Error al guardar calificaciones:", e);
       if (e.message === "MOCK_PLAN") {
-        alert("⚠️ ATENCIÓN: Debes 'Configurar Plan de Evaluación' para esta asignatura y lapso antes de guardar calificaciones.");
+        toast.error("⚠️ ATENCIÓN: Debes 'Configurar Plan de Evaluación' para esta asignatura y lapso antes de guardar calificaciones.", { duration: 6000 });
         return;
       }
       const msg = e.response?.data?.error?.message || e.message || "Error desconocido";
-      alert(`Error al guardar las calificaciones en la base de datos: ${msg}`);
+      toast.error(`Error al guardar las calificaciones en la base de datos: ${msg}`);
       throw e;
     }
   };
@@ -634,11 +637,11 @@ export default function App() {
         return copy;
       });
 
-      alert("Plan de Evaluación guardado permanentemente en la base de datos.");
+      toast.success("Plan de Evaluación guardado permanentemente en la base de datos.");
     } catch (e: any) {
       console.error(e);
-      const msg = e.response?.data?.error?.message || e.message || "Error desconocido";
-      alert(`Error al guardar el plan de evaluación: ${msg}`);
+      const msg = e.response?.data?.error?.message || e.message || "Error de conexión";
+      toast.error(`Error al guardar el plan de evaluación: ${msg}`);
     }
   };
 
@@ -669,7 +672,7 @@ export default function App() {
 
       if (!matriculaId) {
         console.error('No se encontró matrícula para el estudiante', studentId);
-        alert('Error: No se encontró la matrícula del estudiante. Verifique que esté matriculado en el período activo.');
+        toast.error('Error: No se encontró la matrícula del estudiante. Verifique que esté matriculado en el período activo.');
         return;
       }
 
@@ -702,7 +705,7 @@ export default function App() {
       }
     } catch (e: any) {
       console.error('Error al guardar asistencia estudiantil', e);
-      alert('Error al guardar asistencia: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al guardar asistencia: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
 
@@ -716,11 +719,11 @@ export default function App() {
         hora_entrada: log.clockInTime,
       };
       const created = await api.post<any>('/api/asistencias', payload);
-      const serverStatus = created?.data?.estatus === 'Puntual' ? 'OnTime' : 'Late';
+      const serverStatus = created?.estatus === 'Puntual' ? 'OnTime' : created?.estatus === 'Retardo' ? 'Late' : 'Absent';
       setTeacherLogs(p => [{ ...log, id: String(created.id_asistencia || created.id), status: serverStatus }, ...p]);
-    } catch (e) {
-      console.error(e);
-      setTeacherLogs(p => [log, ...p]);
+    } catch (e: any) {
+      console.error('Error al registrar entrada:', e);
+      toast.error('Error al registrar entrada: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
 
@@ -729,10 +732,10 @@ export default function App() {
     try {
       const result = await api.post<any>(`/api/asistencias-estudiantes/sync-inasistencias-batch`, { ids_matricula });
       console.log('Inasistencias sincronizadas:', result);
-      alert(`Inasistencias sincronizadas correctamente para ${ids_matricula.length} estudiante(s).`);
+      toast.success(`Inasistencias sincronizadas correctamente para ${ids_matricula.length} estudiante(s).`);
     } catch (e: any) {
       console.error('Error al sincronizar inasistencias', e);
-      alert('Error al sincronizar inasistencias: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al sincronizar inasistencias: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
 
@@ -744,10 +747,42 @@ export default function App() {
       }
     } catch (e: any) {
       console.error('Error al registrar salida:', e);
-      alert('Error al registrar salida: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al registrar salida: ' + (e?.response?.data?.error?.message || e.message));
       return;
     }
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
+  };
+
+  const handleJustifyTeacherAbsence = async (logId: string, motivo: string, soporteDigital?: string) => {
+    try {
+      const idAsistencia = Number(logId.replace(/\D/g, ''));
+      if (idAsistencia) {
+        const payload: any = { id_asistencia: idAsistencia, motivo };
+        if (soporteDigital) payload.soporte_digital = soporteDigital;
+        
+        const resp = await api.post<any>('/api/justificaciones', payload);
+        const newJustificacion = resp.data;
+        
+        setTeacherLogs(p => p.map(l => {
+          if (l.id === logId) {
+            const currentJusts = l.justificaciones || [];
+            return { 
+              ...l, 
+              status: 'Justified', 
+              justificaciones: [...currentJusts, newJustificacion] 
+            };
+          }
+          return l;
+        }));
+        
+        return true;
+      }
+      return false;
+    } catch (e: any) {
+      console.error('Error al registrar justificación:', e);
+      toast.error('Error al registrar justificación: ' + (e?.response?.data?.error?.message || e.message));
+      return false;
+    }
   };
 
   const handleAddScheduleEvent = async (evt: ScheduleEvent) => {
@@ -776,7 +811,7 @@ export default function App() {
       setScheduleEvents(p => [...p, { ...evt, id: String(created.id_horario || created.id) }]);
     } catch (e: any) {
       console.error('Error al crear horario:', e);
-      alert('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
+      toast.error('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
     }
   };
 
@@ -805,7 +840,7 @@ export default function App() {
       setClassrooms(prev => [...prev, savedRoom]);
     } catch (e) {
       console.error(e);
-      alert('Error al crear el aula en la base de datos');
+      toast.error('Error al crear el aula en la base de datos');
     }
   };
 
@@ -887,6 +922,15 @@ export default function App() {
 
   return (
     <div id="mppe-app-root" className="min-h-screen bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
+      <Toaster 
+        position="top-center" 
+        toastOptions={{ 
+          duration: 4000, 
+          style: { fontSize: '13px', fontWeight: 'bold', borderRadius: '12px' },
+          success: { style: { background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' } },
+          error: { style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }, duration: 6000 }
+        }} 
+      />
 
       {/* Top Banner Warning context (Simulated) */}
       <div id="simulated-header-badge" className="bg-slate-900 text-slate-300 text-[10px] py-1.5 px-4 text-center font-mono tracking-wider flex items-center justify-between border-b border-slate-800">
@@ -1183,6 +1227,7 @@ export default function App() {
                   onAddTeacherLog={handleAddTeacherLog}
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
+                  onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
                 />
               )}
 
@@ -1191,6 +1236,7 @@ export default function App() {
                   scheduleEvents={scheduleEvents}
                   subjects={subjects}
                   users={users}
+                  docentes={docentes}
                   classrooms={classrooms}
                   sections={sections}
                   referenceData={referenceData}

@@ -7,7 +7,8 @@ export class Docente extends Model {
   declare nombre2: string | null;
   declare apellido1: string;
   declare apellido2: string | null;
-  declare especialidad: string | null;
+  declare id_especialidad: number | null;
+  declare fecha_nac: string | null;
   declare telefono: string | null;
   declare correo: string | null;
   declare token_qr: string | null;
@@ -17,6 +18,7 @@ export class Docente extends Model {
 
   static associate(models: any) {
     Docente.hasMany(models.Usuario, { foreignKey: 'id_docente', as: 'usuarios' });
+    Docente.belongsTo(models.Especialidad, { foreignKey: 'id_especialidad', as: 'especialidad_rel' });
   }
 }
 
@@ -49,8 +51,12 @@ export function initDocente(sequelize: Sequelize): typeof Docente {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
-      especialidad: {
-        type: DataTypes.STRING(100),
+      id_especialidad: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      fecha_nac: {
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
       telefono: {

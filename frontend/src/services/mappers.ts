@@ -10,7 +10,9 @@ export function mapRole(idRol: number): UserRole {
 export function mapUsuarioToUser(dbUser: any): User {
   return {
     id: String(dbUser.id || dbUser.id_usuario),
-    name: dbUser.username || `Usuario ${dbUser.id}`,
+    name: dbUser.docente
+      ? `${dbUser.docente.nombre1} ${dbUser.docente.apellido1}`
+      : (dbUser.username || `Usuario ${dbUser.id}`),
     email: dbUser.correo || `${dbUser.username}@local.liceo`,
     role: mapRole(dbUser.idRol || dbUser.id_rol),
     active: dbUser.estatus === 'Activo',
@@ -27,7 +29,8 @@ export function mapDocenteToDocenteType(dbDocente: any): Docente {
     secondName: dbDocente.nombre2 || undefined,
     lastName: dbDocente.apellido1,
     secondLastName: dbDocente.apellido2 || undefined,
-    specialty: dbDocente.especialidad || undefined,
+    id_especialidad: dbDocente.id_especialidad || undefined,
+    dateOfBirth: dbDocente.fecha_nac || undefined,
     phone: dbDocente.telefono || undefined,
     email: dbDocente.correo || undefined,
     status: dbDocente.estatus || 'Activo',

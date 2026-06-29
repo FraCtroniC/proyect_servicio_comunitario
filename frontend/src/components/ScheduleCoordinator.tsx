@@ -5,12 +5,14 @@
 
 import React, { useState } from 'react';
 import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter } from 'lucide-react';
-import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section } from '../types';
+import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente } from '../types';
+import { SearchableSelect } from './SearchableSelect';
 
 interface ScheduleCoordinatorProps {
   scheduleEvents: ScheduleEvent[];
   subjects: Subject[];
   users: User[];
+  docentes: Docente[];
   classrooms: Classroom[];
   sections: Section[];
   referenceData: { dias: any[]; bloques: any[] };
@@ -23,6 +25,7 @@ export default function ScheduleCoordinator({
   scheduleEvents,
   subjects,
   users,
+  docentes,
   classrooms,
   sections,
   referenceData,
@@ -71,7 +74,10 @@ export default function ScheduleCoordinator({
   const days: ('Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes')[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
   const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || id;
-  const getTeacherName = (id: string) => users.find(u => u.id === id)?.name || id;
+  const getTeacherName = (id: string) => {
+    const doc = docentes.find(d => d.id === id);
+    return doc ? `${doc.firstName} ${doc.lastName}` : id;
+  };
   const getClassroomName = (id: string) => classrooms.find(c => c.id === id)?.name || id;
 
   const handleAssignBlock = (e: React.FormEvent) => {
@@ -93,7 +99,7 @@ export default function ScheduleCoordinator({
     );
     if (teacherConflict) {
       setScheduleError(
-        `Conflicto Docente: El degaño ${getTeacherName(formTeacherId)} ya se encuentra asignado a ${teacherConflict.year}° Año "${teacherConflict.section}" en este mismo bloque (${formDay} ${formBlock}).`
+        `Conflicto Docente: El docente ${getTeacherName(formTeacherId)} ya se encuentra asignado a ${teacherConflict.year}° Año "${teacherConflict.section}" en este mismo bloque (${formDay} ${formBlock}).`
       );
       return;
     }
@@ -277,46 +283,34 @@ export default function ScheduleCoordinator({
               {/* Subject */}
               <div id="block-form-sub" className="space-y-0.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Asignatura</label>
-                <select
+                <SearchableSelect
+                  options={subjects.filter(s => s.years.includes(formYear)).map(s => ({ value: s.id, label: s.name }))}
                   value={formSubjectId}
-                  onChange={(e) => setFormSubjectId(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
-                >
-                  <option value="">Seleccionar...</option>
-                  {subjects.filter(s => s.years.includes(formYear)).map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setFormSubjectId(String(val))}
+                  placeholder="Seleccionar..."
+                />
               </div>
 
               {/* Teacher */}
               <div id="block-form-teach" className="space-y-0.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Docente Responsable</label>
-                <select
+                <SearchableSelect
+                  options={docentes.filter(d => d.status === 'Activo').map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName}` }))}
                   value={formTeacherId}
-                  onChange={(e) => setFormTeacherId(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
-                >
-                  <option value="">Seleccionar...</option>
-                  {users.filter(u => u.role === 'docente').map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setFormTeacherId(String(val))}
+                  placeholder="Seleccionar..."
+                />
               </div>
 
               {/* Classroom */}
               <div id="block-form-room" className="space-y-0.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Salón / Aula Física</label>
-                <select
+                <SearchableSelect
+                  options={classrooms.map(c => ({ value: c.id, label: `${c.name} (Cap. ${c.capacity})` }))}
                   value={formClassroomId}
-                  onChange={(e) => setFormClassroomId(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
-                >
-                  <option value="">Seleccionar...</option>
-                  {classrooms.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} (Cap. {c.capacity})</option>
-                  ))}
-                </select>
+                  onChange={(val) => setFormClassroomId(String(val))}
+                  placeholder="Seleccionar..."
+                />
               </div>
 
               <button
@@ -409,30 +403,22 @@ export default function ScheduleCoordinator({
             {filterType === 'teacher' && (
               <div id="subflt-box-teach" className="flex items-center gap-2">
                 <span className="text-slate-400">Ver Carga del Profesor:</span>
-                <select
+                <SearchableSelect
+                  options={docentes.filter(d => d.status === 'Activo').map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName}` }))}
                   value={filterTeacherId}
-                  onChange={(e) => setFilterTeacherId(e.target.value)}
-                  className="bg-white border rounded p-1 font-bold focus:outline-hidden"
-                >
-                  {users.filter(u => u.role === 'docente').map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setFilterTeacherId(String(val))}
+                />
               </div>
             )}
 
             {filterType === 'classroom' && (
               <div id="subflt-box-room" className="flex items-center gap-2">
                 <span className="text-slate-400">Ver Ocupación del Espacio:</span>
-                <select
+                <SearchableSelect
+                  options={classrooms.map(c => ({ value: c.id, label: c.name }))}
                   value={filterClassroomId}
-                  onChange={(e) => setFilterClassroomId(e.target.value)}
-                  className="bg-white border rounded p-1 font-bold focus:outline-hidden"
-                >
-                  {classrooms.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setFilterClassroomId(String(val))}
+                />
               </div>
             )}
           </div>

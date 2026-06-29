@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, UserPlus, CheckCircle2, AlertCircle, PlusCircle, UserCheck } from 'lucide-react';
-import { Docente, UserRole } from '../types';
+import { Docente, UserRole, Especialidad } from '../types';
 import { Modal } from './Modal';
+import { api } from '../services/api';
+import { SearchableSelect } from './SearchableSelect';
 
 interface DocenteManagerProps {
   docentes: Docente[];
@@ -16,8 +18,12 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
   const [secondName, setSecondName] = useState('');
   const [lastName, setLastName] = useState('');
   const [secondLastName, setSecondLastName] = useState('');
+  const [cedulaType, setCedulaType] = useState('V');
   const [cedula, setCedula] = useState('');
-  const [specialty, setSpecialty] = useState('');
+  const [cedulaError, setCedulaError] = useState('');
+  const [id_especialidad, setIdEspecialidad] = useState<number | ''>('');
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   
@@ -28,29 +34,112 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
 
   const [visibleCount, setVisibleCount] = useState(6);
 
+  const [isEspecialidadModalOpen, setIsEspecialidadModalOpen] = useState(false);
+  const [newEspecialidadName, setNewEspecialidadName] = useState('');
+  const [isSubmittingEspecialidad, setIsSubmittingEspecialidad] = useState(false);
+  const [especialidadErrorMsg, setEspecialidadErrorMsg] = useState('');
+
+  useEffect(() => {
+    async function loadEspecialidades() {
+      try {
+        const res: any = await api.especialidades.getAll();
+        setEspecialidades(Array.isArray(res) ? res : []);
+      } catch (err) {
+        console.error('Error cargando especialidades', err);
+      }
+    }
+    loadEspecialidades();
+  }, []);
+
+  const checkCedula = (val: string, type: string) => {
+    if (!val) {
+      setCedulaError('');
+      return;
+    }
+    if (!val.trim().match(/^\d{7,9}$/)) {
+      setCedulaError('Formato inválido (Solo 7-9 números)');
+      return;
+    }
+    const fullCedula = `${type}-${val.trim()}`;
+    if (docentes.some(d => d.cedula === fullCedula)) {
+      setCedulaError('Esta cédula ya está registrada.');
+    } else {
+      setCedulaError('');
+    }
+  };
+
+  const handleCreateEspecialidadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEspecialidadErrorMsg('');
+    if (!newEspecialidadName || !newEspecialidadName.trim()) {
+      setEspecialidadErrorMsg('El nombre de la especialidad es obligatorio');
+      return;
+    }
+    
+    setIsSubmittingEspecialidad(true);
+    try {
+      const res: any = await api.especialidades.create({ nombre: newEspecialidadName.trim() });
+      const nuevaEspecialidad = res;
+      setEspecialidades(prev => [...prev, nuevaEspecialidad].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      setIdEspecialidad(nuevaEspecialidad.id_especialidad);
+      setSuccessMsg('Especialidad creada con éxito.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      setIsEspecialidadModalOpen(false);
+      setNewEspecialidadName('');
+    } catch (err: any) {
+      setEspecialidadErrorMsg(err.message || 'Error al crear la especialidad');
+    } finally {
+      setIsSubmittingEspecialidad(false);
+    }
+  };
+
+  const handleOpenCreateEspecialidad = () => {
+    setEspecialidadErrorMsg('');
+    setNewEspecialidadName('');
+    setIsEspecialidadModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !cedula) {
-      setErrorMsg('El Primer Nombre, Primer Apellido y Cédula son obligatorios');
+    if (!firstName || !lastName || !cedula || !dateOfBirth) {
+      setErrorMsg('El Primer Nombre, Primer Apellido, Cédula y Fecha de Nacimiento son obligatorios');
       setSuccessMsg('');
       return;
     }
 
-    // Format Cedula
-    let cleanCedula = cedula.trim().toUpperCase();
-    if (!cleanCedula.startsWith('V-') && !cleanCedula.startsWith('E-')) {
-      cleanCedula = 'V-' + cleanCedula;
+    const today = new Date();
+    const dob = new Date(dateOfBirth);
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+    if (age < 18) {
+        setErrorMsg('El docente debe ser mayor de edad (18 años o más).');
+        return;
+    }
+
+    if (!cedula.trim().match(/^\d{7,9}$/)) {
+      setCedulaError('Formato inválido (Solo 7-9 números)');
+      return;
+    }
+    
+    const fullCedula = `${cedulaType}-${cedula.trim()}`;
+    if (docentes.some(d => d.cedula === fullCedula)) {
+      setCedulaError('Esta cédula ya está registrada.');
+      return;
     }
 
     setIsSubmitting(true);
     try {
       const newDocente = {
-        cedula: cleanCedula,
+        cedula: fullCedula,
         firstName: firstName.trim(),
         secondName: secondName.trim() || undefined,
         lastName: lastName.trim(),
         secondLastName: secondLastName.trim() || undefined,
-        specialty: specialty.trim() || undefined,
+        id_especialidad: id_especialidad ? Number(id_especialidad) : undefined,
+        dateOfBirth: dateOfBirth,
         phone: phone.trim() || undefined,
         email: email.trim() || undefined,
         status: 'Activo' as const
@@ -67,9 +156,12 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
       setLastName('');
       setSecondLastName('');
       setCedula('');
-      setSpecialty('');
+      setCedulaType('V');
+      setIdEspecialidad('');
+      setDateOfBirth('');
       setPhone('');
       setEmail('');
+      setCedulaError('');
       setIsModalOpen(false);
     } catch (e: any) {
       setErrorMsg(e.message || 'Error al guardar el docente');
@@ -149,10 +241,10 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                 </div>
 
                 <div className="space-y-1.5 text-xs text-slate-500">
-                  {d.specialty && (
+                  {d.id_especialidad && especialidades.find(e => e.id_especialidad === d.id_especialidad) && (
                     <div className="flex items-center gap-2">
                       <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-medium text-slate-600">{d.specialty}</span>
+                      <span className="font-medium text-slate-600">{especialidades.find(e => e.id_especialidad === d.id_especialidad)?.nombre}</span>
                     </div>
                   )}
                   {d.email && (
@@ -201,58 +293,157 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
               </div>
             )}
 
+            <div id="section-form-docente" className="space-y-3 pt-2">
+              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Docente</span>
+            
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Primer Nombre *</label>
-                <input required type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="Ej. Juan" />
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Cédula de Identidad <span className="text-red-500 font-bold text-sm">*</span></label>
+                <div className="flex">
+                  <select
+                    value={cedulaType}
+                    onChange={(e) => {
+                      setCedulaType(e.target.value);
+                      if (cedula) checkCedula(cedula, e.target.value);
+                    }}
+                    className={`text-sm p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0 transition-colors`}
+                  >
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                  </select>
+                  <input 
+                    required 
+                    type="text" 
+                    value={cedula} 
+                    onChange={e => {
+                      setCedula(e.target.value.replace(/\D/g, ''));
+                      setCedulaError('');
+                    }} 
+                    onBlur={(e) => checkCedula(e.target.value, cedulaType)}
+                    className={`w-full text-sm p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:outline-hidden focus:bg-white transition-colors font-mono`} 
+                    placeholder="Ej. 12345678" 
+                  />
+                </div>
+                {cedulaError && <p className="text-rose-500 text-xs mt-1 font-semibold">{cedulaError}</p>}
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Segundo Nombre</label>
-                <input type="text" value={secondName} onChange={e => setSecondName(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="Ej. Carlos" />
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Fecha de Nacimiento <span className="text-red-500 font-bold text-sm">*</span></label>
+                <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" required />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Primer Apellido *</label>
-                <input required type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="Ej. Pérez" />
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-sm">*</span></label>
+                <input required type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Juan" />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Segundo Apellido</label>
-                <input type="text" value={secondLastName} onChange={e => setSecondLastName(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="Ej. Gómez" />
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Segundo Nombre</label>
+                <input type="text" value={secondName} onChange={e => setSecondName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Carlos" />
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Cédula de Identidad *</label>
-              <input required type="text" value={cedula} onChange={e => setCedula(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="V-12345678" />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Especialidad</label>
-              <input type="text" value={specialty} onChange={e => setSpecialty(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="Ej. Matemáticas, Física..." />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Correo Electrónico</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="docente@ejemplo.com" />
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-sm">*</span></label>
+                <input required type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Pérez" />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Teléfono</label>
-                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full text-sm p-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors" placeholder="0414-1234567" />
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Segundo Apellido</label>
+                <input type="text" value={secondLastName} onChange={e => setSecondLastName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Gómez" />
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-sm transition-colors mt-2 pointer-events-auto cursor-pointer"
-            >
-              {isSubmitting ? 'Registrando...' : 'Registrar Docente'}
-            </button>
+            <div className="space-y-0.5">
+              <label className="text-xs font-semibold text-slate-500">Especialidad</label>
+              <div className="flex gap-2">
+                <SearchableSelect
+                  options={especialidades.map(esp => ({ value: esp.id_especialidad, label: esp.nombre }))}
+                  value={id_especialidad}
+                  onChange={(val) => setIdEspecialidad(val === '' ? '' : Number(val))}
+                  placeholder="-- Seleccionar Especialidad --"
+                />
+                {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateEspecialidad}
+                    className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded border border-indigo-200 transition-colors font-bold flex items-center justify-center shrink-0 cursor-pointer pointer-events-auto"
+                    title="Añadir nueva especialidad"
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Correo Electrónico</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="docente@ejemplo.com" />
+              </div>
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-slate-500">Teléfono</label>
+                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="0414-1234567" />
+              </div>
+            </div>
+            
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                Cancelar
+              </button>
+              <button disabled={isSubmitting} type="submit" className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70 disabled:cursor-not-allowed">
+                {isSubmitting ? 'Guardando...' : 'Registrar Docente'}
+              </button>
+            </div>
           </form>
         )}
+      </Modal>
+
+      {/* Modal for creating a new Especialidad */}
+      <Modal
+        isOpen={isEspecialidadModalOpen}
+        onClose={() => setIsEspecialidadModalOpen(false)}
+        title="Nueva Especialidad"
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleCreateEspecialidadSubmit} className="flex flex-col gap-4">
+          {especialidadErrorMsg && (
+            <div className="p-3 bg-rose-50 text-rose-700 text-sm rounded-lg flex items-center gap-2 font-medium border border-rose-100">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {especialidadErrorMsg}
+            </div>
+          )}
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-slate-700">Nombre de la Especialidad <span className="text-rose-500">*</span></label>
+            <input
+              autoFocus
+              type="text"
+              value={newEspecialidadName}
+              onChange={(e) => setNewEspecialidadName(e.target.value)}
+              placeholder="Ej. Profesor de Biología"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden font-medium text-slate-800 transition-colors"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsEspecialidadModalOpen(false)}
+              className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              disabled={isSubmittingEspecialidad}
+              type="submit"
+              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70"
+            >
+              {isSubmittingEspecialidad ? 'Guardando...' : 'Aceptar'}
+            </button>
+          </div>
+        </form>
       </Modal>
     </>
   );

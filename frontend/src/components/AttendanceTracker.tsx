@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Student, Attendance, User, TeacherScheduleLog, AcademicYear, UserRole, Section } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 
@@ -19,6 +20,7 @@ interface AttendanceTrackerProps {
   onAddTeacherLog: (log: TeacherScheduleLog) => void;
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
   onSyncInasistencias?: (ids_matricula: string[]) => void;
+  onJustifyTeacherAbsence?: (logId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
 }
 
 export default function AttendanceTracker({
@@ -31,7 +33,8 @@ export default function AttendanceTracker({
   onModifyAttendance,
   onAddTeacherLog,
   onUpdateTeacherLog,
-  onSyncInasistencias
+  onSyncInasistencias,
+  onJustifyTeacherAbsence
 }: AttendanceTrackerProps) {
   // Navigation
   const [trackerTab, setTrackerTab] = useState<'students' | 'teachers'>('students');
@@ -48,6 +51,12 @@ export default function AttendanceTracker({
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('t-1');
   const [clockSuccessMsg, setClockSuccessMsg] = useState('');
 
+  // Justification Modal state
+  const [showJustifyModal, setShowJustifyModal] = useState(false);
+  const [justifyLogId, setJustifyLogId] = useState<string>('');
+  const [justifyMotivo, setJustifyMotivo] = useState('');
+  const [justifySoporte, setJustifySoporte] = useState('');
+
   // Filtering students and their attendance records for the selected date
   const sectionStudents = students.filter(s => s.academicYear === selectedYear && s.section === selectedSection && s.status === 'Activo');
 
@@ -57,7 +66,7 @@ export default function AttendanceTracker({
   const handleTeacherClockIn = () => {
     const exists = teacherLogs.find(l => l.teacherId === selectedTeacherId && l.date === selectedDate);
     if (exists) {
-      alert("El docente elegido ya posee un registro de entrada cargado para la fecha simulada asignada.");
+      toast.error("El docente elegido ya posee un registro de entrada cargado para la fecha simulada asignada.");
       return;
     }
 
@@ -155,10 +164,11 @@ export default function AttendanceTracker({
                       return att?.matriculaId;
                     })
                     .filter((id): id is string => !!id);
-                  if (ids_matricula.length > 0) {
+                  const hasAbsences = ids_matricula.length > 0;
+                  if (hasAbsences) {
                     onSyncInasistencias?.(ids_matricula);
                   } else {
-                    alert('No hay registros de asistencia para sincronizar. Marque asistencia primero.');
+                    toast.error('No hay registros de asistencia para sincronizar. Marque asistencia primero.');
                   }
                 }
               }}
@@ -271,8 +281,8 @@ export default function AttendanceTracker({
                                     id={`att-flag-${student.id}-${flag}`}
                                     key={flag}
                                     onClick={() => {
-                                      if (!['super_admin', 'control_estudios', 'docente'].includes(currentUserRole)) {
-                                        alert("Error: Solo los docentes o el cuerpo de Control de Estudios pueden pasar asistencia.");
+                                      if (currentUserRole !== 'super_admin' && currentUserRole !== 'docente' && currentUserRole !== 'control_estudios') {
+                                        toast.error("Error: Solo los docentes o el cuerpo de Control de Estudios pueden pasar asistencia.");
                                         return;
                                       }
                                       onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '');
@@ -363,7 +373,7 @@ export default function AttendanceTracker({
                   onClick={() => {
                     const activeLog = teacherLogs.find(l => l.teacherId === selectedTeacherId && l.date === selectedDate && !l.clockOutTime);
                     if (!activeLog) {
-                      alert("No existe una entrada activa sin salida para el profesor seleccionado en el día simulado de hoy.");
+                      toast.error("No existe una entrada activa sin salida para el profesor seleccionado en el día simulado de hoy.");
                       return;
                     }
                     handleTeacherClockOut(activeLog.id);
@@ -419,18 +429,32 @@ export default function AttendanceTracker({
                           <td className="py-3 text-center">
                             {log.status === 'OnTime' ? (
                               <span className="text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full text-[9px]">Puntual</span>
-                            ) : (
+                            ) : log.status === 'Late' ? (
                               <span className="text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full text-[9px]">Retardo</span>
+                            ) : log.status === 'Absent' ? (
+                              <span className="text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-full text-[9px]">Ausente</span>
+                            ) : (
+                              <span className="text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full text-[9px] cursor-help" title={log.justificaciones?.[0]?.motivo || 'Falta justificada'}>Justificado</span>
                             )}
                           </td>
                           <td className="py-3 text-right">
-                            {!log.clockOutTime ? (
+                            {!log.clockOutTime && log.status !== 'Absent' && log.status !== 'Justified' ? (
                               <button
                                 id={`row-clockout-${log.id}`}
                                 onClick={() => handleTeacherClockOut(log.id)}
                                 className="text-[10px] text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                               >
                                 Marcar Salida
+                              </button>
+                            ) : log.status === 'Absent' ? (
+                              <button
+                                onClick={() => {
+                                  setJustifyLogId(log.id);
+                                  setShowJustifyModal(true);
+                                }}
+                                className="text-[10px] text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                              >
+                                Justificar
                               </button>
                             ) : (
                               <span className="text-[10px] text-slate-300 font-bold">Completado</span>
@@ -451,6 +475,76 @@ export default function AttendanceTracker({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* Justification Modal */}
+      {showJustifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+            <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4 text-rose-600" />
+                Justificar Inasistencia Docente
+              </h3>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Motivo de la Inasistencia *</label>
+                <textarea
+                  value={justifyMotivo}
+                  onChange={e => setJustifyMotivo(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
+                  placeholder="Ej. Reposo médico por 3 días..."
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
+                <input
+                  type="text"
+                  value={justifySoporte}
+                  onChange={e => setJustifySoporte(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                  placeholder="Referencia al documento físico o link"
+                />
+              </div>
+            </div>
+            
+            <div className="bg-slate-50 px-5 py-4 border-t border-slate-200 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowJustifyModal(false);
+                  setJustifyMotivo('');
+                  setJustifySoporte('');
+                }}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors pointer-events-auto cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!justifyMotivo.trim()) {
+                    toast.error("El motivo es obligatorio.");
+                    return;
+                  }
+                  if (onJustifyTeacherAbsence) {
+                    const success = await onJustifyTeacherAbsence(justifyLogId, justifyMotivo, justifySoporte);
+                    if (success) {
+                      setShowJustifyModal(false);
+                      setJustifyMotivo('');
+                      setJustifySoporte('');
+                    }
+                  }
+                }}
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-xs pointer-events-auto cursor-pointer"
+              >
+                Registrar Justificación
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { JustificacionController } from '../controllers/justificacion.controller';
 import { authorize } from '../middlewares/rbac.middleware';
+import { ROLES } from '../shared/constants';
 
 export const justificacionRoutes = Router();
 
 justificacionRoutes.get('/', JustificacionController.listar);
+justificacionRoutes.get('/por-asistencia/:id_asistencia', JustificacionController.listarPorAsistencia);
 justificacionRoutes.get('/:id', JustificacionController.obtenerPorId);
-justificacionRoutes.post('/', authorize(1, 3, 4), JustificacionController.crear);
-justificacionRoutes.patch('/:id', authorize(1, 3, 4), JustificacionController.actualizar);
-justificacionRoutes.delete('/:id', authorize(1), JustificacionController.eliminar);
+justificacionRoutes.post('/', authorize(ROLES.SUPER_ADMIN, ROLES.CONTROL_ESTUDIOS, ROLES.DOCENTE), JustificacionController.crear);
+justificacionRoutes.patch('/:id', authorize(ROLES.SUPER_ADMIN, ROLES.CONTROL_ESTUDIOS), JustificacionController.actualizar);
+justificacionRoutes.delete('/:id', authorize(ROLES.SUPER_ADMIN), JustificacionController.eliminar);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BookOpen, Search, User, PlusCircle, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { api } from '../services/api';
 import { Student, Subject, SchoolPeriod, User as AppUser, PendingSubject } from '../types';
+import { SearchableSelect } from './SearchableSelect';
 import { generateActaMateriaPendiente } from '../utils/pdfGenerator';
 
 interface PendingSubjectsManagerProps {
@@ -322,30 +323,22 @@ export default function PendingSubjectsManager({
               
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase">Estudiante <span className="text-rose-500">*</span></label>
-                <select
+                <SearchableSelect
+                  options={students.map(s => ({ value: s.id, label: `${s.lastName}, ${s.firstName} - ${s.cedula}` }))}
                   value={enrollStudentId}
-                  onChange={(e) => setEnrollStudentId(e.target.value)}
-                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-                >
-                  <option value="">Seleccione un estudiante</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.lastName}, {s.firstName} - {s.cedula}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setEnrollStudentId(String(val))}
+                  placeholder="Seleccione un estudiante"
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase">Asignatura (Arrastre) <span className="text-rose-500">*</span></label>
-                <select
+                <SearchableSelect
+                  options={subjects.map(s => ({ value: s.id, label: s.name }))}
                   value={enrollSubjectId}
-                  onChange={(e) => setEnrollSubjectId(e.target.value)}
-                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-                >
-                  <option value="">Seleccione la materia</option>
-                  {subjects.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setEnrollSubjectId(String(val))}
+                  placeholder="Seleccione la materia"
+                />
               </div>
 
               <div className="space-y-1">
@@ -364,16 +357,15 @@ export default function PendingSubjectsManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase">Docente Evaluador</label>
-                <select
+                <SearchableSelect
+                  options={users.filter(u => u.role === 'docente').map(u => ({ 
+                    value: u.id, 
+                    label: `${(u as any).apellidos || (u as any).lastName || ''}, ${(u as any).nombres || (u as any).firstName || u.name}` 
+                  }))}
                   value={enrollEvaluatorId}
-                  onChange={(e) => setEnrollEvaluatorId(e.target.value)}
-                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-                >
-                  <option value="">Sin asignar (Opcional)</option>
-                  {users.filter(u => u.role === 'docente').map(u => (
-                    <option key={u.id} value={u.id}>{(u as any).apellidos || (u as any).lastName || ''}, {(u as any).nombres || (u as any).firstName || u.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setEnrollEvaluatorId(String(val))}
+                  placeholder="Sin asignar (Opcional)"
+                />
               </div>
 
               <div className="pt-2 flex justify-end gap-3">

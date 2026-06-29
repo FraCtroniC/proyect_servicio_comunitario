@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Usuario as UsuarioModel, Rol } from '../models';
+import { Usuario as UsuarioModel, Rol, Docente } from '../models';
 import { UsuarioDto, CrearUsuarioDto, ActualizarUsuarioDto } from '../types/usuario.types';
 import { NotFoundError, ValidationError } from '../shared/errors';
 
@@ -27,6 +27,7 @@ export const UsuarioService = {
       order: [['id_usuario', 'ASC']],
       include: [
         { model: Rol, as: 'rol' },
+        { model: Docente, as: 'docente' },
       ],
     });
     return usuarios.map(mapModelToDto);
@@ -35,6 +36,10 @@ export const UsuarioService = {
   async obtenerPorId(id: number): Promise<UsuarioDto> {
     const usuario = await UsuarioModel.findByPk(id, {
       attributes: { exclude: ['password_hash'] },
+      include: [
+        { model: Rol, as: 'rol' },
+        { model: Docente, as: 'docente' },
+      ],
     });
     if (!usuario) {
       throw new NotFoundError(`Usuario con id ${id} no encontrado`);

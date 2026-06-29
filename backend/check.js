@@ -1,5 +1,23 @@
-const { Client } = require('pg');
-const client = new Client({ user: 'postgres', password: 'password', host: 'localhost', database: 'proyecto_sc' });
-client.connect().then(() => client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'secciones'"))
-  .then(res => { console.log(res.rows.map(r => r.column_name)); client.end(); })
-  .catch(console.error);
+require('dotenv').config();
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  logging: false,
+  dialectOptions: {
+    ssl: { require: true, rejectUnauthorized: false }
+  }
+});
+
+async function run() {
+  try {
+    await sequelize.authenticate();
+    const [results] = await sequelize.query('SELECT * FROM docentes LIMIT 1');
+    console.log("Success:", results);
+  } catch (e) {
+    console.error("Error:", e.message);
+  } finally {
+    await sequelize.close();
+  }
+}
+run();
