@@ -62,6 +62,7 @@ import LoginScreen from './components/loginScreen';
 import SubjectManager from './components/SubjectManager';
 import PeriodManager from './components/PeriodManager';
 import PendingSubjectsManager from './components/PendingSubjectsManager';
+import ChatbotAsistente from './components/ChatbotAsistente';
 
 export default function App() {
   // Global States loaded with seed data representing a Venezuelan Liceo
@@ -171,8 +172,8 @@ export default function App() {
             api.get<any[]>('/api/plan-estudio'),
             api.get<any[]>('/api/horarios'),
             api.get<any[]>('/api/calificaciones'),
-            api.get<any[]>('/api/auditorias'),
-            api.get<any[]>('/api/periodos'),
+            api.get<any[]>('/api/auditorias').catch(() => []),
+            api.get<any[]>('/api/periodos').catch(() => ({ data: [] })),
             api.get<any[]>('/api/evaluaciones/planes').catch(() => ({ data: [] })),
             api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] })),
             api.get<any[]>('/api/secciones').catch(() => []),
@@ -216,7 +217,8 @@ export default function App() {
           }
           
           setAuditLogs(auditoriaData.sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
-          setPeriods(periodosData.map(mapPeriodoToSchoolPeriod));
+          const periodosList = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+          setPeriods(periodosList.map(mapPeriodoToSchoolPeriod));
           setSections((Array.isArray(seccionesData) ? seccionesData : []).map(mapSeccionToSection));
           setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
           setReferenceData({
@@ -920,6 +922,12 @@ export default function App() {
     return <LoginScreen users={users} onLogin={handleLogin} />;
   }
 
+  const CHATBOT_ROLE_MAP: Record<UserRole, number> = {
+    super_admin: 1,
+    control_estudios: 2,
+    docente: 3,
+  };
+
   return (
     <div id="mppe-app-root" className="min-h-screen bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
       <Toaster 
@@ -1285,6 +1293,8 @@ export default function App() {
           </AnimatePresence>
 
         </main>
+
+        <ChatbotAsistente roleId={CHATBOT_ROLE_MAP[currentUserRole]} userName={currentUser?.name} />
 
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { authRoutes } from './auth.routes';
+import { chatbotRoutes } from './chatbot.routes';
 import { usuarioRoutes } from './usuario.routes';
 import { rolRoutes } from './rol.routes';
 import { docenteRoutes } from './docente.routes';
@@ -32,8 +33,9 @@ import { especialidadRoutes } from './especialidad.routes';
 
 export const routes = Router();
 
-// Auth routes are public (no auth middleware)
+// Auth and chatbot routes are public (no auth middleware)
 routes.use('/auth', authRoutes);
+routes.use('/chatbot', chatbotRoutes);
 
 routes.get('/test-docentes', async (req, res) => {
   try {

@@ -113,5 +113,12 @@ export const api = {
   especialidades: {
     getAll: () => request('/api/especialidades'),
     create: (data: { nombre: string }) => request('/api/especialidades', { method: 'POST', body: JSON.stringify(data) })
+  },
+  chatbot: {
+    consultar: (mensaje: string, roleId: number, nombre: string) =>
+      request<{ respuesta: string }>('/api/chatbot/consultar', {
+        method: 'POST',
+        body: JSON.stringify({ mensaje, roleId, nombre }),
+      }),
   }
 };

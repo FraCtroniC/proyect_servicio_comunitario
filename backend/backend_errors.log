@@ -1587,3 +1587,102 @@ Error
     at async AsistenciaEstudiante.findAndCountAll (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
     at async <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
 
+2026-06-30T21:54:06.494Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:03:47.246Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:03:55.263Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:04:10.313Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:04:22.835Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:05:43.408Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:06:32.967Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:10:03.379Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
+2026-06-30T22:13:06.171Z
+Error
+    at Query.run (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\postgres\query.js:76:25)
+    at <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\sequelize.js:650:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PostgresQueryInterface.select (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\dialects\abstract\query-interface.js:1001:12)
+    at async AsistenciaEstudiante.findAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:1824:21)
+    at async Promise.all (index 1)
+    at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
+    at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
+
