@@ -1727,3 +1727,12 @@ Error: Usuario o contraseña incorrectos
 Error: Usuario o contraseña incorrectos
     at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
 
+2026-07-01T20:04:18.498Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T20:04:27.158Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:79:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+

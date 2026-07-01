@@ -7,6 +7,6 @@ export const aulaRoutes = Router();
 
 aulaRoutes.get('/', AulaController.listar);
 aulaRoutes.get('/:id', AulaController.obtenerPorId);
-aulaRoutes.post('/', authorize(1, 3), validateCrearAula, AulaController.crear);
-aulaRoutes.patch('/:id', authorize(1, 3), AulaController.actualizar);
-aulaRoutes.delete('/:id', authorize(1), AulaController.eliminar);
+aulaRoutes.post('/', authorize('Administrador', 'Control de Estudios'), validateCrearAula, AulaController.crear);
+aulaRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios'), AulaController.actualizar);
+aulaRoutes.delete('/:id', authorize('Administrador'), AulaController.eliminar);

@@ -7,6 +7,6 @@ export const seccionRoutes = Router();
 
 seccionRoutes.get('/', SeccionController.listar);
 seccionRoutes.get('/:id', SeccionController.obtenerPorId);
-seccionRoutes.post('/', authorize(1, 3), validateCrearSeccion, SeccionController.crear);
-seccionRoutes.patch('/:id', authorize(1, 3), SeccionController.actualizar);
-seccionRoutes.delete('/:id', authorize(1), SeccionController.eliminar);
+seccionRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearSeccion, SeccionController.crear);
+seccionRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), SeccionController.actualizar);
+seccionRoutes.delete('/:id', authorize('Administrador'), SeccionController.eliminar);

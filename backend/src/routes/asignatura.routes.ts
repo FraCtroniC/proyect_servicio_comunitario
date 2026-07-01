@@ -7,6 +7,6 @@ export const asignaturaRoutes = Router();
 
 asignaturaRoutes.get('/', AsignaturaController.listar);
 asignaturaRoutes.get('/:id', AsignaturaController.obtenerPorId);
-asignaturaRoutes.post('/', authorize(1, 3), validateCrearAsignatura, AsignaturaController.crear);
-asignaturaRoutes.patch('/:id', authorize(1, 3), AsignaturaController.actualizar);
-asignaturaRoutes.delete('/:id', authorize(1), AsignaturaController.eliminar);
+asignaturaRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearAsignatura, AsignaturaController.crear);
+asignaturaRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), AsignaturaController.actualizar);
+asignaturaRoutes.delete('/:id', authorize('Administrador'), AsignaturaController.eliminar);

@@ -6,6 +6,6 @@ export const bloqueHorarioRoutes = Router();
 
 bloqueHorarioRoutes.get('/', BloqueHorarioController.listar);
 bloqueHorarioRoutes.get('/:id', BloqueHorarioController.obtenerPorId);
-bloqueHorarioRoutes.post('/', authorize(1, 3), BloqueHorarioController.crear);
-bloqueHorarioRoutes.patch('/:id', authorize(1, 3), BloqueHorarioController.actualizar);
-bloqueHorarioRoutes.delete('/:id', authorize(1), BloqueHorarioController.eliminar);
+bloqueHorarioRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), BloqueHorarioController.crear);
+bloqueHorarioRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), BloqueHorarioController.actualizar);
+bloqueHorarioRoutes.delete('/:id', authorize('Administrador'), BloqueHorarioController.eliminar);

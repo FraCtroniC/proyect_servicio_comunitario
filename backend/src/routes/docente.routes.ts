@@ -7,7 +7,7 @@ export const docenteRoutes = Router();
 
 docenteRoutes.get('/', DocenteController.listar);
 docenteRoutes.get('/:id', DocenteController.obtenerPorId);
-docenteRoutes.post('/', authorize(1, 3), validateCrearDocente, DocenteController.crear);
-docenteRoutes.patch('/:id', authorize(1, 3), DocenteController.actualizar);
-docenteRoutes.delete('/:id', authorize(1), DocenteController.eliminar);
-docenteRoutes.post('/:id/qr', authorize(1), DocenteController.generarQR);
+docenteRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearDocente, DocenteController.crear);
+docenteRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), DocenteController.actualizar);
+docenteRoutes.delete('/:id', authorize('Administrador'), DocenteController.eliminar);
+docenteRoutes.post('/:id/qr', authorize('Administrador'), DocenteController.generarQR);

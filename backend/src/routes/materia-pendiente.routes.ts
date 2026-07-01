@@ -4,7 +4,7 @@ import { authorize } from '../middlewares/rbac.middleware';
 
 export const materiaPendienteRoutes = Router();
 
-materiaPendienteRoutes.get('/', authorize(1, 3, 4), MateriaPendienteController.getAll);
+materiaPendienteRoutes.get('/', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), MateriaPendienteController.getAll);
 materiaPendienteRoutes.get('/estudiante/:id_estudiante', MateriaPendienteController.getByStudent);
-materiaPendienteRoutes.post('/', authorize(1, 3, 4), MateriaPendienteController.create);
-materiaPendienteRoutes.patch('/:id', authorize(1, 3, 4), MateriaPendienteController.update);
+materiaPendienteRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), MateriaPendienteController.create);
+materiaPendienteRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), MateriaPendienteController.update);

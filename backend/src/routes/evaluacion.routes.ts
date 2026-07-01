@@ -6,9 +6,9 @@ import { auditLog } from '../middlewares/audit.middleware';
 export const evaluacionRoutes = Router();
 
 // Rutas para Planes de Evaluación
-evaluacionRoutes.get('/planes', authorize(1, 2, 3), EvaluacionController.listarPlanes);
-evaluacionRoutes.post('/planes', authorize(1, 2, 3), auditLog('Configuración', 'evaluaciones'), EvaluacionController.upsertPlan);
+evaluacionRoutes.get('/planes', authorize('Administrador', 'Control de Estudios', 'Coordinador'), EvaluacionController.listarPlanes);
+evaluacionRoutes.post('/planes', authorize('Administrador', 'Control de Estudios', 'Coordinador'), auditLog('Configuración', 'evaluaciones'), EvaluacionController.upsertPlan);
 
 // Rutas para Notas Parciales
-evaluacionRoutes.get('/notas', authorize(1, 2, 3), EvaluacionController.listarNotas);
-evaluacionRoutes.post('/notas/bulk', authorize(1, 2, 3), auditLog('Registro', 'notas_parciales'), EvaluacionController.upsertNotas);
+evaluacionRoutes.get('/notas', authorize('Administrador', 'Control de Estudios', 'Coordinador'), EvaluacionController.listarNotas);
+evaluacionRoutes.post('/notas/bulk', authorize('Administrador', 'Control de Estudios', 'Coordinador'), auditLog('Registro', 'notas_parciales'), EvaluacionController.upsertNotas);

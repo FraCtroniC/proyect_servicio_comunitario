@@ -348,19 +348,46 @@ export default function App() {
     }
   };
 
-  const handleAddUser = async (newUser: User) => {
+  const handleAddUser = async (newUser: Partial<User> & { password?: string }) => {
     try {
-      const tempPassword = 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
+      const tempPassword = newUser.password || 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
       const dto = {
-        username: newUser.email.split('@')[0],
+        username: newUser.cedula || newUser.email?.split('@')[0] || 'User',
         password: tempPassword,
-        idRol: newUser.role === 'super_admin' ? 1 : (newUser.role === 'docente' ? 2 : 3)
+        correo: newUser.email,
+        idRol: newUser.role === 'super_admin' ? 1 : (newUser.role === 'control_estudios' ? 3 : 2) // Asumiendo 1 Admin, 3 Secretaria, 2 Docente (fallback)
       };
       const created = await api.post<any>('/api/usuarios', dto);
       setUsers(p => [mapUsuarioToUser(created), ...p]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error('Error al crear usuario en BD');
+      throw new Error(e.response?.data?.error?.message || 'Error al crear usuario en BD');
+    }
+  };
+
+  const handleEditUser = async (userId: string, data: Partial<User> & { password?: string }) => {
+    try {
+      const dto: any = {};
+      if (data.email) dto.correo = data.email;
+      if (data.cedula) dto.username = data.cedula;
+      if (data.password) dto.password = data.password;
+      if (data.role) dto.idRol = data.role === 'super_admin' ? 1 : (data.role === 'control_estudios' ? 3 : 2);
+      
+      const updated = await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
+      setUsers(p => p.map(u => u.id === userId ? { ...u, ...mapUsuarioToUser(updated) } : u));
+    } catch (e: any) {
+      console.error(e);
+      throw new Error(e.response?.data?.error?.message || 'Error al actualizar usuario');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await api.delete(`/api/usuarios/${stripId(userId)}`);
+      setUsers(p => p.filter(u => u.id !== userId));
+    } catch (e: any) {
+      console.error(e);
+      throw new Error(e.response?.data?.error?.message || 'Error al eliminar usuario');
     }
   };
 
@@ -1330,6 +1357,8 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onSetUserRole={setCurrentUserRole}
                   onAddUser={handleAddUser}
+                  onEditUser={handleEditUser}
+                  onDeleteUser={handleDeleteUser}
                   onToggleUserActive={handleToggleUserActive}
                 />
               )}

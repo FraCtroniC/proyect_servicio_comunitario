@@ -6,6 +6,6 @@ export const diaSemanaRoutes = Router();
 
 diaSemanaRoutes.get('/', DiaSemanaController.listar);
 diaSemanaRoutes.get('/:id', DiaSemanaController.obtenerPorId);
-diaSemanaRoutes.post('/', authorize(1, 3), DiaSemanaController.crear);
-diaSemanaRoutes.patch('/:id', authorize(1, 3), DiaSemanaController.actualizar);
-diaSemanaRoutes.delete('/:id', authorize(1), DiaSemanaController.eliminar);
+diaSemanaRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), DiaSemanaController.crear);
+diaSemanaRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), DiaSemanaController.actualizar);
+diaSemanaRoutes.delete('/:id', authorize('Administrador'), DiaSemanaController.eliminar);

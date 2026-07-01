@@ -7,6 +7,6 @@ export const planEstudioRoutes = Router();
 
 planEstudioRoutes.get('/', PlanEstudioController.listar);
 planEstudioRoutes.get('/:id', PlanEstudioController.obtenerPorId);
-planEstudioRoutes.post('/', authorize(1, 3), validateCrearPlanEstudio, PlanEstudioController.crear);
-planEstudioRoutes.patch('/:id', authorize(1, 3), PlanEstudioController.actualizar);
-planEstudioRoutes.delete('/:id', authorize(1), PlanEstudioController.eliminar);
+planEstudioRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearPlanEstudio, PlanEstudioController.crear);
+planEstudioRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), PlanEstudioController.actualizar);
+planEstudioRoutes.delete('/:id', authorize('Administrador'), PlanEstudioController.eliminar);

@@ -6,6 +6,6 @@ export const rolRoutes = Router();
 
 rolRoutes.get('/', RolController.listar);
 rolRoutes.get('/:id', RolController.obtenerPorId);
-rolRoutes.post('/', authorize(1), RolController.crear);
-rolRoutes.patch('/:id', authorize(1), RolController.actualizar);
-rolRoutes.delete('/:id', authorize(1), RolController.eliminar);
+rolRoutes.post('/', authorize('Administrador'), RolController.crear);
+rolRoutes.patch('/:id', authorize('Administrador'), RolController.actualizar);
+rolRoutes.delete('/:id', authorize('Administrador'), RolController.eliminar);

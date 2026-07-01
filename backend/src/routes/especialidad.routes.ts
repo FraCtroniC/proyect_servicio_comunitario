@@ -12,6 +12,6 @@ especialidadRoutes.get('/', EspecialidadController.getAll);
 // Para crear, solo super_admin y control_estudios
 especialidadRoutes.post(
   '/',
-  authorize([ROLES.SUPER_ADMIN, ROLES.CONTROL_ESTUDIOS]),
+  authorize('Administrador', 'Control de Estudios'),
   EspecialidadController.create
 );

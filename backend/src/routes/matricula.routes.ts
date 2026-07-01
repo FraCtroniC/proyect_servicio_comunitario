@@ -7,6 +7,6 @@ export const matriculaRoutes = Router();
 
 matriculaRoutes.get('/', MatriculaController.listar);
 matriculaRoutes.get('/:id', MatriculaController.obtenerPorId);
-matriculaRoutes.post('/', authorize(1, 3), validateCrearMatricula, MatriculaController.crear);
-matriculaRoutes.patch('/:id', authorize(1, 3), MatriculaController.actualizar);
-matriculaRoutes.delete('/:id', authorize(1), MatriculaController.eliminar);
+matriculaRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearMatricula, MatriculaController.crear);
+matriculaRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), MatriculaController.actualizar);
+matriculaRoutes.delete('/:id', authorize('Administrador'), MatriculaController.eliminar);

@@ -9,5 +9,5 @@ asistenciaDocenteRoutes.get('/', AsistenciaDocenteController.listar);
 asistenciaDocenteRoutes.get('/estadisticas', AsistenciaDocenteController.estadisticas);
 asistenciaDocenteRoutes.get('/:id', AsistenciaDocenteController.obtenerPorId);
 asistenciaDocenteRoutes.post('/', authorize(ROLES.SUPER_ADMIN, ROLES.DOCENTE), AsistenciaDocenteController.crear);
-asistenciaDocenteRoutes.patch('/:id', authorize(ROLES.SUPER_ADMIN, ROLES.CONTROL_ESTUDIOS, ROLES.DOCENTE), AsistenciaDocenteController.actualizar);
-asistenciaDocenteRoutes.delete('/:id', authorize(ROLES.SUPER_ADMIN), AsistenciaDocenteController.eliminar);
+asistenciaDocenteRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), AsistenciaDocenteController.actualizar);
+asistenciaDocenteRoutes.delete('/:id', authorize('Administrador'), AsistenciaDocenteController.eliminar);

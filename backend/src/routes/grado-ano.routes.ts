@@ -7,6 +7,6 @@ export const gradoAnoRoutes = Router();
 
 gradoAnoRoutes.get('/', GradoAnoController.listar);
 gradoAnoRoutes.get('/:id', GradoAnoController.obtenerPorId);
-gradoAnoRoutes.post('/', authorize(1, 3), validateCrearGradoAno, GradoAnoController.crear);
-gradoAnoRoutes.patch('/:id', authorize(1, 3), GradoAnoController.actualizar);
-gradoAnoRoutes.delete('/:id', authorize(1), GradoAnoController.eliminar);
+gradoAnoRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearGradoAno, GradoAnoController.crear);
+gradoAnoRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), GradoAnoController.actualizar);
+gradoAnoRoutes.delete('/:id', authorize('Administrador'), GradoAnoController.eliminar);
