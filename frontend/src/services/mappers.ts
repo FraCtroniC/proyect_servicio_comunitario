@@ -103,11 +103,9 @@ export function mapAsignaturaToSubject(dbAsignatura: any, studyPlans?: any[]): S
   let years: AcademicYear[] = [1, 2, 3, 4, 5];
 
   if (studyPlans) {
-    const subjectPlans = studyPlans.filter((p: any) => p.id_asignatura === dbAsignatura.id_asignatura);
-    const uniqueYears = [...new Set(subjectPlans.map((p: any) => (p.grado?.numero || p.id_grado) as AcademicYear).filter(Boolean))] as AcademicYear[];
-    if (uniqueYears.length > 0) {
-      years = uniqueYears.sort((a, b) => a - b);
-    }
+    const subjectPlans = studyPlans.filter((p: any) => String(p.id_asignatura) === String(dbAsignatura.id_asignatura));
+    const uniqueYears = [...new Set(subjectPlans.map((p: any) => Number(p.grado?.numero || p.id_grado)).filter(Boolean))] as AcademicYear[];
+    years = uniqueYears.sort((a, b) => a - b);
   }
 
   return {
@@ -180,7 +178,12 @@ export function mapEvaluacionesDbToPlans(evaluacionesDb: any[], studyPlans: any[
     const year = Number(planObj.year || planObj.grado?.numero || 1) as any;
     const sectionObj = sectionsMap[ev.id_seccion];
     const section = sectionObj ? sectionObj.letra : 'A';
-    const lapso = ev.id_momento as 1|2|3;
+    let lapso = ev.id_momento as 1|2|3;
+    if (ev.momento) {
+      if (ev.momento.descripcion === 'Primer Lapso') lapso = 1;
+      else if (ev.momento.descripcion === 'Segundo Lapso') lapso = 2;
+      else if (ev.momento.descripcion === 'Tercer Lapso') lapso = 3;
+    }
     
     const key = `${subjectId}-${year}-${section}-${lapso}`;
     
@@ -220,10 +223,18 @@ export function mapRepresentanteToRepresentative(dbRep: any): Representative {
 }
 
 export function mapNotaParcialToGrade(dbNota: any, studentId: string): Grade {
+  let lapso = (dbNota.evaluacion?.id_momento || dbNota.id_momento || 1) as 1|2|3;
+  const momentoDesc = dbNota.evaluacion?.momento?.descripcion || dbNota.momento?.descripcion;
+  if (momentoDesc) {
+    if (momentoDesc === 'Primer Lapso') lapso = 1;
+    else if (momentoDesc === 'Segundo Lapso') lapso = 2;
+    else if (momentoDesc === 'Tercer Lapso') lapso = 3;
+  }
+
   return {
     studentId: String(dbNota.matricula?.id_estudiante || dbNota.id_estudiante || studentId),
     subjectId: String(dbNota.evaluacion?.plan?.id_asignatura || dbNota.id_asignatura || ''),
-    lapso: (dbNota.evaluacion?.id_momento || dbNota.id_momento || 1) as 1|2|3,
+    lapso: lapso,
     evaluationId: String(dbNota.id_evaluacion),
     score: dbNota.escala?.nota_calculo || dbNota.id_escala || 0
   };

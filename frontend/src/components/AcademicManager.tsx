@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Layers, ShieldAlert, Users, BookOpen, ChevronRight } from 'lucide-react';
-import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User, Classroom } from '../types';
+import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User, Classroom, Docente } from '../types';
 import { Modal } from './Modal';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -14,6 +14,7 @@ interface AcademicManagerProps {
   sections: Section[];
   periods: SchoolPeriod[];
   users: User[];
+  docentes: Docente[];
   currentUserRole: UserRole;
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
@@ -22,7 +23,7 @@ interface AcademicManagerProps {
 }
 
 export default function AcademicManager({
-  students, sections, periods, users, classrooms, currentUserRole,
+  students, sections, periods, users, docentes, classrooms, currentUserRole,
   onAddStudent, onUpdateStudentStatus, onCreateSection
 }: AcademicManagerProps) {
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
@@ -39,7 +40,6 @@ export default function AcademicManager({
   const [viewGrade, setViewGrade] = useState<number>(0);
 
   const activePeriods = periods.filter(p => p.status === 'Activo' || p.status === 'Planificación');
-  const docentes = users.filter(u => u.role === 'docente');
 
   const filteredSections = viewGrade === 0
     ? sections
@@ -224,7 +224,7 @@ export default function AcademicManager({
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
               <SearchableSelect
-                options={docentes.map(d => ({ value: d.teacherId || d.id, label: `${d.name} ${d.cedula ? `(${d.cedula})` : ''}` }))}
+                options={docentes.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} ${d.cedula ? `(${d.cedula})` : ''}` }))}
                 value={secDocente}
                 onChange={(val) => setSecDocente(String(val))}
                 placeholder="Seleccione un docente"

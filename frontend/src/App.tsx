@@ -1399,6 +1399,7 @@ export default function App() {
                   sections={sections}
                   periods={periods}
                   users={users}
+                  docentes={docentes}
                   classrooms={classrooms}
                   currentUserRole={currentUserRole}
                   onAddStudent={handleAddStudent}

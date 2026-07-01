@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
-import { Evaluacion, NotaParcial, Matricula, Calificacion, PlanEstudio } from '../models';
+import { Evaluacion, NotaParcial, Matricula, Calificacion, PlanEstudio, PeriodoEscolar, Momento } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const EvaluacionController = {
   // Obtener planes de evaluación
   listarPlanes: wrapAsync(async (req: Request, res: Response) => {
-    const result = await Evaluacion.findAll();
+    const result = await Evaluacion.findAll({
+      include: [{ model: Momento, as: 'momento' }]
+    });
     res.json({ data: result });
   }),
 
@@ -29,6 +31,22 @@ export const EvaluacionController = {
     // Para no perder las notas parciales, lo correcto es actualizar las existentes y borrar las quitadas.
     // Pero por simplicidad, podemos buscar por descripción, o usar el ID.
     // Si la UI envía ID "nuevo-XXX", es nuevo.
+
+    // Encontrar el Momento real a partir de 'lap' (id_momento 1,2,3) enviado por el frontend
+    const periodoActivo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } }) as any;
+    if (!periodoActivo) {
+      res.status(400).json({ error: { message: 'No hay un Periodo Escolar activo registrado' } });
+      return;
+    }
+
+    let realMomentoId = id_momento;
+    if ([1, 2, 3].includes(id_momento)) {
+      const descripciones = ['Primer Lapso', 'Segundo Lapso', 'Tercer Lapso'];
+      const [momento] = await Momento.findOrCreate({
+        where: { id_periodo: periodoActivo.id_periodo, descripcion: descripciones[id_momento - 1] }
+      });
+      realMomentoId = (momento as any).id_momento;
+    }
     
     const saved = [];
     const receivedIds: number[] = [];
@@ -45,7 +63,7 @@ export const EvaluacionController = {
       } else {
         // Crear
         const record = await Evaluacion.create({
-          id_plan, id_seccion, id_momento,
+          id_plan, id_seccion, id_momento: realMomentoId,
           descripcion: ev.descripcion,
           ponderacion: ev.ponderacion
         });
@@ -60,7 +78,7 @@ export const EvaluacionController = {
 
     // Buscar las evaluaciones actuales para este plan, seccion y momento
     const existingEvals = await Evaluacion.findAll({
-      where: { id_plan, id_seccion, id_momento }
+      where: { id_plan, id_seccion, id_momento: realMomentoId }
     });
 
     for (const ex of existingEvals) {
@@ -78,6 +96,7 @@ export const EvaluacionController = {
 
   // Obtener notas parciales
   listarNotas: wrapAsync(async (req: Request, res: Response) => {
+    const Momento = require('../models').Momento;
     const result = await NotaParcial.findAll({
       include: [
         {
@@ -87,6 +106,10 @@ export const EvaluacionController = {
             {
               model: PlanEstudio,
               as: 'plan'
+            },
+            {
+              model: Momento,
+              as: 'momento'
             }
           ]
         }
