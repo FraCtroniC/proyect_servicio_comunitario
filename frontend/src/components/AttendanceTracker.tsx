@@ -8,6 +8,7 @@ import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, Shiel
 import toast from 'react-hot-toast';
 import { Student, Attendance, User, TeacherScheduleLog, AcademicYear, UserRole, Section } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
+import { Modal } from './Modal';
 
 interface AttendanceTrackerProps {
   students: Student[];
@@ -52,9 +53,10 @@ export default function AttendanceTracker({
   const [clockSuccessMsg, setClockSuccessMsg] = useState('');
 
   // Justification Modal state
-  const [showJustifyModal, setShowJustifyModal] = useState(false);
-  const [justifyLogId, setJustifyLogId] = useState<string>('');
+  const [teacherJustifyLog, setTeacherJustifyLog] = useState<TeacherScheduleLog | null>(null);
   const [justifyMotivo, setJustifyMotivo] = useState('');
+  
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [justifySoporte, setJustifySoporte] = useState('');
 
   // Filtering students and their attendance records for the selected date
@@ -156,22 +158,7 @@ export default function AttendanceTracker({
               Reporte PDF
             </button>
             <button
-              onClick={() => {
-                if (window.confirm('¿Sincronizar inasistencias de todos los estudiantes visibles en las calificaciones?')) {
-                  const ids_matricula = sectionStudents
-                    .map(s => {
-                      const att = attendance.find(a => a.studentId === s.id);
-                      return att?.matriculaId;
-                    })
-                    .filter((id): id is string => !!id);
-                  const hasAbsences = ids_matricula.length > 0;
-                  if (hasAbsences) {
-                    onSyncInasistencias?.(ids_matricula);
-                  } else {
-                    toast.error('No hay registros de asistencia para sincronizar. Marque asistencia primero.');
-                  }
-                }
-              }}
+              onClick={() => setIsSyncModalOpen(true)}
               className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer"
             >
               Sincronizar Inasistencias con Calificaciones
@@ -449,8 +436,7 @@ export default function AttendanceTracker({
                             ) : log.status === 'Absent' ? (
                               <button
                                 onClick={() => {
-                                  setJustifyLogId(log.id);
-                                  setShowJustifyModal(true);
+                                  setTeacherJustifyLog(log);
                                 }}
                                 className="text-[10px] text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                               >
@@ -478,76 +464,103 @@ export default function AttendanceTracker({
         </div>
       )}
 
-      {/* Justification Modal */}
-      {showJustifyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
-            <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4 text-rose-600" />
-                Justificar Inasistencia Docente
-              </h3>
-            </div>
-            
-            <div className="p-5 space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Motivo de la Inasistencia *</label>
-                <textarea
-                  value={justifyMotivo}
-                  onChange={e => setJustifyMotivo(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
-                  placeholder="Ej. Reposo médico por 3 días..."
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
-                <input
-                  type="text"
-                  value={justifySoporte}
-                  onChange={e => setJustifySoporte(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
-                  placeholder="Referencia al documento físico o link"
-                />
-              </div>
-            </div>
-            
-            <div className="bg-slate-50 px-5 py-4 border-t border-slate-200 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowJustifyModal(false);
-                  setJustifyMotivo('');
-                  setJustifySoporte('');
-                }}
-                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors pointer-events-auto cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={async () => {
-                  if (!justifyMotivo.trim()) {
-                    toast.error("El motivo es obligatorio.");
-                    return;
-                  }
-                  if (onJustifyTeacherAbsence) {
-                    const success = await onJustifyTeacherAbsence(justifyLogId, justifyMotivo, justifySoporte);
-                    if (success) {
-                      setShowJustifyModal(false);
-                      setJustifyMotivo('');
-                      setJustifySoporte('');
-                    }
-                  }
-                }}
-                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-xs pointer-events-auto cursor-pointer"
-              >
-                Registrar Justificación
-              </button>
-            </div>
+      {/* Modals */}
+      <Modal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} title="Confirmar Sincronización">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            ¿Está seguro de sincronizar las inasistencias de todos los estudiantes visibles con sus calificaciones? Esta acción podría afectar los promedios finales según el reglamento.
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => setIsSyncModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button 
+              onClick={() => {
+                const ids_matricula = sectionStudents
+                  .map(s => {
+                    const att = attendance.find(a => a.studentId === s.id);
+                    return att?.matriculaId;
+                  })
+                  .filter((id): id is string => !!id);
+                const hasAbsences = ids_matricula.length > 0;
+                if (hasAbsences) {
+                  onSyncInasistencias?.(ids_matricula);
+                } else {
+                  toast.error('No hay registros de asistencia para sincronizar. Marque asistencia primero.');
+                }
+                setIsSyncModalOpen(false);
+              }}
+              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Sincronizar
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
 
+      <Modal isOpen={!!teacherJustifyLog} onClose={() => {
+        setTeacherJustifyLog(null);
+        setJustifyMotivo('');
+        setJustifySoporte('');
+      }} title="Justificar Inasistencia Docente">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Motivo de la Inasistencia *</label>
+            <textarea
+              value={justifyMotivo}
+              onChange={e => setJustifyMotivo(e.target.value)}
+              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
+              placeholder="Ej. Reposo médico por 3 días..."
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
+            <input
+              type="text"
+              value={justifySoporte}
+              onChange={e => setJustifySoporte(e.target.value)}
+              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+              placeholder="Referencia al documento físico o link"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button
+              onClick={() => {
+                setTeacherJustifyLog(null);
+                setJustifyMotivo('');
+                setJustifySoporte('');
+              }}
+              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={async () => {
+                if (!teacherJustifyLog) return;
+                if (!justifyMotivo.trim()) {
+                  toast.error("El motivo es obligatorio.");
+                  return;
+                }
+                if (onJustifyTeacherAbsence) {
+                  const success = await onJustifyTeacherAbsence(teacherJustifyLog.id, justifyMotivo, justifySoporte);
+                  if (success) {
+                    toast.success("Inasistencia justificada.");
+                    setTeacherJustifyLog(null);
+                    setJustifyMotivo('');
+                    setJustifySoporte('');
+                  } else {
+                    toast.error("No se pudo justificar.");
+                  }
+                }
+              }}
+              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Guardar Justificación
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

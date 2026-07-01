@@ -4,9 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter } from 'lucide-react';
+import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter, Edit2, XCircle, User as UserIcon, MapPin, BookOpen, Trash2 } from 'lucide-react';
 import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente } from '../types';
 import { SearchableSelect } from './SearchableSelect';
+import { Modal } from './Modal';
 
 interface ScheduleCoordinatorProps {
   scheduleEvents: ScheduleEvent[];
@@ -18,6 +19,7 @@ interface ScheduleCoordinatorProps {
   referenceData: { dias: any[]; bloques: any[] };
   currentUserRole: UserRole;
   onAddScheduleEvent: (evt: ScheduleEvent) => void;
+  onUpdateScheduleEvent?: (evtId: string, evt: Partial<ScheduleEvent>) => void;
   onRemoveScheduleEvent: (evtId: string) => void;
 }
 
@@ -31,6 +33,7 @@ export default function ScheduleCoordinator({
   referenceData,
   currentUserRole,
   onAddScheduleEvent,
+  onUpdateScheduleEvent,
   onRemoveScheduleEvent
 }: ScheduleCoordinatorProps) {
   // Filters to display current schedules
@@ -53,25 +56,24 @@ export default function ScheduleCoordinator({
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleSuccess, setScheduleSuccess] = useState('');
 
-  // Static timeblocks structured
-  const timeBlocks = referenceData.bloques.length > 0
-    ? referenceData.bloques.map((b: any) => ({
-        label: `Bloque ${b.id_bloque}`,
-        time: `${b.hora_inicio.substring(0, 5)} - ${b.hora_fin.substring(0, 5)}`,
-        isRecess: false
-      }))
-    : [
-        { label: 'Bloque 1', time: '07:00 - 07:45', isRecess: false },
-        { label: 'Bloque 2', time: '07:45 - 08:30', isRecess: false },
-        { label: 'Receso Corto', time: '08:30 - 08:45', isRecess: true },
-        { label: 'Bloque 3', time: '08:45 - 09:30', isRecess: false },
-        { label: 'Bloque 4', time: '09:30 - 10:15', isRecess: false },
-        { label: 'Receso Largo', time: '10:15 - 10:30', isRecess: true },
-        { label: 'Bloque 5', time: '10:30 - 11:15', isRecess: false },
-        { label: 'Bloque 6', time: '11:15 - 12:00', isRecess: false }
-      ];
+  // Editing state
+  const [editingEvent, setEditingEvent] = useState<string | null>(null);
+
+  // Static timeblocks structured for the grid rendering
+  const timeBlocks = [
+    { label: 'Bloque 1', time: '07:00 - 07:45', isRecess: false },
+    { label: 'Bloque 2', time: '07:45 - 08:30', isRecess: false },
+    { label: 'Receso Corto', time: '08:30 - 08:45', isRecess: true },
+    { label: 'Bloque 3', time: '08:45 - 09:30', isRecess: false },
+    { label: 'Bloque 4', time: '09:30 - 10:15', isRecess: false },
+    { label: 'Receso Largo', time: '10:15 - 10:30', isRecess: true },
+    { label: 'Bloque 5', time: '10:30 - 11:15', isRecess: false },
+    { label: 'Bloque 6', time: '11:15 - 12:00', isRecess: false }
+  ];
 
   const days: ('Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes')[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<ScheduleEvent | null>(null);
 
   const getSubjectName = (id: string) => subjects.find(s => s.id === id)?.name || id;
   const getTeacherName = (id: string) => {
@@ -79,6 +81,32 @@ export default function ScheduleCoordinator({
     return doc ? `${doc.firstName} ${doc.lastName}` : id;
   };
   const getClassroomName = (id: string) => classrooms.find(c => c.id === id)?.name || id;
+
+  const handleEditClick = (evt: ScheduleEvent) => {
+    setFormDay(evt.day);
+    setFormBlock(evt.timeBlock);
+    setFormYear(evt.year);
+    setFormSection(evt.section);
+    setFormSubjectId(evt.subjectId);
+    setFormTeacherId(evt.teacherId);
+    setFormClassroomId(evt.classroomId);
+    setEditingEvent(evt.id);
+    setScheduleError('');
+    setScheduleSuccess('');
+    
+    // Scroll to top where the form is (mobile friendly)
+    document.getElementById('schedule-coordinator-root')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEvent(null);
+    setFormBlock('');
+    setFormSubjectId('');
+    setFormTeacherId('');
+    setFormClassroomId('');
+    setScheduleError('');
+    setScheduleSuccess('');
+  };
 
   const handleAssignBlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,8 +119,11 @@ export default function ScheduleCoordinator({
     }
 
     // --- CONFLICT RESOLUTION ALGORITHM (Strict overlap validation) ---
-    // 1. Teacher Double-Booking conflict (Teacher already teaching somewhere else at this day/block?)
-    const teacherConflict = scheduleEvents.find(
+    // Ignore the event currently being edited
+    const otherEvents = scheduleEvents.filter(e => e.id !== editingEvent);
+
+    // 1. Teacher Double-Booking conflict
+    const teacherConflict = otherEvents.find(
       e => e.day === formDay && 
            e.timeBlock === formBlock && 
            e.teacherId === formTeacherId
@@ -104,8 +135,8 @@ export default function ScheduleCoordinator({
       return;
     }
 
-    // 2. Classroom Double-Booking conflict (Classroom physical space occupied at this day/block?)
-    const classroomConflict = scheduleEvents.find(
+    // 2. Classroom Double-Booking conflict
+    const classroomConflict = otherEvents.find(
       e => e.day === formDay && 
            e.timeBlock === formBlock && 
            e.classroomId === formClassroomId
@@ -117,8 +148,8 @@ export default function ScheduleCoordinator({
       return;
     }
 
-    // 3. Students Double-Booking conflict (Can't book two things for the SAME students / year / section)
-    const sectionConflict = scheduleEvents.find(
+    // 3. Students Double-Booking conflict
+    const sectionConflict = otherEvents.find(
       e => e.day === formDay && 
            e.timeBlock === formBlock && 
            e.year === formYear && 
@@ -140,7 +171,7 @@ export default function ScheduleCoordinator({
 
     // Create Schedule item
     const newEvent: ScheduleEvent = {
-      id: 'ev-' + Date.now(),
+      id: editingEvent || ('ev-' + Date.now()),
       day: formDay,
       timeBlock: formBlock,
       year: formYear,
@@ -150,8 +181,14 @@ export default function ScheduleCoordinator({
       classroomId: formClassroomId
     };
 
-    onAddScheduleEvent(newEvent);
-    setScheduleSuccess(`Bloque asignado con éxito: ${getSubjectName(formSubjectId)} planificado el día ${formDay} (${formBlock}).`);
+    if (editingEvent && onUpdateScheduleEvent) {
+      onUpdateScheduleEvent(editingEvent, newEvent);
+      setScheduleSuccess(`Bloque actualizado con éxito: ${getSubjectName(formSubjectId)} planificado el día ${formDay} (${formBlock}).`);
+      setEditingEvent(null);
+    } else {
+      onAddScheduleEvent(newEvent);
+      setScheduleSuccess(`Bloque asignado con éxito: ${getSubjectName(formSubjectId)} planificado el día ${formDay} (${formBlock}).`);
+    }
   };
 
   // Filter events based on active visual mode selection
@@ -182,11 +219,25 @@ export default function ScheduleCoordinator({
         
         {/* Left Side: Drag & Drop emulator entry form */}
         <div id="assignment-form-card" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs h-fit space-y-4">
-          <div id="form-header" className="border-b border-slate-100 pb-2">
+          <div id="form-header" className="border-b border-slate-100 pb-2 flex justify-between items-center">
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <PlusCircle className="h-4.5 w-4.5 text-indigo-600" />
-              Asignar Bloque Académico
+              {editingEvent ? (
+                <>
+                  <Edit2 className="h-4.5 w-4.5 text-indigo-600" />
+                  Editar Bloque Académico
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="h-4.5 w-4.5 text-indigo-600" />
+                  Asignar Bloque Académico
+                </>
+              )}
             </h3>
+            {editingEvent && (
+              <button onClick={handleCancelEdit} type="button" className="text-slate-400 hover:text-slate-600 cursor-pointer pointer-events-auto" title="Cancelar Edición">
+                <XCircle className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
@@ -315,9 +366,9 @@ export default function ScheduleCoordinator({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg transition-colors pointer-events-auto cursor-pointer flex items-center justify-center gap-1"
+                className={`w-full py-2.5 ${editingEvent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-700 hover:bg-indigo-800'} text-white font-bold text-xs rounded-lg transition-colors pointer-events-auto cursor-pointer flex items-center justify-center gap-1`}
               >
-                <span>Asignar y Verificar Overlaps</span>
+                <span>{editingEvent ? 'Guardar Cambios y Verificar Overlaps' : 'Asignar y Verificar Overlaps'}</span>
               </button>
             </form>
           )}
@@ -463,37 +514,53 @@ export default function ScheduleCoordinator({
                         );
 
                         return (
-                          <td id={`cal-cell-${day}-${idx}`} key={day} className="p-2.5 border text-center align-middle font-medium min-w-[140px] max-w-[180px]">
+                          <td id={`cal-cell-${day}-${idx}`} key={day} className="p-2 border align-middle min-w-[140px] max-w-[180px] h-20 text-center">
                             {activeEvent ? (
-                              <div className="bg-indigo-50 border border-indigo-150/70 p-2.5 rounded-lg relative group space-y-1 text-indigo-950 font-bold">
-                                {/* Title description elements */}
-                                <span className="block text-[11px] leading-snug">{getSubjectName(activeEvent.subjectId)}</span>
-                                <span className="block text-[9px] text-indigo-700/80 font-semibold">{getTeacherName(activeEvent.teacherId)}</span>
-                                <span className="block text-[9px] text-slate-450 font-mono font-medium">{getClassroomName(activeEvent.classroomId)}</span>
+                              <div className="relative group h-full flex flex-col justify-center">
                                 
+                                <span className="block text-[11px] font-bold text-slate-800 leading-snug mb-0.5" title={getSubjectName(activeEvent.subjectId)}>
+                                  {getSubjectName(activeEvent.subjectId)}
+                                </span>
+                                
+                                <span className="block text-[10px] text-slate-500 truncate font-medium mb-0.5" title={getTeacherName(activeEvent.teacherId)}>
+                                  {getTeacherName(activeEvent.teacherId)}
+                                </span>
+
+                                <span className="block text-[10px] font-bold text-slate-600 truncate">
+                                  {getClassroomName(activeEvent.classroomId)}
+                                </span>
+
+                                {/* Section Tag */}
                                 {filterType !== 'section' && (
-                                  <span className="block text-[9px] bg-slate-200/50 text-slate-600 rounded px-1 w-fit mx-auto mt-1 font-bold">
+                                  <span className="block text-[10px] font-bold text-indigo-600 mt-0.5">
                                     {activeEvent.year}° "{activeEvent.section}"
                                   </span>
                                 )}
 
-                                {/* Delete button overlay if super admin / control de estudios */}
+                                {/* Hover actions overlay */}
                                 {['super_admin', 'control_estudios'].includes(currentUserRole) && (
-                                  <button
-                                    id={`del-evt-${activeEvent.id}`}
-                                    onClick={() => {
-                                      if (!window.confirm(`¿Eliminar esta asignación de ${getSubjectName(activeEvent.subjectId)} (${activeEvent.day} ${activeEvent.timeBlock})?`)) return;
-                                      onRemoveScheduleEvent(activeEvent.id);
-                                    }}
-                                    className="absolute -top-1 -right-1 p-1 bg-rose-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto cursor-pointer block text-[8px] hover:bg-rose-700 shadow-sm"
-                                    title="Quitar Asignación"
-                                  >
-                                    <Trash className="h-3 w-3" />
-                                  </button>
+                                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-200 z-20 shadow-sm">
+                                    <button
+                                      id={`edit-evt-${activeEvent.id}`}
+                                      onClick={() => handleEditClick(activeEvent)}
+                                      className="p-1 rounded-md text-slate-400 hover:bg-amber-50 hover:text-amber-600 transition-all"
+                                      title="Editar Asignación"
+                                    >
+                                      <Edit2 size={12} />
+                                    </button>
+                                    <button
+                                      id={`del-evt-${activeEvent.id}`}
+                                      onClick={() => setEventToDelete(activeEvent)}
+                                      className="p-1 rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                      title="Quitar Asignación"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-slate-300 italic text-[10px]">Sin Actividad</span>
+                              <span className="text-slate-300 italic text-[10px]">Libre</span>
                             )}
                           </td>
                         );
@@ -508,6 +575,29 @@ export default function ScheduleCoordinator({
         </div>
 
       </div>
+
+      {/* Modal de Eliminación */}
+      <Modal isOpen={!!eventToDelete} onClose={() => setEventToDelete(null)} title="Confirmar Eliminación">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            ¿Está seguro de que desea eliminar la asignación de <strong>{eventToDelete ? getSubjectName(eventToDelete.subjectId) : ''}</strong> correspondiente al bloque <strong>{eventToDelete?.day} {eventToDelete?.timeBlock}</strong>?
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => setEventToDelete(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button 
+              onClick={() => {
+                if (eventToDelete) {
+                  onRemoveScheduleEvent(eventToDelete.id);
+                  setEventToDelete(null);
+                }
+              }}
+              className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Eliminar Asignación
+            </button>
+          </div>
+        </div>
+      </Modal>
 
     </div>
   );

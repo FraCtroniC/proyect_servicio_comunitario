@@ -9,10 +9,12 @@ interface DocenteManagerProps {
   docentes: Docente[];
   currentUserRole: UserRole;
   onAddDocente: (docente: Omit<Docente, 'id'>) => Promise<void>;
+  onUpdateDocente?: (id: string, docente: Omit<Docente, 'id'>) => Promise<void>;
+  onDeleteDocente?: (id: string) => Promise<void>;
   onToggleDocenteActive: (id: string) => Promise<void>;
 }
 
-export default function DocenteManager({ docentes, currentUserRole, onAddDocente, onToggleDocenteActive }: DocenteManagerProps) {
+export default function DocenteManager({ docentes, currentUserRole, onAddDocente, onUpdateDocente, onDeleteDocente, onToggleDocenteActive }: DocenteManagerProps) {
   // Setup forms
   const [firstName, setFirstName] = useState('');
   const [secondName, setSecondName] = useState('');
@@ -21,6 +23,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
   const [cedulaType, setCedulaType] = useState('V');
   const [cedula, setCedula] = useState('');
   const [cedulaError, setCedulaError] = useState('');
+  const [dobError, setDobError] = useState('');
   const [id_especialidad, setIdEspecialidad] = useState<number | ''>('');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -33,6 +36,10 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [visibleCount, setVisibleCount] = useState(6);
+
+  const [editingDocente, setEditingDocente] = useState<Docente | null>(null);
+  const [docenteToDelete, setDocenteToDelete] = useState<Docente | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [isEspecialidadModalOpen, setIsEspecialidadModalOpen] = useState(false);
   const [newEspecialidadName, setNewEspecialidadName] = useState('');
@@ -68,6 +75,25 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     }
   };
 
+  const checkDateOfBirth = (val: string) => {
+    if (!val) {
+      setDobError('');
+      return;
+    }
+    const today = new Date();
+    const dob = new Date(val);
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+    if (age < 18) {
+        setDobError('El docente debe ser mayor de edad (18 años o más).');
+    } else {
+        setDobError('');
+    }
+  };
+
   const handleCreateEspecialidadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEspecialidadErrorMsg('');
@@ -99,6 +125,43 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     setIsEspecialidadModalOpen(true);
   };
 
+  const openAddModal = () => {
+    setEditingDocente(null);
+    setFirstName('');
+    setSecondName('');
+    setLastName('');
+    setSecondLastName('');
+    setCedulaType('V');
+    setCedula('');
+    setIdEspecialidad('');
+    setDateOfBirth('');
+    setPhone('');
+    setEmail('');
+    setCedulaError('');
+    setDobError('');
+    setErrorMsg('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (d: Docente) => {
+    setEditingDocente(d);
+    setFirstName(d.firstName);
+    setSecondName(d.secondName || '');
+    setLastName(d.lastName);
+    setSecondLastName(d.secondLastName || '');
+    const [type, num] = d.cedula.split('-');
+    setCedulaType(type || 'V');
+    setCedula(num || d.cedula);
+    setIdEspecialidad(d.id_especialidad || '');
+    setDateOfBirth(d.dateOfBirth);
+    setPhone(d.phone || '');
+    setEmail(d.email || '');
+    setCedulaError('');
+    setDobError('');
+    setErrorMsg('');
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName || !lastName || !cedula || !dateOfBirth) {
@@ -115,7 +178,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         age--;
     }
     if (age < 18) {
-        setErrorMsg('El docente debe ser mayor de edad (18 años o más).');
+        setDobError('El docente debe ser mayor de edad (18 años o más).');
         return;
     }
 
@@ -125,9 +188,11 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     }
     
     const fullCedula = `${cedulaType}-${cedula.trim()}`;
-    if (docentes.some(d => d.cedula === fullCedula)) {
-      setCedulaError('Esta cédula ya está registrada.');
-      return;
+    if (!editingDocente || editingDocente.cedula !== fullCedula) {
+      if (docentes.some(d => d.cedula === fullCedula)) {
+        setCedulaError('Esta cédula ya está registrada.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -142,12 +207,17 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         dateOfBirth: dateOfBirth,
         phone: phone.trim() || undefined,
         email: email.trim() || undefined,
-        status: 'Activo' as const
+        status: editingDocente ? editingDocente.status : 'Activo'
       };
 
-      await onAddDocente(newDocente);
+      if (editingDocente && onUpdateDocente) {
+        await onUpdateDocente(editingDocente.id, newDocente);
+        setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} actualizado con éxito.`);
+      } else {
+        await onAddDocente(newDocente);
+        setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} registrado con éxito.`);
+      }
       
-      setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} registrado con éxito.`);
       setErrorMsg('');
       
       // Clear forms
@@ -162,7 +232,9 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
       setPhone('');
       setEmail('');
       setCedulaError('');
+      setDobError('');
       setIsModalOpen(false);
+      setEditingDocente(null);
     } catch (e: any) {
       setErrorMsg(e.message || 'Error al guardar el docente');
     } finally {
@@ -193,8 +265,8 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
             
             {['super_admin', 'control_estudios'].includes(currentUserRole) && (
               <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-indigo-600/20"
+                onClick={openAddModal}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-indigo-600/20 pointer-events-auto cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 Registrar Docente
@@ -202,6 +274,34 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
             )}
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación">
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 leading-relaxed">
+              ¿Está seguro de eliminar al docente <span className="font-bold text-slate-800">{docenteToDelete?.firstName} {docenteToDelete?.lastName}</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+              <button 
+                onClick={async () => {
+                  if (docenteToDelete && onDeleteDocente) {
+                    try {
+                      await onDeleteDocente(docenteToDelete.id);
+                      setIsDeleteModalOpen(false);
+                      setDocenteToDelete(null);
+                    } catch (e: any) {
+                      setErrorMsg(e.message || 'Error al eliminar el docente');
+                    }
+                  }
+                }}
+                className="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </Modal>
 
         {successMsg && (
           <div className="p-4 bg-emerald-50 text-emerald-800 text-sm rounded-xl flex items-center gap-3 border border-emerald-100 shadow-sm">
@@ -231,12 +331,31 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                   </div>
                   
                   {['super_admin', 'control_estudios'].includes(currentUserRole) && (
-                    <button 
-                      onClick={() => onToggleDocenteActive(d.id)}
-                      className={`text-[10px] px-2 py-1 rounded-full font-bold transition-colors pointer-events-auto cursor-pointer ${d.status === 'Activo' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
-                    >
-                      {d.status}
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      <button 
+                        onClick={() => onToggleDocenteActive(d.id)}
+                        className={`text-[10px] px-2 py-1 rounded-full font-bold transition-colors pointer-events-auto cursor-pointer ${d.status === 'Activo' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
+                      >
+                        {d.status}
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEditModal(d)}
+                          className="text-[10px] text-slate-500 hover:text-indigo-600 font-bold pointer-events-auto cursor-pointer"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDocenteToDelete(d);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="text-[10px] text-rose-500 hover:text-rose-700 font-bold pointer-events-auto cursor-pointer"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -278,7 +397,10 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Docente">
+      <Modal isOpen={isModalOpen} onClose={() => {
+        setIsModalOpen(false);
+        setEditingDocente(null);
+      }} title={editingDocente ? "Editar Perfil del Docente" : "Registrar Nuevo Docente"}>
         {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
           <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-2">
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
@@ -328,7 +450,18 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
               </div>
               <div className="space-y-0.5">
                 <label className="text-xs font-semibold text-slate-500">Fecha de Nacimiento <span className="text-red-500 font-bold text-sm">*</span></label>
-                <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" required />
+                <input 
+                  type="date" 
+                  value={dateOfBirth} 
+                  onChange={e => {
+                    setDateOfBirth(e.target.value);
+                    setDobError('');
+                  }} 
+                  onBlur={(e) => checkDateOfBirth(e.target.value)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${dobError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`} 
+                  required 
+                />
+                {dobError && <p className="text-rose-500 text-xs mt-1 font-semibold">{dobError}</p>}
               </div>
             </div>
 
