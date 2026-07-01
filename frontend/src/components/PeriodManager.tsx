@@ -7,13 +7,14 @@ import { Modal } from './Modal';
 interface PeriodManagerProps {
   periods: SchoolPeriod[];
   currentUserRole: UserRole;
-  onAddPeriod: (name: string, status: 'Activo' | 'Planificación') => void;
-  onUpdatePeriodStatus: (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => void;
+  onAddPeriod: (name: string, status: 'Activo' | 'Planificación') => Promise<void>;
+  onUpdatePeriodStatus: (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => Promise<void>;
 }
 
 export default function PeriodManager({ periods, currentUserRole, onAddPeriod, onUpdatePeriodStatus }: PeriodManagerProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<SchoolPeriod | null>(null);
 
   // Add Form
@@ -29,14 +30,19 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
     setIsAddModalOpen(true);
   };
 
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) {
       toast.error('El nombre del periodo es requerido (ej. 2026-2027)');
       return;
     }
-    onAddPeriod(newName, newStatus);
-    setIsAddModalOpen(false);
+    try {
+      await onAddPeriod(newName, newStatus);
+      toast.success('Periodo creado exitosamente.');
+      setIsAddModalOpen(false);
+    } catch (error) {
+      // Error is handled in App.tsx
+    }
   };
 
   const openCloseModal = (period: SchoolPeriod) => {
@@ -45,22 +51,38 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
     setIsCloseModalOpen(true);
   };
 
-  const handleCloseSubmit = (e: React.FormEvent) => {
+  const handleCloseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (confirmText !== 'CERRAR') {
       toast.error('Debes escribir la palabra CERRAR exactamente igual para confirmar.');
       return;
     }
     if (selectedPeriod) {
-      onUpdatePeriodStatus(selectedPeriod.id, 'Cerrado');
-      toast.success(`Periodo ${selectedPeriod.name} cerrado exitosamente.`);
+      try {
+        await onUpdatePeriodStatus(selectedPeriod.id, 'Cerrado');
+        toast.success(`Periodo ${selectedPeriod.name} cerrado exitosamente.`);
+        setIsCloseModalOpen(false);
+      } catch (error) {
+        // Error is handled in App.tsx
+      }
     }
-    setIsCloseModalOpen(false);
   };
 
-  const handleActivate = (period: SchoolPeriod) => {
-    if (confirm(`¿Estás seguro de activar el periodo ${period.name}? Esto permitirá inscripciones y carga de notas bajo este periodo.`)) {
-      onUpdatePeriodStatus(period.id, 'Activo');
+  const openActivateModal = (period: SchoolPeriod) => {
+    setSelectedPeriod(period);
+    setIsActivateModalOpen(true);
+  };
+
+  const handleActivateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedPeriod) {
+      try {
+        await onUpdatePeriodStatus(selectedPeriod.id, 'Activo');
+        toast.success(`Periodo ${selectedPeriod.name} activado exitosamente.`);
+        setIsActivateModalOpen(false);
+      } catch (error) {
+        // Error is handled in App.tsx
+      }
     }
   };
 
@@ -135,7 +157,7 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
                       <td className="p-3 text-center flex items-center justify-center gap-2">
                         {per.status === 'Planificación' && (
                           <button
-                            onClick={() => handleActivate(per)}
+                            onClick={() => openActivateModal(per)}
                             className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 px-3 py-1.5 rounded text-[10px] font-bold transition-colors pointer-events-auto cursor-pointer"
                           >
                             Activar
@@ -228,6 +250,26 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
               className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
             >
               Confirmar Cierre Definitivo
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Activar Periodo */}
+      <Modal isOpen={isActivateModalOpen} onClose={() => setIsActivateModalOpen(false)} title="Activar Periodo Escolar">
+        <form onSubmit={handleActivateSubmit} className="space-y-4">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <h4 className="text-xs font-bold text-emerald-800 mb-1 flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Confirmar Activación</h4>
+            <p className="text-[11px] text-emerald-700 leading-relaxed">
+              ¿Estás seguro de activar el periodo <strong>{selectedPeriod?.name}</strong>? Esto permitirá inscripciones y carga de notas bajo este periodo.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="submit"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+            >
+              Sí, Activar Periodo
             </button>
           </div>
         </form>

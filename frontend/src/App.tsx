@@ -65,6 +65,36 @@ import PendingSubjectsManager from './components/PendingSubjectsManager';
 import ChatbotAsistente from './components/ChatbotAsistente';
 import UserProfileModal from './components/UserProfileModal';
 
+const VenezuelaClock = () => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeFormatter = new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  const dateFormatter = new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric'
+  });
+
+  return (
+    <div className="flex flex-col items-end justify-center leading-tight ml-2 text-white font-sans">
+      <span className="text-[14px] font-semibold">{timeFormatter.format(time)}</span>
+      <span className="text-[14px] text-slate-300">{dateFormatter.format(time)}</span>
+    </div>
+  );
+};
+
 export default function App() {
   // Global States loaded with seed data representing a Venezuelan Liceo
   const [users, setUsers] = useState<User[]>([]);
@@ -512,6 +542,7 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al crear periodo escolar');
+      throw e;
     }
   };
 
@@ -522,6 +553,7 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al actualizar periodo escolar');
+      throw e;
     }
   };
 
@@ -866,45 +898,57 @@ export default function App() {
     {
       group: 'Principal',
       items: [
-        { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard }
+        { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] }
       ]
     },
     {
-      group: 'Académico',
+      group: 'Configuración Inicial',
       items: [
-        { id: 'students', label: 'Estudiantes', icon: Users },
-        { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap },
-        { id: 'docentes', label: 'Gestión de Docentes', icon: Briefcase },
-        { id: 'grades', label: 'Calificaciones', icon: Award },
-        { id: 'pendientes', label: 'Materias Pendientes', icon: BookOpen },
-        { id: 'attendance', label: 'Control Asistencia', icon: Calendar }
+        { id: 'periods', label: 'Periodos Escolares', icon: CalendarDays, allowedRoles: ['super_admin', 'control_estudios'] },
+        { id: 'users', label: 'Roles de Acceso', icon: Shield, allowedRoles: ['super_admin'] },
+        { id: 'facilities', label: 'Salones & Aulas', icon: Home, allowedRoles: ['super_admin', 'control_estudios'] }
       ]
     },
     {
-      group: 'Planificación',
+      group: 'Planificación Académica',
       items: [
-        { id: 'periods', label: 'Periodos Escolares', icon: CalendarDays },
-        { id: 'subjects', label: 'Plan de Estudio', icon: Book },
-        { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck }
+        { id: 'subjects', label: 'Plan de Estudio', icon: Book, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] },
+        { id: 'docentes', label: 'Gestión de Docentes', icon: Briefcase, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] },
+        { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] }
       ]
     },
     {
-      group: 'Administración',
+      group: 'Organización Escolar',
       items: [
-        { id: 'facilities', label: 'Salones & Aulas', icon: Home },
-        { id: 'users', label: 'Roles de Acceso', icon: Shield }
+        { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] },
+        { id: 'students', label: 'Estudiantes', icon: Users, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] }
+      ]
+    },
+    {
+      group: 'Operaciones Diarias',
+      items: [
+        { id: 'grades', label: 'Calificaciones', icon: Award, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] },
+        { id: 'attendance', label: 'Control Asistencia', icon: Calendar, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] },
+        { id: 'pendientes', label: 'Materias Pendientes', icon: BookOpen, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] }
       ]
     },
     {
       group: 'Sistema',
       items: [
-        { id: 'documentation', label: 'Documentación', icon: BookOpen }
+        { id: 'documentation', label: 'Documentación', icon: BookOpen, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] }
       ]
     }
   ];
 
+  const filteredTabGroups = tabGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => item.allowedRoles.includes(currentUserRole))
+    }))
+    .filter(group => group.items.length > 0);
+
   // Flattened for easy lookup if needed
-  const tabs = tabGroups.flatMap(g => g.items);
+  const tabs = filteredTabGroups.flatMap(g => g.items);
 
   // Helper definitions for side-roles indicators
   const getRoleLabelAndColor = (role: UserRole) => {
@@ -943,12 +987,12 @@ export default function App() {
       />
 
       {/* Top Banner Warning context (Simulated) */}
-      <div id="simulated-header-badge" className="bg-slate-900 text-slate-300 text-[10px] py-1.5 px-4 text-center font-mono tracking-wider flex items-center justify-between border-b border-slate-800">
-        <span className="hidden md:inline">● CONTEXTO SOU-MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN (VENEZUELA)</span>
-        <span className="flex items-center gap-1.5 mx-auto md:mx-0">
-          🔑 Vista activa para: <strong className="text-white font-black uppercase text-[11px]">{currentRoleLabel}</strong>
-          <span className="text-slate-500">|</span>
-          Cambiar perspecivas en pestaña <button id="btn-quick-goto-roles" onClick={() => setActiveTab('users')} className="underline hover:text-white pointer-events-auto cursor-pointer">Roles Acceso</button>
+      <div id="simulated-header-badge" className="bg-slate-900 text-slate-300 py-3 px-6 text-center font-mono tracking-wider flex items-center justify-between border-b border-slate-800 shadow-md">
+        <span className="flex items-center gap-2 mx-auto md:mx-0 text-sm text-slate-300">
+          👋 Bienvenido de nuevo, <strong className="text-white font-black px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">{currentUser?.name || 'Usuario'}</strong>
+        </span>
+        <span className="hidden md:flex items-center">
+          <VenezuelaClock />
         </span>
       </div>
 
@@ -977,7 +1021,7 @@ export default function App() {
 
             {/* Navigation options */}
             <nav id="sidebar-nav" className="px-3 pb-6 flex-1 overflow-y-auto">
-              {tabGroups.map((group, idx) => (
+              {filteredTabGroups.map((group, idx) => (
                 <div key={idx} className="mb-6 last:mb-0">
                   <h3 className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                     {group.group}
@@ -1083,7 +1127,7 @@ export default function App() {
               className="md:hidden bg-slate-900 border-b border-slate-800 text-slate-300 absolute w-full top-[61px] left-0 z-40 px-4 py-6 space-y-4 select-none shadow-2xl"
             >
               <nav className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
-                {tabGroups.map((group, idx) => (
+                {filteredTabGroups.map((group, idx) => (
                   <div key={idx} className="space-y-1">
                     <h3 className="px-3 mb-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                       {group.group}

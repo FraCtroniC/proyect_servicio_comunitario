@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layers, UserPlus, Filter, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, AcademicYear, UserRole, MateriaPendiente, Section } from '../types';
@@ -68,6 +68,23 @@ export default function StudentManager({ students, sections, classrooms, current
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [pendingSubjects, setPendingSubjects] = useState<MateriaPendiente[]>([]);
   
+  useEffect(() => {
+    if (modalMode === 'create' && isStudentModalOpen) {
+      const draft = {
+        firstName, secondName, lastName, secondLastName, cedula, cedulaType,
+        birthYear, gender, estado, municipio, birthPlace, enrollYear, enrollSection,
+        repFirstName, repSecondName, repLastName, repSecondLastName, repCedula,
+        repCedulaType, repPhone, repEmail, repAddress
+      };
+      localStorage.setItem('student_create_draft', JSON.stringify(draft));
+    }
+  }, [
+    firstName, secondName, lastName, secondLastName, cedula, cedulaType,
+    birthYear, gender, estado, municipio, birthPlace, enrollYear, enrollSection,
+    repFirstName, repSecondName, repLastName, repSecondLastName, repCedula,
+    repCedulaType, repPhone, repEmail, repAddress, modalMode, isStudentModalOpen
+  ]);
+
   const handleOpenProfile = async (s: Student) => {
     setSelectedStudent(s);
     setIsProfileModalOpen(true);
@@ -79,31 +96,51 @@ export default function StudentManager({ students, sections, classrooms, current
     }
   };
 
+  const resetFormToDefaults = () => {
+    setFirstName(''); setSecondName(''); setLastName(''); setSecondLastName('');
+    setCedula(''); setCedulaType('V'); setBirthYear('2009-05-15'); setGender('');
+    setEstado(''); setMunicipio(''); setBirthPlace(''); setEnrollYear(5); setEnrollSection('A');
+    setRepFirstName(''); setRepSecondName(''); setRepLastName(''); setRepSecondLastName('');
+    setRepCedula(''); setRepCedulaType('V'); setRepPhone(''); setRepEmail(''); setRepAddress('');
+  };
+
   const handleOpenCreate = () => {
     setModalMode('create');
     setEditingStudentId('');
-    setFirstName('');
-    setSecondName('');
-    setLastName('');
-    setSecondLastName('');
-    setCedula('');
-    setCedulaType('V');
-    setBirthYear('2009-05-15');
-    setGender('');
-    setEstado('');
-    setMunicipio('');
-    setBirthPlace('');
-    setEnrollYear(5);
-    setEnrollSection('A');
-    setRepFirstName('');
-    setRepSecondName('');
-    setRepLastName('');
-    setRepSecondLastName('');
-    setRepCedula('');
-    setRepCedulaType('V');
-    setRepPhone('');
-    setRepEmail('');
-    setRepAddress('');
+    
+    const draftStr = localStorage.getItem('student_create_draft');
+    if (draftStr) {
+      try {
+        const draft = JSON.parse(draftStr);
+        setFirstName(draft.firstName || '');
+        setSecondName(draft.secondName || '');
+        setLastName(draft.lastName || '');
+        setSecondLastName(draft.secondLastName || '');
+        setCedula(draft.cedula || '');
+        setCedulaType(draft.cedulaType || 'V');
+        setBirthYear(draft.birthYear || '2009-05-15');
+        setGender(draft.gender || '');
+        setEstado(draft.estado || '');
+        setMunicipio(draft.municipio || '');
+        setBirthPlace(draft.birthPlace || '');
+        setEnrollYear(draft.enrollYear || 5);
+        setEnrollSection(draft.enrollSection || 'A');
+        setRepFirstName(draft.repFirstName || '');
+        setRepSecondName(draft.repSecondName || '');
+        setRepLastName(draft.repLastName || '');
+        setRepSecondLastName(draft.repSecondLastName || '');
+        setRepCedula(draft.repCedula || '');
+        setRepCedulaType(draft.repCedulaType || 'V');
+        setRepPhone(draft.repPhone || '');
+        setRepEmail(draft.repEmail || '');
+        setRepAddress(draft.repAddress || '');
+      } catch (e) {
+        resetFormToDefaults();
+      }
+    } else {
+      resetFormToDefaults();
+    }
+
     setErrors({});
     setFormError('');
     setFormSuccess('');
@@ -335,6 +372,8 @@ export default function StudentManager({ students, sections, classrooms, current
     if (modalMode === 'create') {
       onAddStudent(newStudent);
       setFormSuccess(`Estudiante ${newStudent.firstName} ${newStudent.lastName} matriculado correctamente en ${newStudent.academicYear}° Año Secc. ${newStudent.section}.`);
+      
+      localStorage.removeItem('student_create_draft');
       
       // Clear forms
       setFirstName('');
@@ -663,7 +702,7 @@ export default function StudentManager({ students, sections, classrooms, current
 
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Estado <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-xs font-semibold text-slate-500">Estado (Nacimiento) <span className="text-red-500 font-bold text-sm">*</span></label>
                 <SearchableSelect
                   options={getStates().map(s => ({ value: s, label: s }))}
                   value={estado}
@@ -672,7 +711,7 @@ export default function StudentManager({ students, sections, classrooms, current
                 />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Municipio <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-xs font-semibold text-slate-500">Municipio (Nacimiento) <span className="text-red-500 font-bold text-sm">*</span></label>
                 <SearchableSelect
                   options={estado ? getMunicipalities(estado).map(m => ({ value: m, label: m })) : []}
                   value={municipio}
@@ -682,7 +721,7 @@ export default function StudentManager({ students, sections, classrooms, current
                 />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Lugar Nac. (Parroquia)</label>
+                <label className="text-xs font-semibold text-slate-500">Parroquia (Nacimiento)</label>
                 <SearchableSelect
                   options={(estado && municipio) ? getParishes(estado, municipio).map((p: string) => ({ value: p, label: p })) : []}
                   value={birthPlace}

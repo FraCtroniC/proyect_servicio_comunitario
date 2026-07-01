@@ -7,6 +7,6 @@ export const periodoEscolarRoutes = Router();
 
 periodoEscolarRoutes.get('/', PeriodoEscolarController.listar);
 periodoEscolarRoutes.get('/:id', PeriodoEscolarController.obtenerPorId);
-periodoEscolarRoutes.post('/', authorize(1, 3), validateCrearPeriodoEscolar, PeriodoEscolarController.crear);
-periodoEscolarRoutes.patch('/:id', authorize(1, 3), PeriodoEscolarController.actualizar);
-periodoEscolarRoutes.delete('/:id', authorize(1), PeriodoEscolarController.eliminar);
+periodoEscolarRoutes.post('/', authorize('Administrador', 'Control de Estudios'), validateCrearPeriodoEscolar, PeriodoEscolarController.crear);
+periodoEscolarRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios'), PeriodoEscolarController.actualizar);
+periodoEscolarRoutes.delete('/:id', authorize('Administrador'), PeriodoEscolarController.eliminar);

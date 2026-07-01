@@ -250,7 +250,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
             </span>
           </div>
           <p className="text-xs md:text-sm text-slate-500 leading-normal max-w-xs mx-auto">
-            Sistema Integrado de Control de Estudios para Educación Media General.
+            Sistema Integrado de Gestión Academica, Control de notas y Asistencia de Educacion Media General.
           </p>
         </div>
 

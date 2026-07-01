@@ -1699,3 +1699,31 @@ Error: El correo electrónico no se encuentra registrado en el sistema.
     at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:156:13)
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
 
+2026-07-01T16:26:45.256Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T16:26:50.524Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T16:26:59.037Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T16:27:02.679Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T16:31:50.735Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T16:31:59.110Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T17:17:06.492Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Users\Josedaniel\Documents\UNEFA\Proyecto_S.C\proyect_servicio_comunitario\backend\src\controllers\auth.controller.ts:91:13)
+
