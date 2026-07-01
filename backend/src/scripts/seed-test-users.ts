@@ -1,12 +1,11 @@
 import bcrypt from 'bcrypt';
-import { sequelize, Rol, Usuario } from './src/models';
+import { sequelize, Rol, Usuario } from '../models';
 
 async function seedTestUsers() {
   try {
     await sequelize.authenticate();
     console.log('Conectado a la BD.');
 
-    // Asegurar que existe el rol "Control de Estudios"
     let controlRol = await Rol.findOne({ where: { nombre: 'Control de Estudios' } });
     if (!controlRol) {
       controlRol = await Rol.create({
@@ -17,7 +16,6 @@ async function seedTestUsers() {
     }
     const controlRolId = controlRol.getDataValue('id_rol');
 
-    // Obtener IDs de roles existentes
     const adminRol = await Rol.findOne({ where: { nombre: 'Administrador' } });
     const docenteRol = await Rol.findOne({ where: { nombre: 'Docente' } });
 
@@ -31,7 +29,6 @@ async function seedTestUsers() {
 
     const passwordHash = await bcrypt.hash('1234', 10);
 
-    // Crear usuario admin si no existe
     const adminExists = await Usuario.findOne({ where: { username: 'admin' } });
     if (!adminExists) {
       await Usuario.create({
@@ -45,7 +42,6 @@ async function seedTestUsers() {
       console.log('Usuario "admin" ya existe.');
     }
 
-    // Crear usuario control si no existe
     const controlExists = await Usuario.findOne({ where: { username: 'control' } });
     if (!controlExists) {
       await Usuario.create({
@@ -59,7 +55,6 @@ async function seedTestUsers() {
       console.log('Usuario "control" ya existe.');
     }
 
-    // Crear usuario docente si no existe
     const docenteExists = await Usuario.findOne({ where: { username: 'docente' } });
     if (!docenteExists) {
       await Usuario.create({
@@ -74,10 +69,10 @@ async function seedTestUsers() {
     }
 
     console.log('\n--- USUARIOS DE PRUEBA ---');
-    console.log('admin   | clave: 1234 | Rol: Administrador    → super_admin');
-    console.log('control | clave: 1234 | Rol: Control Estudios → control_estudios');
-    console.log('docente | clave: 1234 | Rol: Docente          → docente');
-    console.log('arturo  | clave: 1234 | Rol: Administrador    → super_admin (seed original)');
+    console.log('admin   | clave: 1234 | Rol: Administrador    -> super_admin');
+    console.log('control | clave: 1234 | Rol: Control Estudios -> control_estudios');
+    console.log('docente | clave: 1234 | Rol: Docente          -> docente');
+    console.log('arturo  | clave: 1234 | Rol: Administrador    -> super_admin (seed original)');
 
     process.exit(0);
   } catch (error) {

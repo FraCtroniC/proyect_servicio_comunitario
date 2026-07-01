@@ -1,19 +1,15 @@
-import { sequelize, Asignatura, PlanEstudio, GradoAno } from './src/models';
+import { sequelize, Asignatura, PlanEstudio, GradoAno } from '../models';
 
 async function seedMPPE() {
   try {
     await sequelize.authenticate();
     console.log('Conectado a la BD.');
 
-    // 1. Borrar dependencias primero (Calificaciones y Horarios si existen)
-    // Para simplificar, asumiremos que no hay calificaciones todavía, o usaremos CASCADE si fuera nativo.
-    // Destruir todo en PlanEstudio y Asignaturas
     console.log('Borrando PlanEstudio actual...');
     await PlanEstudio.destroy({ where: {} });
     console.log('Borrando Asignaturas actuales...');
     await Asignatura.destroy({ where: {} });
 
-    // 2. Obtener los grados
     const grados = await GradoAno.findAll();
     const gradoMap = new Map();
     grados.forEach((g: any) => gradoMap.set(g.numero, g.id_grado));
@@ -23,21 +19,11 @@ async function seedMPPE() {
         process.exit(1);
     }
 
-    // 3. Crear asignaturas base
     const asignaturasBase = [
-      'Castellano',
-      'Inglés',
-      'Matemática',
-      'Educación Física',
-      'Arte y Patrimonio',
-      'Ciencias Naturales',
-      'Geografía, Historia y Ciudadanía',
-      'Orientación y Convivencia',
-      'Grupos Creación, Recreación y Producción',
-      'Física',
-      'Química',
-      'Biología',
-      'Formación para la Soberanía Nacional',
+      'Castellano', 'Inglés', 'Matemática', 'Educación Física',
+      'Arte y Patrimonio', 'Ciencias Naturales', 'Geografía, Historia y Ciudadanía',
+      'Orientación y Convivencia', 'Grupos Creación, Recreación y Producción',
+      'Física', 'Química', 'Biología', 'Formación para la Soberanía Nacional',
       'Ciencias de la Tierra'
     ];
 
@@ -46,12 +32,9 @@ async function seedMPPE() {
       const a = await Asignatura.create({ nombre: name, tipo_calificacion: 'Cuantitativa' }) as any;
       asigMap.set(name, a.id_asignatura);
     }
-
     console.log('Asignaturas base creadas.');
 
-    // 4. Crear Plan Estudio
     const plan = [
-      // 1er y 2do Año
       ...[1, 2].flatMap(y => [
         { asig: 'Castellano', cod: `CAS${y}`, pos: 1, year: y },
         { asig: 'Inglés', cod: `ING${y}`, pos: 2, year: y },
@@ -63,7 +46,6 @@ async function seedMPPE() {
         { asig: 'Orientación y Convivencia', cod: `OYC${y}`, pos: 8, year: y },
         { asig: 'Grupos Creación, Recreación y Producción', cod: `CRP${y}`, pos: 9, year: y },
       ]),
-      // 3er Año
       ...[
         { asig: 'Castellano', cod: 'CAS3', pos: 1, year: 3 },
         { asig: 'Inglés', cod: 'ING3', pos: 2, year: 3 },
@@ -76,7 +58,6 @@ async function seedMPPE() {
         { asig: 'Orientación y Convivencia', cod: 'OYC3', pos: 9, year: 3 },
         { asig: 'Grupos Creación, Recreación y Producción', cod: 'CRP3', pos: 10, year: 3 },
       ],
-      // 4to Año
       ...[
         { asig: 'Castellano', cod: 'CAS4', pos: 1, year: 4 },
         { asig: 'Inglés', cod: 'ING4', pos: 2, year: 4 },
@@ -90,7 +71,6 @@ async function seedMPPE() {
         { asig: 'Orientación y Convivencia', cod: 'OYC4', pos: 10, year: 4 },
         { asig: 'Grupos Creación, Recreación y Producción', cod: 'CRP4', pos: 11, year: 4 },
       ],
-      // 5to Año
       ...[
         { asig: 'Castellano', cod: 'CAS5', pos: 1, year: 5 },
         { asig: 'Inglés', cod: 'ING5', pos: 2, year: 5 },
@@ -118,7 +98,6 @@ async function seedMPPE() {
 
     console.log('Plan de Estudio inyectado correctamente.');
     process.exit(0);
-
   } catch (err) {
     console.error('Error:', err);
     process.exit(1);
