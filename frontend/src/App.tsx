@@ -63,6 +63,7 @@ import SubjectManager from './components/SubjectManager';
 import PeriodManager from './components/PeriodManager';
 import PendingSubjectsManager from './components/PendingSubjectsManager';
 import ChatbotAsistente from './components/ChatbotAsistente';
+import UserProfileModal from './components/UserProfileModal';
 
 export default function App() {
   // Global States loaded with seed data representing a Venezuelan Liceo
@@ -96,6 +97,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -1016,7 +1018,10 @@ export default function App() {
           <div id="sidebar-footer" className="p-4 border-t border-slate-800/60 space-y-3">
             {/* Simulated Active Account */}
             <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/50 flex flex-col gap-3">
-              <div className="flex items-center gap-2.5 overflow-hidden">
+              <button
+                onClick={() => setIsProfileOpen(true)}
+                className="flex items-center gap-2.5 overflow-hidden w-full text-left pointer-events-auto cursor-pointer hover:bg-slate-700/30 rounded-lg p-1.5 -m-1.5 transition-colors"
+              >
                 <div className="h-9 w-9 shrink-0 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-blue-400 border border-blue-500/30 uppercase overflow-hidden">
                   {currentUser?.avatarUrl ? (
                     <img src={currentUser.avatarUrl} alt={currentUser.name} className="h-full w-full object-cover" />
@@ -1030,7 +1035,7 @@ export default function App() {
                   </span>
                   <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-tight truncate">{currentRoleLabel}</span>
                 </div>
-              </div>
+              </button>
               
               <button
                 onClick={handleLogout}
@@ -1295,6 +1300,13 @@ export default function App() {
         </main>
 
         <ChatbotAsistente roleId={CHATBOT_ROLE_MAP[currentUserRole]} userName={currentUser?.name} />
+
+        <UserProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+        />
 
       </div>
     </div>

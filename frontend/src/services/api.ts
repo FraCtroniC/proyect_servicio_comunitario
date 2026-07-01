@@ -120,5 +120,14 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ mensaje, roleId, nombre }),
       }),
-  }
+  },
+  auth: {
+    getProfile: () =>
+      request<{ nombre1: string | null; nombre2: string | null; apellido1: string | null; apellido2: string | null; username: string; rol: string | null }>('/api/auth/profile'),
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      request<{ message: string }>('/api/auth/change-password', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+  },
 };

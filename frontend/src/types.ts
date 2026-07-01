@@ -15,6 +15,12 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   teacherId?: string;
+  firstName?: string;
+  secondName?: string;
+  lastName?: string;
+  secondLastName?: string;
+  rol?: string;
+  username?: string;
 }
 
 export interface Docente {

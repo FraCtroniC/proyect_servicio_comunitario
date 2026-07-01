@@ -7,6 +7,7 @@ import { Usuario as UsuarioModel, Rol, Docente } from '../models';
 import { environment } from '../../config/environment';
 import { AppError } from '../shared/errors';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 // Bloqueo de cuenta por intentos fallidos (en memoria, no toca la DB)
 const loginAttempts = new Map<string, { count: number; lockUntil: number }>();
@@ -261,5 +262,70 @@ export const AuthController = {
       }
       throw error;
     }
+  }),
+
+  obtenerPerfil: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
+    const idUsuario = req.user?.idUsuario;
+    if (!idUsuario) {
+      throw new AppError('No autorizado', 401);
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuario, {
+      include: [
+        { model: Rol, as: 'rol' },
+        { model: Docente, as: 'docente' }
+      ]
+    });
+
+    if (!usuario) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
+    const docente = usuario.docente as any;
+    const rol = usuario.rol as any;
+
+    res.json({
+      data: {
+        nombre1: docente?.nombre1 ?? null,
+        nombre2: docente?.nombre2 ?? null,
+        apellido1: docente?.apellido1 ?? null,
+        apellido2: docente?.apellido2 ?? null,
+        username: usuario.username,
+        rol: rol?.nombre ?? null,
+      }
+    });
+  }),
+
+  cambiarPassword: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
+    const idUsuario = req.user?.idUsuario;
+    if (!idUsuario) {
+      throw new AppError('No autorizado', 401);
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      throw new AppError('La contraseña actual y la nueva contraseña son requeridas', 400);
+    }
+
+    if (newPassword.length < 6) {
+      throw new AppError('La nueva contraseña debe tener al menos 6 caracteres', 400);
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuario);
+    if (!usuario) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
+    const passwordMatch = await bcrypt.compare(currentPassword, usuario.password_hash);
+    if (!passwordMatch) {
+      throw new AppError('La contraseña actual es incorrecta', 401);
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    usuario.password_hash = await bcrypt.hash(newPassword, salt);
+    await usuario.save();
+
+    res.json({ data: { message: 'Contraseña actualizada con éxito' } });
   }),
 };

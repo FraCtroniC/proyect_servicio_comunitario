@@ -1686,3 +1686,16 @@ Error
     at async AsistenciaEstudiante.findAndCountAll (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\node_modules\sequelize\src\model.js:2183:27)
     at async <anonymous> (C:\Users\Javian\Documents\MIS REPOS\proyect_servicio_comunitario\backend\src\controllers\asistencia-estudiante.controller.ts:54:29)
 
+2026-07-01T00:16:16.924Z
+Error: La contraseña actual es incorrecta
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:322:13)
+
+2026-07-01T00:20:47.567Z
+Error: Usuario o contraseña incorrectos
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:91:13)
+
+2026-07-01T00:21:23.602Z
+Error: El correo electrónico no se encuentra registrado en el sistema.
+    at <anonymous> (C:\Carpeta de carpetas\Uni\6° semestre\Servicio Comunitario\proyecto\backend\src\controllers\auth.controller.ts:156:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
