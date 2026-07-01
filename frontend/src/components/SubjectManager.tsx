@@ -8,10 +8,17 @@ interface SubjectManagerProps {
   studyPlans: StudyPlanItem[];
   currentUserRole: UserRole;
   onAddStudyPlanItem: (name: string, year: number, codigo: string, posicion: number) => void;
+  onUpdateStudyPlanItem?: (id: string, name: string, year: number, codigo: string, posicion: number) => void;
+  onDeleteStudyPlanItem?: (id: string) => void;
 }
 
-export default function SubjectManager({ studyPlans, currentUserRole, onAddStudyPlanItem }: SubjectManagerProps) {
+export default function SubjectManager({ studyPlans, currentUserRole, onAddStudyPlanItem, onUpdateStudyPlanItem, onDeleteStudyPlanItem }: SubjectManagerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<StudyPlanItem | null>(null);
+  
+  // Delete Modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<StudyPlanItem | null>(null);
 
   // Filters
   const [filterYear, setFilterYear] = useState<number | 'Todos'>('Todos');
@@ -23,10 +30,20 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
   const [posicion, setPosicion] = useState<number>(1);
 
   const openAddModal = () => {
+    setEditingPlan(null);
     setNombre('');
     setYear(filterYear === 'Todos' ? 1 : filterYear);
     setCodigo('');
     setPosicion(1);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (plan: StudyPlanItem) => {
+    setEditingPlan(plan);
+    setNombre(plan.subjectName);
+    setYear(plan.year as number);
+    setCodigo(plan.codigo || '');
+    setPosicion(plan.posicion);
     setIsModalOpen(true);
   };
 
@@ -37,8 +54,13 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
       return;
     }
 
-    onAddStudyPlanItem(nombre, year, codigo, posicion);
+    if (editingPlan && onUpdateStudyPlanItem) {
+      onUpdateStudyPlanItem(editingPlan.id, nombre, year, codigo, posicion);
+    } else {
+      onAddStudyPlanItem(nombre, year, codigo, posicion);
+    }
     setIsModalOpen(false);
+    setEditingPlan(null);
   };
 
   const canEdit = ['super_admin', 'control_estudios'].includes(currentUserRole);
@@ -106,6 +128,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                   <th className="p-3 font-bold">MATERIA</th>
                   <th className="p-3 font-bold text-center w-24">POSICIÓN</th>
                   <th className="p-3 font-bold text-center w-24">AÑO</th>
+                  {canEdit && <th className="p-3 font-bold text-center w-24">ACCIONES</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -119,6 +142,27 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                     <td className="p-3 font-bold text-slate-700">{item.subjectName}</td>
                     <td className="p-3 text-center font-mono font-bold text-slate-500">{item.posicion}</td>
                     <td className="p-3 text-center font-bold text-indigo-600">{item.year}°</td>
+                    {canEdit && (
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="text-xs text-slate-500 hover:text-indigo-600 transition-colors font-bold cursor-pointer"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => {
+                              setPlanToDelete(item);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className="text-xs text-rose-500 hover:text-rose-700 transition-colors font-bold cursor-pointer"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -127,8 +171,11 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
         )}
       </div>
 
-      {/* Modal Agregar al Plan de Estudio */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Agregar al Plan de Estudio">
+      {/* Modal Agregar/Editar al Plan de Estudio */}
+      <Modal isOpen={isModalOpen} onClose={() => {
+        setIsModalOpen(false);
+        setEditingPlan(null);
+      }} title={editingPlan ? "Editar Materia en Plan" : "Agregar al Plan de Estudio"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           
           <div className="space-y-1">
@@ -187,12 +234,36 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
             >
-              Agregar Materia al Plan
+              {editingPlan ? "Guardar Cambios" : "Guardar Materia"}
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            ¿Está seguro de eliminar la materia <span className="font-bold text-slate-800">{planToDelete?.subjectName}</span> del plan de estudio?
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button 
+              onClick={() => {
+                if (planToDelete && onDeleteStudyPlanItem) {
+                  onDeleteStudyPlanItem(planToDelete.id);
+                  setIsDeleteModalOpen(false);
+                  setPlanToDelete(null);
+                }
+              }}
+              className="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
       </Modal>
 
     </div>

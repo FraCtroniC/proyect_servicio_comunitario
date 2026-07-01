@@ -254,8 +254,8 @@ export default function App() {
           setSections((Array.isArray(seccionesData) ? seccionesData : []).map(mapSeccionToSection));
           setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
           setReferenceData({
-            dias: Array.isArray(diasData) ? diasData : [],
-            bloques: Array.isArray(bloquesData) ? bloquesData : []
+            dias: Array.isArray(diasData) ? diasData : ((diasData as any)?.data || []),
+            bloques: Array.isArray(bloquesData) ? bloquesData : ((bloquesData as any)?.data || [])
           });
 
           // Cache matrículas
@@ -332,6 +332,54 @@ export default function App() {
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al crear docente en BD');
+    }
+  };
+
+  const handleUpdateDocente = async (id: string, updatedDocente: Omit<Docente, 'id'>) => {
+    try {
+      const payload = {
+        cedula_docente: updatedDocente.cedula.replace('V-', '').replace('E-', ''),
+        nombre1: updatedDocente.firstName,
+        nombre2: updatedDocente.secondName,
+        apellido1: updatedDocente.lastName,
+        apellido2: updatedDocente.secondLastName,
+        id_especialidad: updatedDocente.id_especialidad,
+        fecha_nac: updatedDocente.dateOfBirth,
+        telefono: updatedDocente.phone,
+        correo: updatedDocente.email
+      };
+      await api.patch<any>(`/api/docentes/${stripId(id)}`, payload);
+      
+      setDocentes(p => p.map(d => d.id === id ? { ...d, ...updatedDocente } : d));
+      
+      // Attempt to update associated user email if necessary, silently catch
+      if (updatedDocente.email) {
+        const user = users.find(u => u.teacherId === id || (u.email && u.email === updatedDocente.email));
+        if (user) {
+           await api.patch(`/api/usuarios/${stripId(user.id)}`, { correo: updatedDocente.email }).catch(() => {});
+           setUsers(p => p.map(u => u.id === user.id ? { ...u, email: updatedDocente.email } : u));
+        }
+      }
+
+    } catch (e: any) {
+      console.error(e);
+      throw new Error(e.response?.data?.error?.message || 'Error al actualizar docente en BD');
+    }
+  };
+
+  const handleDeleteDocente = async (id: string) => {
+    try {
+      await api.delete(`/api/docentes/${stripId(id)}`);
+      setDocentes(p => p.filter(d => d.id !== id));
+      
+      // Remove associated user if exists locally
+      const user = users.find(u => u.teacherId === id);
+      if (user) {
+         setUsers(p => p.filter(u => u.id !== user.id));
+      }
+    } catch (e: any) {
+      console.error(e);
+      throw new Error(e.response?.data?.error?.message || 'Error al eliminar docente, asegúrese de que no tenga horarios asignados.');
     }
   };
 
@@ -546,6 +594,50 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al añadir la materia al plan de estudio en la BD');
+    }
+  };
+  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number) => {
+    try {
+      // 1. Ensure subject exists or create it
+      let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
+      if (!subjectId) {
+        const subResp = await api.post<any>('/api/asignaturas', {
+          nombre: name,
+          tipo_calificacion: 'Cuantitativa'
+        });
+        const newSub = mapAsignaturaToSubject(subResp);
+        setSubjects(p => [...p, newSub]);
+        subjectId = newSub.id;
+      }
+      
+      // 2. Update the plan_estudio record
+      const planResp = await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
+        id_asignatura: Number(subjectId),
+        id_grado: year,
+        codigo_asignatura: codigo,
+        posicion: posicion
+      });
+
+      const updatedItem = mapPlanToStudyPlanItem(planResp);
+      updatedItem.subjectName = name;
+      updatedItem.year = year as any;
+
+      setStudyPlans(p => p.map(plan => plan.id === id ? updatedItem : plan));
+      toast.success('Materia actualizada en el plan de estudio exitosamente');
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al actualizar la materia en el plan de estudio');
+    }
+  };
+
+  const handleDeleteStudyPlanItem = async (id: string) => {
+    try {
+      await api.delete(`/api/plan-estudio/${stripId(id)}`);
+      setStudyPlans(p => p.filter(plan => plan.id !== id));
+      toast.success('Materia eliminada del plan de estudio');
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al eliminar la materia del plan de estudio');
     }
   };
 
@@ -850,8 +942,9 @@ export default function App() {
 
   const handleAddScheduleEvent = async (evt: ScheduleEvent) => {
     try {
+      const dayObj = referenceData.dias.find((d: any) => d.nombre === evt.day);
       const dayMap: Record<string, number> = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5 };
-      const idDia = dayMap[evt.day] || 1;
+      const idDia = dayObj?.id_dia || dayMap[evt.day] || 1;
       const bloque = referenceData.bloques.find((b: any) =>
         `${b.hora_inicio} - ${b.hora_fin}` === evt.timeBlock ||
         `${b.hora_inicio.substring(0, 5)} - ${b.hora_fin.substring(0, 5)}` === evt.timeBlock
@@ -867,7 +960,9 @@ export default function App() {
         id_seccion: seccion ? Number(seccion.id) : 1,
         id_dia: idDia,
         id_bloque: idBloque,
-        id_aula: Number(evt.classroomId.replace(/\D/g, '')) || Number(evt.classroomId)
+        id_aula: Number(evt.classroomId.replace(/\D/g, '')) || Number(evt.classroomId),
+        dia_nombre: evt.day,
+        bloque_rango: evt.timeBlock
       };
 
       const created = await api.post<any>('/api/horarios', payload);
@@ -875,6 +970,45 @@ export default function App() {
     } catch (e: any) {
       console.error('Error al crear horario:', e);
       toast.error('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
+    }
+  };
+
+  const handleUpdateScheduleEvent = async (evtId: string, evt: Partial<ScheduleEvent>) => {
+    try {
+      const id = Number(evtId.replace(/\D/g, ''));
+      if (!id) return;
+      
+      const payload: any = {};
+      if (evt.day) {
+        const dayObj = referenceData.dias.find((d: any) => d.nombre === evt.day);
+        const dayMap: Record<string, number> = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5 };
+        payload.id_dia = dayObj?.id_dia || dayMap[evt.day] || 1;
+        payload.dia_nombre = evt.day;
+      }
+      if (evt.timeBlock) {
+        const bloque = referenceData.bloques.find((b: any) =>
+          `${b.hora_inicio} - ${b.hora_fin}` === evt.timeBlock ||
+          `${b.hora_inicio.substring(0, 5)} - ${b.hora_fin.substring(0, 5)}` === evt.timeBlock
+        );
+        payload.id_bloque = bloque?.id_bloque || Number(evt.timeBlock.split(':')[0]) || 1;
+        payload.bloque_rango = evt.timeBlock;
+      }
+      if (evt.year && evt.section) {
+        const seccion = sections.find(s => s.grade === evt.year && s.letter === evt.section);
+        payload.id_seccion = seccion ? Number(seccion.id) : 1;
+      }
+      if (evt.subjectId) payload.id_asignatura = Number(evt.subjectId.replace(/\D/g, '')) || Number(evt.subjectId);
+      if (evt.classroomId) payload.id_aula = Number(evt.classroomId.replace(/\D/g, '')) || Number(evt.classroomId);
+      if (evt.teacherId) {
+        const user = users.find(u => u.id === evt.teacherId);
+        payload.id_docente = user?.teacherId ? Number(user.teacherId) : Number(evt.teacherId.replace(/\D/g, '')) || 1;
+      }
+
+      await api.patch(`/api/horarios/${id}`, payload);
+      setScheduleEvents(p => p.map(e => e.id === evtId ? { ...e, ...evt } : e));
+    } catch (e: any) {
+      console.error('Error al actualizar horario:', e);
+      toast.error('Error al actualizar horario en BD: ' + (e.message || 'Error desconocido'));
     }
   };
 
@@ -904,6 +1038,24 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al crear el aula en la base de datos');
+    }
+  };
+
+  const handleEditClassroom = async (roomId: string, data: Partial<Classroom>) => {
+    try {
+      const id = Number(roomId.replace(/\D/g, ''));
+      if (id) {
+        const payload: any = {};
+        if (data.name) payload.nombre_codigo = data.name;
+        if (data.capacity) payload.capacidad = data.capacity;
+        if (data.type) payload.tipo_espacio = data.type;
+        
+        await api.patch<any>(`/api/aulas/${id}`, payload);
+        setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
+      }
+    } catch (e) {
+      console.error('Error al editar aula:', e);
+      throw new Error('Error al editar aula en BD');
     }
   };
 
@@ -1260,6 +1412,8 @@ export default function App() {
                   studyPlans={studyPlans}
                   currentUserRole={currentUserRole}
                   onAddStudyPlanItem={handleAddStudyPlanItem}
+                  onUpdateStudyPlanItem={handleUpdateStudyPlanItem}
+                  onDeleteStudyPlanItem={handleDeleteStudyPlanItem}
                 />
               )}
 
@@ -1326,6 +1480,7 @@ export default function App() {
                   referenceData={referenceData}
                   currentUserRole={currentUserRole}
                   onAddScheduleEvent={handleAddScheduleEvent}
+                  onUpdateScheduleEvent={handleUpdateScheduleEvent}
                   onRemoveScheduleEvent={handleRemoveScheduleEvent}
                 />
               )}
@@ -1338,6 +1493,7 @@ export default function App() {
                   students={students}
                   currentUserRole={currentUserRole}
                   onAddClassroom={handleAddClassroom}
+                  onEditClassroom={handleEditClassroom}
                   onRemoveClassroom={handleRemoveClassroom}
                 />
               )}
@@ -1347,6 +1503,8 @@ export default function App() {
                   docentes={docentes}
                   currentUserRole={currentUserRole}
                   onAddDocente={handleAddDocente}
+                  onUpdateDocente={handleUpdateDocente}
+                  onDeleteDocente={handleDeleteDocente}
                   onToggleDocenteActive={handleToggleDocenteActive}
                 />
               )}

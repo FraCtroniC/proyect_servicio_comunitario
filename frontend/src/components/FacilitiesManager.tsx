@@ -15,8 +15,9 @@ interface FacilitiesProps {
   sections?: Section[];
   students?: Student[];
   currentUserRole: UserRole;
-  onAddClassroom: (room: Classroom) => void;
-  onRemoveClassroom: (roomId: string) => void;
+  onAddClassroom: (room: Classroom) => Promise<void> | void;
+  onEditClassroom: (roomId: string, data: Partial<Classroom>) => Promise<void> | void;
+  onRemoveClassroom: (roomId: string) => Promise<void> | void;
 }
 
 export default function FacilitiesManager({
@@ -26,6 +27,7 @@ export default function FacilitiesManager({
   students = [],
   currentUserRole,
   onAddClassroom,
+  onEditClassroom,
   onRemoveClassroom
 }: FacilitiesProps) {
   // Add Classroom form states
@@ -36,6 +38,28 @@ export default function FacilitiesManager({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [roomToDelete, setRoomToDelete] = useState<Classroom | null>(null);
+
+  const openAddModal = () => {
+    setName('');
+    setCapacity(30);
+    setType('Teórica');
+    setResources('');
+    setEditingRoomId(null);
+    setErrorMsg('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (room: Classroom) => {
+    setName(room.name);
+    setCapacity(room.capacity);
+    setType(room.type);
+    setResources(room.resources ? room.resources.join(', ') : '');
+    setEditingRoomId(room.id);
+    setErrorMsg('');
+    setIsModalOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,21 +71,35 @@ export default function FacilitiesManager({
     // Split resources
     const parsedResources = resources ? resources.split(',').map(r => r.trim()).filter(Boolean) : [];
 
-    const newRoom: Classroom = {
-      id: 'rm-' + Date.now(),
-      name,
-      capacity,
-      type,
-      resources: parsedResources
-    };
-
-    onAddClassroom(newRoom);
-    setSuccessMsg(`Aula física "${newRoom.name}" agregada con éxito.`);
-    setErrorMsg('');
-    setName('');
-    setCapacity(30);
-    setResources('');
-    setIsModalOpen(false);
+    try {
+      if (editingRoomId) {
+        onEditClassroom(editingRoomId, {
+          name,
+          capacity,
+          type,
+          resources: parsedResources
+        });
+        setSuccessMsg(`Aula física "${name}" editada con éxito.`);
+      } else {
+        const newRoom: Classroom = {
+          id: 'rm-' + Date.now(),
+          name,
+          capacity,
+          type,
+          resources: parsedResources
+        };
+        onAddClassroom(newRoom);
+        setSuccessMsg(`Aula física "${newRoom.name}" agregada con éxito.`);
+      }
+      
+      setErrorMsg('');
+      setName('');
+      setCapacity(30);
+      setResources('');
+      setIsModalOpen(false);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al guardar el aula.');
+    }
   };
 
   const getClassroomOccupancyCount = (roomId: string) => {
@@ -107,7 +145,7 @@ export default function FacilitiesManager({
               <span className="text-[10px] bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded">Total Locaciones: {classrooms.length}</span>
               {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={openAddModal}
                   className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
                 >
                   <PlusCircle className="w-4 h-4" />
@@ -178,7 +216,13 @@ export default function FacilitiesManager({
 
                   {/* Actions (Only for supervisor role) */}
                   {['super_admin', 'control_estudios'].includes(currentUserRole) && (
-                    <div className="flex justify-end pt-3 border-t border-slate-105 mt-3">
+                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-105 mt-3">
+                      <button
+                        onClick={() => openEditModal(room)}
+                        className="text-[9px] font-black text-indigo-600 hover:text-white hover:bg-indigo-600 border border-indigo-300 font-mono py-1 px-2 rounded-md transition-colors pointer-events-auto cursor-pointer"
+                      >
+                        Editar
+                      </button>
                       <button
                         id={`btn-del-room-${room.id}`}
                         onClick={() => {
@@ -186,8 +230,7 @@ export default function FacilitiesManager({
                             toast.error("No se puede desincorporar este salón ya que posee bloques horarios planificados pendientes.");
                             return;
                           }
-                          if (!window.confirm(`¿Está seguro de desincorporar "${room.name}"? Esta acción no se puede deshacer.`)) return;
-                          onRemoveClassroom(room.id);
+                          setRoomToDelete(room);
                         }}
                         className="text-[9px] font-black text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-300 font-mono py-1 px-2 rounded-md transition-colors pointer-events-auto cursor-pointer flex items-center gap-1"
                       >
@@ -205,7 +248,30 @@ export default function FacilitiesManager({
       </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Ingresar Nueva Locación">
+      {/* Modal de Eliminación */}
+      <Modal isOpen={!!roomToDelete} onClose={() => setRoomToDelete(null)} title="Confirmar Desincorporación">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            ¿Está seguro de desincorporar <strong>{roomToDelete?.name}</strong>? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => setRoomToDelete(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button 
+              onClick={() => {
+                if (roomToDelete) {
+                  onRemoveClassroom(roomToDelete.id);
+                  setRoomToDelete(null);
+                }
+              }}
+              className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Desincorporar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingRoomId ? "Editar Aula Física" : "Registrar Nueva Aula Física"}>
         {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
           <div id="room-form-locked" className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-2">
             <Shield className="h-5 w-5 text-amber-600" />

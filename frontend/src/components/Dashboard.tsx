@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useState } from 'react';
 import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, User, Attendance, Grade, Subject, EvaluationPlan, UserRole } from '../types';
 import { calculateEvaluationAverage } from '../utils/gradeCalculations';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Modal } from './Modal';
 import { api } from '../services/api';
 
 interface DashboardProps {
@@ -22,6 +24,8 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ students, users, attendance, grades, subjects, evaluationPlans, onNavigateToTab, currentUserRole }: DashboardProps) {
+  const [alertingStudent, setAlertingStudent] = useState<Student | null>(null);
+
   // 1. Stats calculations
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === 'Activo').length;
@@ -282,25 +286,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
                       <li key={s.id} className="flex items-center justify-between">
                         <span>{s.firstName} {s.lastName} ({s.academicYear}° Año "{s.section}")</span>
                         <button
-                          onClick={async () => {
-                            if (window.confirm(`¿Enviar alerta al representante de ${s.firstName}?`)) {
-                              try {
-                                const success = await api.notificaciones.alertaAcademica({
-                                  emailRepresentante: 'representante.demo@gmail.com', // Demo, en prod usar s.representativeEmail
-                                  studentName: `${s.firstName} ${s.lastName}`,
-                                  subjectName: 'Bajo Rendimiento General',
-                                  notes: 'Promedio actual inferior a 10 ptos.'
-                                });
-                                if (success) {
-                                  toast.success('Alerta enviada correctamente');
-                                } else {
-                                  toast.error('Error enviando alerta');
-                                }
-                              } catch (e) {
-                                toast.error('Error enviando alerta');
-                              }
-                            }
-                          }}
+                          onClick={() => setAlertingStudent(s)}
                           className="ml-2 bg-rose-100 hover:bg-rose-200 text-rose-700 px-2 py-0.5 rounded transition-colors"
                         >
                           ✉️ Enviar Alerta
@@ -364,6 +350,42 @@ export default function Dashboard({ students, users, attendance, grades, subject
         </div>
 
       </div>
+
+      <Modal isOpen={!!alertingStudent} onClose={() => setAlertingStudent(null)} title="Confirmar Envío de Alerta">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            ¿Está seguro de enviar una alerta de bajo rendimiento al representante de <strong>{alertingStudent?.firstName} {alertingStudent?.lastName}</strong>?
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => setAlertingStudent(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button 
+              onClick={async () => {
+                if (!alertingStudent) return;
+                try {
+                  const success = await api.notificaciones.alertaAcademica({
+                    emailRepresentante: 'representante.demo@gmail.com', // Demo
+                    studentName: `${alertingStudent.firstName} ${alertingStudent.lastName}`,
+                    subjectName: 'Bajo Rendimiento General',
+                    notes: 'Promedio actual inferior a 10 ptos.'
+                  });
+                  if (success) {
+                    toast.success('Alerta enviada correctamente');
+                  } else {
+                    toast.error('Error enviando alerta');
+                  }
+                } catch (e) {
+                  toast.error('Error enviando alerta');
+                }
+                setAlertingStudent(null);
+              }}
+              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Enviar Alerta
+            </button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }

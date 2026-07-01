@@ -121,7 +121,7 @@ export function mapAsignaturaToSubject(dbAsignatura: any, studyPlans?: any[]): S
 export function mapHorarioToScheduleEvent(dbHorario: any): ScheduleEvent {
   const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
   const dayName = dbHorario.dia?.nombre || days[(dbHorario.id_dia - 1) % 5] || 'Lunes';
-  const timeBlock = dbHorario.bloque ? `${dbHorario.bloque.hora_inicio} - ${dbHorario.bloque.hora_fin}` : '00:00 - 00:00';
+  const timeBlock = dbHorario.bloque ? `${dbHorario.bloque.hora_inicio.substring(0, 5)} - ${dbHorario.bloque.hora_fin.substring(0, 5)}` : '00:00 - 00:00';
   
   return {
     id: String(dbHorario.id_horario),
