@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://backend-sc-tbkn.onrender.com/api/$1"
+    }
+  ]
+}
