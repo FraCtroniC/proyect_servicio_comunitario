@@ -1,71 +1,215 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
-import { Usuario as UsuarioModel, Rol, Docente } from '../models';
+import { z } from 'zod';
+import { Usuario as UsuarioModel, Rol, Docente, LoginAudit, RefreshToken } from '../models';
 import { environment } from '../../config/environment';
 import { AppError } from '../shared/errors';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
-// Bloqueo de cuenta por intentos fallidos (en memoria, no toca la DB)
-const loginAttempts = new Map<string, { count: number; lockUntil: number }>();
 const MAX_ATTEMPTS = 5;
 const LOCK_DURATION = 15 * 60 * 1000;
+const AUTH_COOKIE = 'access_token';
+const REFRESH_COOKIE = 'refresh_token';
+const COOKIE_BASE = {
+  httpOnly: true,
+  secure: environment.nodeEnv === 'production',
+  sameSite: environment.nodeEnv === 'production' ? 'none' as const : 'lax' as const,
+  path: '/',
+};
 
-function checkLoginLock(username: string): number | null {
-  const record = loginAttempts.get(username);
-  if (!record) return null;
-  if (Date.now() > record.lockUntil) {
-    loginAttempts.delete(username);
+const loginSchema = z.object({
+  username: z.string().min(1, 'El usuario es requerido'),
+  password: z.string().min(1, 'La contraseña es requerida'),
+});
+
+const forgotSchema = z.object({
+  correo: z.string().email('Correo inválido'),
+});
+
+const resetSchema = z.object({
+  token: z.string().min(1, 'Token requerido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Contraseña actual requerida'),
+  newPassword: z.string().min(6, 'La nueva contraseña debe tener al menos 6 caracteres'),
+});
+
+async function checkLoginLockDB(username: string): Promise<number | null> {
+  const usuario = await UsuarioModel.findOne({
+    where: { username },
+    attributes: ['locked_until'],
+  });
+  if (!usuario || !usuario.locked_until) return null;
+  if (usuario.locked_until <= new Date()) {
+    await UsuarioModel.update(
+      { failed_attempts: 0, locked_until: null },
+      { where: { username } }
+    );
     return null;
   }
-  const remaining = Math.ceil((record.lockUntil - Date.now()) / 60000);
+  const remaining = Math.ceil((usuario.locked_until.getTime() - Date.now()) / 60000);
   return remaining;
 }
 
-function recordFailedAttempt(username: string) {
-  const record = loginAttempts.get(username) || { count: 0, lockUntil: 0 };
-  record.count += 1;
-  if (record.count >= MAX_ATTEMPTS) {
-    record.lockUntil = Date.now() + LOCK_DURATION;
+async function recordFailedAttemptDB(username: string, ip: string, userAgent: string) {
+  await LoginAudit.create({
+    username,
+    ip_address: ip,
+    user_agent: userAgent,
+    success: false,
+  });
+  await UsuarioModel.increment('failed_attempts', { where: { username } });
+  const usuario = await UsuarioModel.findOne({
+    where: { username },
+    attributes: ['failed_attempts'],
+  });
+  if (usuario && usuario.failed_attempts >= MAX_ATTEMPTS) {
+    await UsuarioModel.update(
+      { locked_until: new Date(Date.now() + LOCK_DURATION) },
+      { where: { username } }
+    );
   }
-  loginAttempts.set(username, record);
 }
 
-function clearLoginAttempts(username: string) {
-  loginAttempts.delete(username);
+async function clearLoginAttemptsDB(username: string, ip: string, userAgent: string) {
+  await UsuarioModel.update(
+    { failed_attempts: 0, locked_until: null },
+    { where: { username } }
+  );
+  await LoginAudit.create({
+    username,
+    ip_address: ip,
+    user_agent: userAgent,
+    success: true,
+  });
 }
 
-// Configuración del transportador de correo
+async function getTokenVersion(idUsuario: number): Promise<number> {
+  const u = await UsuarioModel.findByPk(idUsuario, { attributes: ['token_version'] });
+  return (u?.getDataValue('token_version') as number) || 0;
+}
+
+async function setAuthCookies(res: Response, usuario: any) {
+  const tokenVersion = await getTokenVersion(usuario.id_usuario);
+  const payload = {
+    idUsuario: usuario.id_usuario,
+    username: usuario.username,
+    idRol: usuario.id_rol,
+    rol: usuario.rol ? (usuario.rol as any).nombre : null,
+    tokenVersion,
+  };
+
+  const accessToken = jwt.sign(payload, environment.jwtSecret, { expiresIn: '15m' });
+  const refreshTokenValue = crypto.randomUUID();
+  const tokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+
+  await RefreshToken.create({
+    id_usuario: usuario.id_usuario,
+    token_hash: tokenHash,
+    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
+  res.cookie(AUTH_COOKIE, accessToken, { ...COOKIE_BASE, maxAge: 15 * 60 * 1000 });
+  res.cookie(REFRESH_COOKIE, refreshTokenValue, {
+    ...COOKIE_BASE,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  return accessToken;
+}
+
+function clearAuthCookies(res: Response) {
+  res.clearCookie(AUTH_COOKIE, COOKIE_BASE);
+  res.clearCookie(REFRESH_COOKIE, COOKIE_BASE);
+}
+
+async function sendPasswordChangeNotification(usuario: any, action: string) {
+  const correoDestino = usuario.correo || (usuario.docente ? (usuario.docente as any).correo : null);
+  if (!correoDestino) return;
+
+  try {
+    await transporter.sendMail({
+      from: `"Soporte Liceo" <${environment.smtp.from}>`,
+      to: correoDestino,
+      subject: `Contraseña ${action} - Liceo Estilita Orozco`,
+      text: `Hola ${usuario.username}, te notificamos que tu contraseña ha sido ${action}. Si no realizaste esta acción, comunícate con el administrador de inmediato.`,
+      html: `
+        <div style="background-color: #f8fafc; padding: 20px 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <table cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+            <tr>
+              <td style="background-color: #1a237e; padding: 30px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 600;">Liceo Estilita Orozco</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 40px; line-height: 1.6; color: #334155;">
+                <h2 style="color: #1a237e; margin-top: 0; font-size: 20px;">Notificación de seguridad</h2>
+                <p style="font-size: 16px;">Hola <strong>${usuario.username}</strong>,</p>
+                <p style="font-size: 16px;">Tu contraseña ha sido <strong>${action}</strong> exitosamente.</p>
+                <div style="margin: 30px 0; padding: 20px; background-color: #f1f5f9; border-radius: 8px; border-left: 4px solid #1a237e;">
+                  <p style="margin: 0; font-size: 14px; color: #475569;">
+                    Si no realizaste esta acción, comunícate con el administrador del sistema de inmediato.
+                  </p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                  &copy; ${new Date().getFullYear()} Liceo Nacional Estilita Orozco.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `,
+    });
+    console.log(`[Auth] Notificación de contraseña ${action} enviada a: ${correoDestino}`);
+  } catch (error) {
+    console.error(`[Auth] Error al enviar notificación de contraseña ${action}:`, error);
+  }
+}
+
 const transporter = nodemailer.createTransport({
   host: environment.smtp.host,
   port: environment.smtp.port,
-  secure: environment.smtp.port === 465, // true para 465, false para otros
+  secure: environment.smtp.port === 465,
   auth: {
     user: environment.smtp.user,
     pass: environment.smtp.pass,
   },
 });
 
-export const AuthController = {
-  login: wrapAsync(async (req: Request, res: Response) => {
-    const { username, password } = req.body;
+const SAFE_DELAY = 400;
 
-    if (!username || !password) {
+export const AuthController = {
+  obtenerCsrfToken: wrapAsync(async (_req: Request, res: Response) => {
+    res.json({ ok: true });
+  }),
+
+  login: wrapAsync(async (req: Request, res: Response) => {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
       throw new AppError('El usuario y la contraseña son requeridos', 400);
     }
 
+    const { username, password } = parsed.data;
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
     const usernameKey = username.toLowerCase();
 
-    // Verificar bloqueo temporal por intentos fallidos
-    const lockRemaining = checkLoginLock(usernameKey);
+    const lockRemaining = await checkLoginLockDB(usernameKey);
     if (lockRemaining !== null) {
       throw new AppError(`Demasiados intentos fallidos. Cuenta bloqueada por ${lockRemaining} minuto(s).`, 429);
     }
 
-    // Buscar el usuario en la base de datos e incluir Rol y Docente
     const usuario = await UsuarioModel.findOne({
       where: { username: usernameKey },
       include: [
@@ -74,27 +218,22 @@ export const AuthController = {
       ]
     });
 
-    if (!usuario) {
-      recordFailedAttempt(usernameKey);
-      throw new AppError('Usuario o contraseña incorrectos', 401);
+    let passwordMatch = false;
+    if (usuario && usuario.estatus === 'Activo') {
+      passwordMatch = await bcrypt.compare(password, usuario.password_hash);
     }
 
-    if (usuario.estatus !== 'Activo') {
-      recordFailedAttempt(usernameKey);
-      throw new AppError('Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.', 403);
+    if (!usuario || !passwordMatch) {
+      if (usuario) await recordFailedAttemptDB(usernameKey, ip, userAgent);
+      await new Promise(resolve => setTimeout(resolve, SAFE_DELAY));
+      const msg = usuario?.estatus !== 'Activo' && usuario
+        ? 'Esta cuenta está inactiva o bloqueada. Comuníquese con el administrador.'
+        : 'Usuario o contraseña incorrectos';
+      throw new AppError(msg, usuario?.estatus !== 'Activo' && usuario ? 403 : 401);
     }
 
-    // Verificar contraseña
-    const passwordMatch = await bcrypt.compare(password, usuario.password_hash);
-    if (!passwordMatch) {
-      recordFailedAttempt(usernameKey);
-      throw new AppError('Usuario o contraseña incorrectos', 401);
-    }
+    await clearLoginAttemptsDB(usernameKey, ip, userAgent);
 
-    // Limpiar intentos fallidos al iniciar sesión exitosamente
-    clearLoginAttempts(usernameKey);
-
-    // Construir displayName amistoso
     let displayName = usuario.username;
     if (usuario.docente) {
       const d = usuario.docente as any;
@@ -103,19 +242,8 @@ export const AuthController = {
       displayName = (usuario.rol as any).nombre;
     }
 
-    // Generar token JWT
-    const token = jwt.sign(
-      {
-        idUsuario: usuario.id_usuario,
-        username: usuario.username,
-        idRol: usuario.id_rol,
-        rol: usuario.rol ? (usuario.rol as any).nombre : null,
-      },
-      environment.jwtSecret,
-      { expiresIn: '2h' }
-    );
+    const token = await setAuthCookies(res, usuario);
 
-    // Actualizar último acceso
     usuario.ultimo_acceso = new Date();
     await usuario.save();
 
@@ -131,14 +259,69 @@ export const AuthController = {
     });
   }),
 
-  solicitarRecuperacion: wrapAsync(async (req: Request, res: Response) => {
-    const { correo } = req.body;
-
-    if (!correo) {
-      throw new AppError('El correo electrónico es requerido', 400);
+  refresh: wrapAsync(async (req: Request, res: Response) => {
+    const refreshTokenValue = req.cookies?.[REFRESH_COOKIE];
+    if (!refreshTokenValue) {
+      throw new AppError('No autorizado', 401);
     }
 
-    // Buscamos el correo tanto en la tabla de Usuarios como en la de Docentes (vía asociación)
+    const tokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+    const storedToken = await RefreshToken.findOne({
+      where: { token_hash: tokenHash, revoked_at: null },
+    });
+
+    if (!storedToken || storedToken.expires_at < new Date()) {
+      clearAuthCookies(res);
+      throw new AppError('No autorizado', 401);
+    }
+
+    await storedToken.update({ revoked_at: new Date() });
+
+    const usuario = await UsuarioModel.findByPk(storedToken.id_usuario, {
+      include: [{ model: Rol, as: 'rol' }],
+    });
+    if (!usuario || usuario.estatus !== 'Activo') {
+      clearAuthCookies(res);
+      throw new AppError('No autorizado', 401);
+    }
+
+    const newToken = await setAuthCookies(res, usuario);
+
+    res.json({ ok: true, token: newToken });
+  }),
+
+  logout: wrapAsync(async (req: Request, res: Response) => {
+    const refreshTokenValue = req.cookies?.[REFRESH_COOKIE];
+    if (refreshTokenValue) {
+      const tokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+      await RefreshToken.update(
+        { revoked_at: new Date() },
+        { where: { token_hash: tokenHash, revoked_at: null } }
+      );
+    }
+
+    const tokenFromCookie = req.cookies?.[AUTH_COOKIE];
+    if (tokenFromCookie) {
+      try {
+        const decoded = jwt.verify(tokenFromCookie, environment.jwtSecret, { algorithms: ['HS256'] }) as any;
+        if (decoded.idUsuario) {
+          await UsuarioModel.increment('token_version', { where: { id_usuario: decoded.idUsuario } });
+        }
+      } catch {}
+    }
+
+    clearAuthCookies(res);
+    res.json({ ok: true, message: 'Sesión cerrada exitosamente' });
+  }),
+
+  solicitarRecuperacion: wrapAsync(async (req: Request, res: Response) => {
+    const parsed = forgotSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError('Correo electrónico inválido', 400);
+    }
+
+    const { correo } = parsed.data;
+
     const usuario = await UsuarioModel.findOne({
       where: {
         [Op.or]: [
@@ -156,7 +339,6 @@ export const AuthController = {
       throw new AppError('El correo electrónico no se encuentra registrado en el sistema.', 404);
     }
 
-    // Determinamos el destinatario (priorizamos el de la tabla usuarios, luego el del docente vinculado)
     const correoDestino = usuario.correo || (usuario.docente ? (usuario.docente as any).correo : null);
 
     if (!correoDestino) {
@@ -164,7 +346,6 @@ export const AuthController = {
       throw new AppError('El usuario encontrado no tiene un correo electrónico válido asociado para la recuperación.', 400);
     }
 
-    // Generar un token temporal para el enlace de recuperación (expira en 1 hora)
     const resetToken = jwt.sign(
       { idUsuario: usuario.id_usuario, purpose: 'password_reset' },
       environment.jwtSecret,
@@ -205,9 +386,6 @@ export const AuthController = {
                 <td style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
                   <p style="color: #94a3b8; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} Liceo Nacional Estilita Orozco. Todos los derechos reservados.</p>
                   <p style="color: #94a3b8; font-size: 12px; margin: 5px 0 0 0;">Departamento de Control de Estudios y Evaluación.</p>
-                  <div style="display: none; font-size: 1px; color: #f8fafc; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-                    ID de seguridad: ${Date.now()}
-                  </div>
                 </td>
               </tr>
             </table>
@@ -227,30 +405,33 @@ export const AuthController = {
   }),
 
   restablecerPassword: wrapAsync(async (req: Request, res: Response) => {
-    const { token, password } = req.body;
-
-    if (!token || !password) {
-      throw new AppError('El token y la nueva contraseña son requeridos', 400);
+    const parsed = resetSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      throw new AppError(first.message, 400);
     }
 
+    const { token, password } = parsed.data;
+
     try {
-      // Verificar la validez del token y el propósito
       const decoded = jwt.verify(token, environment.jwtSecret) as any;
 
       if (decoded.purpose !== 'password_reset') {
         throw new AppError('Token inválido para esta operación', 400);
       }
 
-      const usuario = await UsuarioModel.findByPk(decoded.idUsuario);
+      const usuario = await UsuarioModel.findByPk(decoded.idUsuario, {
+        include: [{ model: Docente, as: 'docente', required: false }],
+      });
       if (!usuario) {
         throw new AppError('Usuario no encontrado', 404);
       }
 
-      // Hashear la nueva contraseña antes de guardarla
       const salt = await bcrypt.genSalt(10);
       usuario.password_hash = await bcrypt.hash(password, salt);
-      
       await usuario.save();
+
+      sendPasswordChangeNotification(usuario, 'restablecida');
 
       res.json({ ok: true, message: 'Contraseña actualizada con éxito' });
     } catch (error: any) {
@@ -302,17 +483,17 @@ export const AuthController = {
       throw new AppError('No autorizado', 401);
     }
 
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      throw new AppError('La contraseña actual y la nueva contraseña son requeridas', 400);
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      throw new AppError(first.message, 400);
     }
 
-    if (newPassword.length < 6) {
-      throw new AppError('La nueva contraseña debe tener al menos 6 caracteres', 400);
-    }
+    const { currentPassword, newPassword } = parsed.data;
 
-    const usuario = await UsuarioModel.findByPk(idUsuario);
+    const usuario = await UsuarioModel.findByPk(idUsuario, {
+      include: [{ model: Docente, as: 'docente', required: false }],
+    });
     if (!usuario) {
       throw new AppError('Usuario no encontrado', 404);
     }
@@ -325,6 +506,8 @@ export const AuthController = {
     const salt = await bcrypt.genSalt(10);
     usuario.password_hash = await bcrypt.hash(newPassword, salt);
     await usuario.save();
+
+    sendPasswordChangeNotification(usuario, 'cambiada');
 
     res.json({ data: { message: 'Contraseña actualizada con éxito' } });
   }),

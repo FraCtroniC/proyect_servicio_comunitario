@@ -7,6 +7,9 @@ export class Usuario extends Model {
   declare username: string;
   declare password_hash: string;
   declare estatus: string | null;
+  declare failed_attempts: number;
+  declare locked_until: Date | null;
+  declare token_version: number;
   declare correo: string | null;
   declare ultimo_acceso: Date | null;
   declare readonly created_at: Date;
@@ -57,6 +60,20 @@ export function initUsuario(sequelize: Sequelize): typeof Usuario {
         type: DataTypes.STRING(15),
         allowNull: true,
         defaultValue: 'Activo',
+      },
+      failed_attempts: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      locked_until: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      token_version: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
       },
       correo: {
         type: DataTypes.STRING(100),
