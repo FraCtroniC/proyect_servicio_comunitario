@@ -93,6 +93,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ username: identifier.trim(), password }),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -164,6 +165,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: resetToken, password: newPassword.trim() }),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -198,6 +200,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ correo: resetEmail.trim() }),
+        credentials: 'include',
       });
 
       if (!response.ok) {

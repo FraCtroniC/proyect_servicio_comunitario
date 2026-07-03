@@ -1,4 +1,5 @@
 const SESSION_KEY = 'liceo-auth-session';
+const CSRF_COOKIE = 'csrf_token';
 
 function getSessionToken(): string | null {
   try {
@@ -14,16 +15,26 @@ function getSessionToken(): string | null {
   return null;
 }
 
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(new RegExp(`(^| )${CSRF_COOKIE}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 type RequestOptions = RequestInit & {
   params?: Record<string, string | number | boolean>;
 };
 
 async function request<T>(url: string, options: RequestOptions = {}): Promise<T> {
-  const token = getSessionToken();
   const headers = new Headers(options.headers);
 
+  const token = getSessionToken();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const csrfToken = getCsrfToken();
+  if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes((options.method || 'GET').toUpperCase())) {
+    headers.set('X-CSRF-Token', csrfToken);
   }
 
   if (options.body && !(options.body instanceof FormData)) {
@@ -47,6 +58,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const response = await fetch(finalUrl, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -70,6 +82,40 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   return resJson.data !== undefined ? resJson.data : resJson;
 }
 
+async function refreshSession(): Promise<string | null> {
+  try {
+    const csrfToken = getCsrfToken();
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.ok && data.token) {
+      const existing = sessionStorage.getItem(SESSION_KEY);
+      if (existing) {
+        const session = JSON.parse(existing);
+        session.sessionToken = data.token;
+        session.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      }
+      return data.token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function initCsrf() {
+  try {
+    await fetch('/api/auth/csrf-token', { credentials: 'include' });
+  } catch {}
+}
+
+initCsrf();
+
 export const api = {
   get: <T>(url: string, params?: Record<string, any>) => request<T>(url, { method: 'GET', params }),
   post: <T>(url: string, body?: any) =>
@@ -77,6 +123,17 @@ export const api = {
   patch: <T>(url: string, body?: any) =>
     request<T>(url, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(url: string) => request<T>(url, { method: 'DELETE' }),
+  authSession: {
+    refresh: refreshSession,
+    logout: async () => {
+      const csrfToken = getCsrfToken();
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      });
+    },
+  },
   materiasPendientes: {
     getAll: () => request('/api/materias-pendientes'),
     getByStudent: (id: string) => request(`/api/materias-pendientes/estudiante/${id}`),
@@ -93,7 +150,9 @@ export const api = {
       const token = getSessionToken();
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(`/api/historicos/${estudianteId}/generar-excel?plan=${plan}`, { headers });
+      const csrfToken = getCsrfToken();
+      if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+      const res = await fetch(`/api/historicos/${estudianteId}/generar-excel?plan=${plan}`, { headers, credentials: 'include' });
       if (!res.ok) {
         let msg = 'Error al generar el Excel';
         try { const err = await res.json(); msg = err.error?.message || msg; } catch {}

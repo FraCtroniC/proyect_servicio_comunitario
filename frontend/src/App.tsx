@@ -157,14 +157,17 @@ export default function App() {
     sessionStorage.setItem('frontend_new_user', JSON.stringify(user));
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setCurrentUserRole('super_admin');
-    setActiveTab('dashboard');
-    sessionStorage.removeItem('liceo-auth-session');
-    sessionStorage.removeItem('frontend_new_user');
-  };
+const handleLogout = async () => {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch {}
+  setIsLoggedIn(false);
+  setCurrentUser(null);
+  setCurrentUserRole('super_admin');
+  setActiveTab('dashboard');
+  sessionStorage.removeItem('liceo-auth-session');
+  sessionStorage.removeItem('frontend_new_user');
+};
 
   const daysAgo = (days: number): string => {
     const d = new Date();

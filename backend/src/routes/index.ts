@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { csrfProtection } from '../middlewares/csrf.middleware';
 import { authRoutes } from './auth.routes';
 import { chatbotRoutes } from './chatbot.routes';
 import { usuarioRoutes } from './usuario.routes';
@@ -47,7 +48,8 @@ routes.get('/test-docentes', async (req, res) => {
   }
 });
 
-// All other routes require authentication
+// CSRF protection + authentication for all non-public routes
+routes.use(csrfProtection);
 routes.use(authMiddleware);
 
 routes.use('/usuarios', usuarioRoutes);

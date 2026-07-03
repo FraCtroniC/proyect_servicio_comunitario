@@ -88,10 +88,9 @@ export default function Dashboard({ students, users, attendance, grades, subject
   const handleBackup = async () => {
     try {
       // Usaremos un endpoint directo que devuelve el blob
-      const token = localStorage.getItem('token') || '';
-      const response = await fetch('/api/system/backup', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+const response = await fetch('/api/system/backup', {
+  credentials: 'include',
+});
       if (!response.ok) throw new Error('Fallo al respaldar');
       
       const blob = await response.blob();
