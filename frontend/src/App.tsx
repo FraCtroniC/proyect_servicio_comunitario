@@ -729,8 +729,9 @@ export default function App() {
 
       await api.post('/api/evaluaciones/notas/bulk', { notas_parciales: payload });
 
+      const userIdStr = currentUser ? currentUser.id.replace(/\D/g, '') : '';
       const auditPayload = {
-        id_usuario: currentUser ? Number(currentUser.id.replace(/\D/g, '')) || 1 : 1,
+        id_usuario: userIdStr.length > 0 ? Number(userIdStr) : null,
         accion: 'GUARDAR_NOTAS',
         tabla_afectada: 'notas_parciales',
         valores_nuevos: { asignatura: subjectName, year: year, section: section, lapso, detalles, planEvaluaciones }
@@ -1154,7 +1155,7 @@ export default function App() {
   };
 
   return (
-    <div id="mppe-app-root" className="min-h-screen bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
+    <div id="mppe-app-root" className="h-screen overflow-hidden bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
       <Toaster 
         position="top-center" 
         toastOptions={{ 
@@ -1176,7 +1177,7 @@ export default function App() {
       </div>
 
       {/* Main Container Layout */}
-      <div id="mppe-main-layout" className="flex-1 flex flex-col md:flex-row">
+      <div id="mppe-main-layout" className="flex-1 min-h-0 flex flex-col md:flex-row">
 
         {/* SIDEBAR FOR DESKTOP */}
         <aside id="mppe-sidebar" className="hidden md:flex w-64 bg-slate-900 text-slate-300 shrink-0 flex-col justify-between border-r border-slate-800 z-20 select-none relative">
@@ -1199,7 +1200,7 @@ export default function App() {
             </div>
 
             {/* Navigation options */}
-            <nav id="sidebar-nav" className="px-3 pb-6 flex-1 overflow-y-auto">
+            <nav id="sidebar-nav" className="px-3 pb-6 flex-1 overflow-y-auto scrollbar-hide">
               {filteredTabGroups.map((group, idx) => (
                 <div key={idx} className="mb-6 last:mb-0">
                   <h3 className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -1305,7 +1306,7 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               className="md:hidden bg-slate-900 border-b border-slate-800 text-slate-300 absolute w-full top-[61px] left-0 z-40 px-4 py-6 space-y-4 select-none shadow-2xl"
             >
-              <nav className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
+              <nav className="space-y-4 overflow-y-auto scrollbar-hide max-h-[60vh] pr-2">
                 {filteredTabGroups.map((group, idx) => (
                   <div key={idx} className="space-y-1">
                     <h3 className="px-3 mb-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -1351,7 +1352,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* MAIN MODULE STAGE */}
-        <main id="app-stage-container" className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto block">
+        <main id="app-stage-container" className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto scrollbar-hide block">
 
           <AnimatePresence mode="wait">
             <motion.div

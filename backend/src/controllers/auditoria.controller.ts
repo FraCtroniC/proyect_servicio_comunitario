@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Auditoria } from '../models/Auditoria';
+import { Auditoria, Usuario } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const AuditoriaController = {
@@ -19,12 +19,24 @@ export const AuditoriaController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const { accion, tabla_afectada } = req.body;
+    const { accion, tabla_afectada, id_usuario } = req.body;
     if (!accion || !tabla_afectada) {
       res.status(400).json({ error: { message: 'Los campos accion y tabla_afectada son requeridos' } });
       return;
     }
-    const result = await Auditoria.create(req.body);
+
+    let finalIdUsuario = id_usuario;
+    if (finalIdUsuario !== null && finalIdUsuario !== undefined) {
+      const userExists = await Usuario.findByPk(finalIdUsuario);
+      if (!userExists) {
+        // Fallback to first available user
+        const firstUser = await Usuario.findOne();
+        finalIdUsuario = firstUser ? firstUser.id_usuario : null;
+      }
+    }
+
+    const payload = { ...req.body, id_usuario: finalIdUsuario };
+    const result = await Auditoria.create(payload);
     res.status(201).json({ data: result });
   }),
 

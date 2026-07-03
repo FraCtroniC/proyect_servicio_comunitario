@@ -1,4 +1,4 @@
-import { sequelize, Rol, Docente, Usuario, Representante, Estudiante } from '../models';
+import { sequelize, Rol, Docente, Usuario, Representante, Estudiante, EscalaCalificacion } from '../models';
 import bcrypt from 'bcrypt';
 
 async function seed() {
@@ -24,6 +24,31 @@ async function seed() {
       });
     }
     console.log('✅ Roles verificados.');
+
+    // 1.5 Escala Calificaciones (1-20)
+    for (let i = 1; i <= 20; i++) {
+      let literal = '';
+      if (i < 10) literal = 'Insuficiente';
+      else if (i < 15) literal = 'Mínima';
+      else literal = 'Sobresaliente';
+      
+      let letra = 'C';
+      if (i >= 15) letra = 'A';
+      else if (i >= 10) letra = 'B';
+      else letra = 'C';
+
+      await EscalaCalificacion.findOrCreate({
+        where: { id_escala: i },
+        defaults: {
+          id_escala: i,
+          nota_impresa: i.toString().padStart(2, '0'),
+          nota_literal: literal,
+          nota_calculo: i,
+          ponderacion_letra: letra
+        }
+      });
+    }
+    console.log('✅ Escala de calificaciones (1-20) insertada.');
 
     // 2. Docentes (12 Docentes — necesarios para cubrir las 12 secciones del phase2)
     const docentesData = [
