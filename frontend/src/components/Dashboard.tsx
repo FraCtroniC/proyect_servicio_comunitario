@@ -25,6 +25,7 @@ interface DashboardProps {
 
 export default function Dashboard({ students, users, attendance, grades, subjects, evaluationPlans, onNavigateToTab, currentUserRole }: DashboardProps) {
   const [alertingStudent, setAlertingStudent] = useState<Student | null>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
 
   // 1. Stats calculations
   const totalStudents = students.length;
@@ -86,11 +87,14 @@ export default function Dashboard({ students, users, attendance, grades, subject
   });
 
   const handleBackup = async () => {
+    if (isBackingUp) return;
+    setIsBackingUp(true);
+    toast.loading('Generando respaldo, por favor espere...', { id: 'backup-toast' });
     try {
       // Usaremos un endpoint directo que devuelve el blob
-const response = await fetch('/api/system/backup', {
-  credentials: 'include',
-});
+      const response = await fetch('/api/system/backup', {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Fallo al respaldar');
       
       const blob = await response.blob();
@@ -101,9 +105,12 @@ const response = await fetch('/api/system/backup', {
       document.body.appendChild(a);
       a.click();
       a.remove();
+      toast.success('Respaldo descargado exitosamente', { id: 'backup-toast' });
     } catch (e) {
-      toast.error("Error al descargar el respaldo.");
+      toast.error("Error al descargar el respaldo.", { id: 'backup-toast' });
       console.error(e);
+    } finally {
+      setIsBackingUp(false);
     }
   };
 
@@ -338,10 +345,24 @@ const response = await fetch('/api/system/backup', {
               <div className="pt-4 border-t border-slate-100">
                 <button
                   onClick={handleBackup}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-colors"
+                  disabled={isBackingUp}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                    isBackingUp 
+                      ? 'bg-slate-400 cursor-not-allowed text-white' 
+                      : 'bg-slate-800 hover:bg-slate-900 text-white'
+                  }`}
                 >
-                  <Database className="h-4 w-4" />
-                  Descargar Respaldo BD (.sql)
+                  {isBackingUp ? (
+                    <>
+                      <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Generando y descargando...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4" />
+                      Descargar Respaldo BD (.sql)
+                    </>
+                  )}
                 </button>
               </div>
             )}

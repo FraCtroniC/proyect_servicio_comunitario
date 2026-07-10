@@ -19,6 +19,13 @@ async function main() {
   app.listen(environment.port, () => {
     console.log(`Servidor corriendo en puerto ${environment.port}`);
     console.log(`Entorno: ${environment.nodeEnv}`);
+    
+    // Inicializar tarea de respaldo automático
+    import('./services/backup.service').then(({ BackupService }) => {
+      BackupService.iniciarCronJob();
+    }).catch(err => {
+      console.error('Error inicializando cron job de respaldos:', err);
+    });
   });
 }
 
