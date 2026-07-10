@@ -30,10 +30,10 @@ async function runSeed() {
 
     // 3. Aulas
     const aulasData = [
-      { nombre_codigo: 'Aula 1-A', capacidad: 35, tipo_espacio: 'Teórica', estatus: 'Activo' },
-      { nombre_codigo: 'Aula 1-B', capacidad: 35, tipo_espacio: 'Teórica', estatus: 'Activo' },
-      { nombre_codigo: 'Aula 2-A', capacidad: 35, tipo_espacio: 'Teórica', estatus: 'Activo' },
-      { nombre_codigo: 'Aula 2-B', capacidad: 35, tipo_espacio: 'Teórica', estatus: 'Activo' },
+      { nombre_codigo: 'Aula 1-A', capacidad: 34, tipo_espacio: 'Teórica', estatus: 'Activo' },
+      { nombre_codigo: 'Aula 1-B', capacidad: 34, tipo_espacio: 'Teórica', estatus: 'Activo' },
+      { nombre_codigo: 'Aula 2-A', capacidad: 34, tipo_espacio: 'Teórica', estatus: 'Activo' },
+      { nombre_codigo: 'Aula 2-B', capacidad: 34, tipo_espacio: 'Teórica', estatus: 'Activo' },
       { nombre_codigo: 'Lab Física', capacidad: 20, tipo_espacio: 'Laboratorio', estatus: 'Activo' },
       { nombre_codigo: 'Lab Química', capacidad: 20, tipo_espacio: 'Laboratorio', estatus: 'Activo' },
       { nombre_codigo: 'Cancha', capacidad: 50, tipo_espacio: 'Deportiva', estatus: 'Activo' },

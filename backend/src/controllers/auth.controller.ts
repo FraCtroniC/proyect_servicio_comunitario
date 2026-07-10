@@ -113,13 +113,13 @@ async function setAuthCookies(res: Response, usuario: any) {
   await RefreshToken.create({
     id_usuario: usuario.id_usuario,
     token_hash: tokenHash,
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000),
   });
 
   res.cookie(AUTH_COOKIE, accessToken, { ...COOKIE_BASE, maxAge: 15 * 60 * 1000 });
   res.cookie(REFRESH_COOKIE, refreshTokenValue, {
     ...COOKIE_BASE,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 8 * 60 * 60 * 1000,
   });
 
   return accessToken;

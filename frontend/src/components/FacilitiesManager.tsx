@@ -32,7 +32,7 @@ export default function FacilitiesManager({
 }: FacilitiesProps) {
   // Add Classroom form states
   const [name, setName] = useState('');
-  const [capacity, setCapacity] = useState(30);
+  const [capacity, setCapacity] = useState<number | string>(30);
   const [type, setType] = useState<'Teórica' | 'Laboratorio' | 'Deportiva' | 'Comunitaria'>('Teórica');
   const [resources, setResources] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -63,8 +63,8 @@ export default function FacilitiesManager({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !capacity) {
-      setErrorMsg('Nombre y Capacidad son requeridos.');
+    if (!name || capacity === '' || Number(capacity) <= 0) {
+      setErrorMsg('Nombre y Capacidad (mayor a 0) son requeridos.');
       return;
     }
 
@@ -75,7 +75,7 @@ export default function FacilitiesManager({
       if (editingRoomId) {
         onEditClassroom(editingRoomId, {
           name,
-          capacity,
+          capacity: Number(capacity),
           type,
           resources: parsedResources
         });
@@ -84,7 +84,7 @@ export default function FacilitiesManager({
         const newRoom: Classroom = {
           id: 'rm-' + Date.now(),
           name,
-          capacity,
+          capacity: Number(capacity),
           type,
           resources: parsedResources
         };
@@ -310,7 +310,7 @@ export default function FacilitiesManager({
               <input 
                 type="number" 
                 value={capacity}
-                onChange={(e) => setCapacity(Number(e.target.value))}
+                onChange={(e) => setCapacity(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
               />
             </div>

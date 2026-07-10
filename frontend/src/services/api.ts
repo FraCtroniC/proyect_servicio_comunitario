@@ -55,11 +55,23 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     }
   }
 
-  const response = await fetch(finalUrl, {
+  let response = await fetch(finalUrl, {
     ...options,
     headers,
     credentials: 'include',
   });
+
+  if (response.status === 401) {
+    const newToken = await refreshSession();
+    if (newToken) {
+      headers.set('Authorization', `Bearer ${newToken}`);
+      response = await fetch(finalUrl, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+    }
+  }
 
   if (!response.ok) {
     let errorMsg = `Error en la petición al servidor (Status: ${response.status} - ${response.statusText} en ${url})`;

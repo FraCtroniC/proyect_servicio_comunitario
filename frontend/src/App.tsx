@@ -661,9 +661,9 @@ const handleLogout = async () => {
         estatus: status
       });
       setPeriods(p => [...p, mapPeriodoToSchoolPeriod(resp)]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error('Error al crear periodo escolar');
+      toast.error(e.message || 'Error al crear periodo escolar');
       throw e;
     }
   };
@@ -1039,9 +1039,9 @@ const handleLogout = async () => {
       });
       const savedRoom = mapAulaToClassroom(resp);
       setClassrooms(prev => [...prev, savedRoom]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error('Error al crear el aula en la base de datos');
+      toast.error(e.message || 'Error al crear el aula en la base de datos');
     }
   };
 
@@ -1057,9 +1057,9 @@ const handleLogout = async () => {
         await api.patch<any>(`/api/aulas/${id}`, payload);
         setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error al editar aula:', e);
-      throw new Error('Error al editar aula en BD');
+      throw new Error(e.message || 'Error al editar aula en BD');
     }
   };
 

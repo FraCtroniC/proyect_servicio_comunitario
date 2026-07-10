@@ -19,15 +19,25 @@ export const AulaController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
+    const { capacidad } = req.body;
+    if (capacidad !== undefined && capacidad > 34) {
+      res.status(400).json({ error: { message: 'La capacidad (aforo) del aula no puede ser mayor a 34 estudiantes según las normativas.' } });
+      return;
+    }
     const result = await Aula.create(req.body);
     res.status(201).json({ data: result });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+    const { capacidad } = req.body;
     const record = await Aula.findByPk(id);
     if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
+      return;
+    }
+    if (capacidad !== undefined && capacidad > 34) {
+      res.status(400).json({ error: { message: 'La capacidad (aforo) del aula no puede ser mayor a 34 estudiantes según las normativas.' } });
       return;
     }
     await record.update(req.body);

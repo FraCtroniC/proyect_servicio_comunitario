@@ -19,16 +19,32 @@ export const PeriodoEscolarController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
+    const { nombre } = req.body;
+    if (nombre) {
+      const existing = await PeriodoEscolar.findOne({ where: { nombre } });
+      if (existing) {
+        res.status(400).json({ error: { message: `Ya existe un período escolar registrado con el nombre ${nombre}` } });
+        return;
+      }
+    }
     const result = await PeriodoEscolar.create(req.body);
     res.status(201).json({ data: result });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+    const { nombre } = req.body;
     const record = await PeriodoEscolar.findByPk(id);
     if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
+    }
+    if (nombre && nombre !== record.nombre) {
+      const existing = await PeriodoEscolar.findOne({ where: { nombre } });
+      if (existing) {
+        res.status(400).json({ error: { message: `Ya existe un período escolar registrado con el nombre ${nombre}` } });
+        return;
+      }
     }
     await record.update(req.body);
     res.json({ data: record });
