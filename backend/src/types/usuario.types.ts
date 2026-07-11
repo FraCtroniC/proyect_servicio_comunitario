@@ -1,3 +1,13 @@
+export interface DocenteInfoDto {
+  cedula_docente: string;
+  nombre1: string;
+  nombre2: string | null;
+  apellido1: string;
+  apellido2: string | null;
+  telefono: string | null;
+  correo: string | null;
+}
+
 export interface UsuarioDto {
   id: number;
   idRol: number;
@@ -9,6 +19,7 @@ export interface UsuarioDto {
   createdAt: Date;
   updatedAt: Date | null;
   role?: { idRol: number; nombre: string };
+  docente?: DocenteInfoDto;
 }
 
 export interface CrearUsuarioDto {
@@ -27,4 +38,5 @@ export interface ActualizarUsuarioDto {
   password?: string;
   estatus?: string;
   correo?: string;
+  telefono?: string;
 }

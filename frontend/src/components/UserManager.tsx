@@ -26,6 +26,7 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
   const [cedula, setCedula] = useState('');
   const [phone, setPhone] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [password, setPassword] = useState('');
@@ -55,6 +56,7 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
     setPassword('');
     setEditingUserId(null);
     setErrorMsg('');
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -62,16 +64,28 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
     setName(u.name);
     setEmail(u.email);
     setRole(u.role);
-    setCedula(u.cedula || '');
+    setCedula(u.cedula || u.username || '');
     setPhone(u.phone || '');
     setPassword('');
     setEditingUserId(u.id);
     setErrorMsg('');
+    setFieldErrors({});
     setIsModalOpen(true);
+  };
+
+  const isDocente = !!users.find(u => u.id === editingUserId)?.teacherId;
+
+  const handleCedulaChange = (value: string) => {
+    setCedula(value);
+    if (!isDocente) {
+      setName(value);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+    setFieldErrors({});
     try {
       if (editingUserId) {
         await onEditUser(editingUserId, { name, email, role, cedula, phone, password });
@@ -86,7 +100,11 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error al guardar el usuario.');
+      if (err.fieldErrors) {
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setErrorMsg(err.message || 'Error al guardar el usuario.');
+      }
     }
   };
 
@@ -258,22 +276,25 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUserId ? "Editar Usuario" : "Nuevo Usuario"}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {errorMsg && <div className="text-red-600 text-xs bg-red-50 p-2 rounded">{errorMsg}</div>}
+          {errorMsg && <div className="text-red-600 text-xs bg-red-50 p-2 rounded whitespace-pre-line">{errorMsg}</div>}
           <div>
             <label className="block text-xs font-semibold text-slate-700">Nombre</label>
-            <input type="text" required value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm" />
+            <input type="text" required value={name} onChange={e => setName(e.target.value)} readOnly={!isDocente} className={`mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm ${!isDocente ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Usuario / Cédula</label>
-            <input type="text" required value={cedula} onChange={e => setCedula(e.target.value)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm" />
+            <label className="block text-xs font-semibold text-slate-700">Usuario / Cedula</label>
+            <input type="text" required value={cedula} onChange={e => handleCedulaChange(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-sm ${fieldErrors.username ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            {fieldErrors.username && <p className="text-red-600 text-[11px] mt-1">{fieldErrors.username}</p>}
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700">Email</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm" />
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-sm ${fieldErrors.correo ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            {fieldErrors.correo && <p className="text-red-600 text-[11px] mt-1">{fieldErrors.correo}</p>}
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700">Teléfono</label>
-            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm" />
+            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="xxxx-xxxxxxx" className={`mt-1 w-full p-2 border rounded-lg text-sm ${fieldErrors.telefono ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            {fieldErrors.telefono && <p className="text-red-600 text-[11px] mt-1">{fieldErrors.telefono}</p>}
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700">Rol</label>

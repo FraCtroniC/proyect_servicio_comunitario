@@ -3,7 +3,7 @@ import { UsuarioService } from '../services/usuario.service';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 
 const ALLOWED_CREATE_FIELDS = ['idRol', 'idDocente', 'username', 'password', 'correo'];
-const ALLOWED_UPDATE_FIELDS = ['password', 'correo', 'estatus'];
+const ALLOWED_UPDATE_FIELDS = ['idRol', 'username', 'password', 'correo', 'estatus', 'telefono'];
 
 function pick(body: any, fields: string[]): any {
   const result: any = {};
