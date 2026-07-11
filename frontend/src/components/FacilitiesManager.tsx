@@ -103,7 +103,7 @@ export default function FacilitiesManager({
       setResources('');
       setIsModalOpen(false);
     } catch (err: any) {
-      const details = err.response?.data?.error?.details;
+      const details = err.details;
       if (details && typeof details === 'object') {
         setFieldErrors(details);
       } else {

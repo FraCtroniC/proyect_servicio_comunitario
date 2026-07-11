@@ -28,6 +28,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
   const [year, setYear] = useState<number>(1);
   const [codigo, setCodigo] = useState('');
   const [posicion, setPosicion] = useState<number>(1);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const openAddModal = () => {
     setEditingPlan(null);
@@ -35,6 +36,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
     setYear(filterYear === 'Todos' ? 1 : filterYear);
     setCodigo('');
     setPosicion(1);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -44,23 +46,34 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
     setYear(plan.year as number);
     setCodigo(plan.codigo || '');
     setPosicion(plan.posicion);
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
     if (!nombre.trim() || !codigo.trim()) {
       toast.error("El nombre y el código son requeridos");
       return;
     }
 
-    if (editingPlan && onUpdateStudyPlanItem) {
-      onUpdateStudyPlanItem(editingPlan.id, nombre, year, codigo, posicion);
-    } else {
-      onAddStudyPlanItem(nombre, year, codigo, posicion);
+    try {
+      if (editingPlan && onUpdateStudyPlanItem) {
+        await onUpdateStudyPlanItem(editingPlan.id, nombre, year, codigo, posicion);
+      } else {
+        await onAddStudyPlanItem(nombre, year, codigo, posicion);
+      }
+      setIsModalOpen(false);
+      setEditingPlan(null);
+    } catch (err: any) {
+      const details = err.details;
+      if (details && typeof details === 'object') {
+        setFieldErrors(details);
+      } else {
+        toast.error(err.message || 'Error al guardar en el plan de estudio');
+      }
     }
-    setIsModalOpen(false);
-    setEditingPlan(null);
   };
 
   const canEdit = ['super_admin', 'control_estudios'].includes(currentUserRole);
@@ -185,9 +198,10 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
               placeholder="Ej. Castellano"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
+              className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.id_asignatura ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
               required
             />
+            {fieldErrors.id_asignatura && <p className="text-red-600 text-[11px]">{fieldErrors.id_asignatura}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -198,9 +212,10 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                 placeholder="Ej. CAS1"
                 value={codigo}
                 onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-mono font-bold uppercase"
+                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-mono font-bold uppercase ${fieldErrors.codigo_asignatura ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
                 required
               />
+              {fieldErrors.codigo_asignatura && <p className="text-red-600 text-[11px]">{fieldErrors.codigo_asignatura}</p>}
             </div>
 
             <div className="space-y-1">
@@ -210,9 +225,10 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                 min="1"
                 value={posicion}
                 onChange={(e) => setPosicion(Number(e.target.value))}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
+                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.posicion ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
                 required
               />
+              {fieldErrors.posicion && <p className="text-red-600 text-[11px]">{fieldErrors.posicion}</p>}
             </div>
           </div>
 

@@ -7,7 +7,10 @@ export interface CacheOptions {
 }
 
 function keyFrom(req: Request): string {
-  return req.originalUrl || req.url;
+  const url = req.originalUrl || req.url;
+  const match = url.match(/\/api\/([^\/]+)/);
+  const entity = match ? match[1] : 'default';
+  return `${entity}:${url}`;
 }
 
 export function cacheable(options: CacheOptions) {

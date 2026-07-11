@@ -75,15 +75,21 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 
   if (!response.ok) {
     let errorMsg = `Error en la petición al servidor (Status: ${response.status} - ${response.statusText} en ${url})`;
+    let errDetails: Record<string, string[]> | null = null;
     try {
       const errJson = await response.json();
       if (errJson.error && errJson.error.message) {
         errorMsg = errJson.error.message;
       }
+      if (errJson.error && errJson.error.details) {
+        errDetails = errJson.error.details;
+      }
     } catch (e) {
       // Ignorar si no es JSON válido
     }
-    throw new Error(errorMsg);
+    const err = new Error(errorMsg) as any;
+    err.details = errDetails;
+    throw err;
   }
 
   if (response.status === 204) {

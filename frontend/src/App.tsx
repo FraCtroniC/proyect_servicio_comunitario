@@ -417,13 +417,13 @@ const handleLogout = async () => {
       setUsers(p => p.map(u => u.id === userId ? { ...u, ...mapUsuarioToUser(updated) } : u));
     } catch (e: any) {
       console.error(e);
-      const details = e.response?.data?.error?.details;
+      const details = e.details;
       if (details && typeof details === 'object') {
         const err = new Error('Error de validación') as any;
         err.fieldErrors = details;
         throw err;
       }
-      throw new Error(e.response?.data?.error?.message || 'Error al actualizar usuario');
+      throw new Error(e.message || 'Error al actualizar usuario');
     }
   };
 
@@ -562,71 +562,59 @@ const handleLogout = async () => {
   };
 
   const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number) => {
-    try {
-      // 1. Check if subject exists or create it
-      let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
-      
-      if (!subjectId) {
-        const subResp = await api.post<any>('/api/asignaturas', {
-          nombre: name,
-          tipo_calificacion: 'Cuantitativa'
-        });
-        const newSub = mapAsignaturaToSubject(subResp);
-        setSubjects(p => [...p, newSub]);
-        subjectId = newSub.id;
-      }
-
-      // 2. Create the plan_estudio record
-      const planResp = await api.post<any>('/api/plan-estudio', {
-        id_asignatura: Number(subjectId),
-        id_grado: year,
-        codigo_asignatura: codigo,
-        posicion: posicion
+    // 1. Check if subject exists or create it
+    let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
+    
+    if (!subjectId) {
+      const subResp = await api.post<any>('/api/asignaturas', {
+        nombre: name,
+        tipo_calificacion: 'Cuantitativa'
       });
-      
-      const newItem = mapPlanToStudyPlanItem(planResp);
-      // Mapeador fallback si backend no devuelve el join
-      newItem.subjectName = name;
-      newItem.year = year as any;
-      
-      setStudyPlans(p => [...p, newItem]);
-    } catch (e) {
-      console.error(e);
-      toast.error('Error al añadir la materia al plan de estudio en la BD');
+      const newSub = mapAsignaturaToSubject(subResp);
+      setSubjects(p => [...p, newSub]);
+      subjectId = newSub.id;
     }
+
+    // 2. Create the plan_estudio record
+    const planResp = await api.post<any>('/api/plan-estudio', {
+      id_asignatura: Number(subjectId),
+      id_grado: year,
+      codigo_asignatura: codigo,
+      posicion: posicion
+    });
+    
+    const newItem = mapPlanToStudyPlanItem(planResp);
+    newItem.subjectName = name;
+    newItem.year = year as any;
+    
+    setStudyPlans(p => [...p, newItem]);
   };
   const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number) => {
-    try {
-      // 1. Ensure subject exists or create it
-      let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
-      if (!subjectId) {
-        const subResp = await api.post<any>('/api/asignaturas', {
-          nombre: name,
-          tipo_calificacion: 'Cuantitativa'
-        });
-        const newSub = mapAsignaturaToSubject(subResp);
-        setSubjects(p => [...p, newSub]);
-        subjectId = newSub.id;
-      }
-      
-      // 2. Update the plan_estudio record
-      const planResp = await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
-        id_asignatura: Number(subjectId),
-        id_grado: year,
-        codigo_asignatura: codigo,
-        posicion: posicion
+    // 1. Ensure subject exists or create it
+    let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
+    if (!subjectId) {
+      const subResp = await api.post<any>('/api/asignaturas', {
+        nombre: name,
+        tipo_calificacion: 'Cuantitativa'
       });
-
-      const updatedItem = mapPlanToStudyPlanItem(planResp);
-      updatedItem.subjectName = name;
-      updatedItem.year = year as any;
-
-      setStudyPlans(p => p.map(plan => plan.id === id ? updatedItem : plan));
-      toast.success('Materia actualizada en el plan de estudio exitosamente');
-    } catch (e) {
-      console.error(e);
-      toast.error('Error al actualizar la materia en el plan de estudio');
+      const newSub = mapAsignaturaToSubject(subResp);
+      setSubjects(p => [...p, newSub]);
+      subjectId = newSub.id;
     }
+    
+    // 2. Update the plan_estudio record
+    const planResp = await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
+      id_asignatura: Number(subjectId),
+      id_grado: year,
+      codigo_asignatura: codigo,
+      posicion: posicion
+    });
+
+    const updatedItem = mapPlanToStudyPlanItem(planResp);
+    updatedItem.subjectName = name;
+    updatedItem.year = year as any;
+
+    setStudyPlans(p => p.map(plan => plan.id === id ? updatedItem : plan));
   };
 
   const handleDeleteStudyPlanItem = async (id: string) => {
