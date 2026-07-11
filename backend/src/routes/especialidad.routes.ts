@@ -1,17 +1,15 @@
 import { Router } from 'express';
 import { EspecialidadController } from '../controllers/especialidad.controller';
 import { authorize } from '../middlewares/rbac.middleware';
-import { ROLES } from '../shared/constants';
+import { cacheable, invalidates } from '../middlewares/cache.middleware';
 
 export const especialidadRoutes = Router();
 
-// Todas las rutas de especialidades requieren autenticación
-// Para listar, todos pueden ver
-especialidadRoutes.get('/', EspecialidadController.getAll);
+especialidadRoutes.get('/', cacheable({ ttl: 3600 }), EspecialidadController.getAll);
 
-// Para crear, solo super_admin y control_estudios
 especialidadRoutes.post(
   '/',
   authorize('Administrador', 'Control de Estudios'),
+  invalidates('especialidades:*'),
   EspecialidadController.create
 );

@@ -1,6 +1,7 @@
 import app from './app';
 import { environment } from '../config/environment';
 import { sequelize } from './models';
+import { connectRedis, closeRedis } from '../config/redis';
 
 async function main() {
   try {
@@ -8,9 +9,16 @@ async function main() {
     await sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
 
-    // Nota: sync() está comentado porque las tablas ya existen.
-    // Si agregas un modelo nuevo, ejecutá las migraciones o usá el script seed.
-    // await sequelize.sync();
+    if (environment.redisUrl) {
+      try {
+        await connectRedis();
+        console.log('Conexión a Redis establecida correctamente.');
+      } catch (err) {
+        console.warn('No se pudo conectar a Redis. La caché y rate limiting continuarán sin Redis:', (err as Error).message);
+      }
+    } else {
+      console.log('REDIS_URL no configurada. La caché y rate limiting no estarán disponibles.');
+    }
   } catch (err) {
     console.error('Error al conectar con PostgreSQL mediante Sequelize:', err);
     process.exit(1);
@@ -19,8 +27,7 @@ async function main() {
   app.listen(environment.port, () => {
     console.log(`Servidor corriendo en puerto ${environment.port}`);
     console.log(`Entorno: ${environment.nodeEnv}`);
-    
-    // Inicializar tarea de respaldo automático
+
     import('./services/backup.service').then(({ BackupService }) => {
       BackupService.iniciarCronJob();
     }).catch(err => {
@@ -34,9 +41,13 @@ const gracefulShutdown = async () => {
     console.log('Cerrando conexión de Sequelize...');
     await sequelize.close();
     console.log('Conexión de Sequelize cerrada correctamente.');
+
+    await closeRedis();
+    console.log('Conexión de Redis cerrada correctamente.');
+
     process.exit(0);
   } catch (err) {
-    console.error('Error al cerrar la conexión de Sequelize:', err);
+    console.error('Error durante el apagado:', err);
     process.exit(1);
   }
 };
@@ -45,4 +56,3 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 main();
-// trigger restart 2
