@@ -19,11 +19,18 @@ export const PeriodoEscolarController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const { nombre } = req.body;
+    const { nombre, estatus } = req.body;
     if (nombre) {
       const existing = await PeriodoEscolar.findOne({ where: { nombre } });
       if (existing) {
         res.status(400).json({ error: { message: `Ya existe un período escolar registrado con el nombre ${nombre}` } });
+        return;
+      }
+    }
+    if (estatus === 'Activo') {
+      const activoExistente = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+      if (activoExistente) {
+        res.status(400).json({ error: { message: `Ya existe un período escolar activo (${activoExistente.nombre}). Debe cerrarlo antes de activar uno nuevo.` } });
         return;
       }
     }
@@ -33,7 +40,7 @@ export const PeriodoEscolarController = {
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const { nombre } = req.body;
+    const { nombre, estatus } = req.body;
     const record = await PeriodoEscolar.findByPk(id);
     if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
@@ -43,6 +50,13 @@ export const PeriodoEscolarController = {
       const existing = await PeriodoEscolar.findOne({ where: { nombre } });
       if (existing) {
         res.status(400).json({ error: { message: `Ya existe un período escolar registrado con el nombre ${nombre}` } });
+        return;
+      }
+    }
+    if (estatus === 'Activo' && record.estatus !== 'Activo') {
+      const activoExistente = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+      if (activoExistente) {
+        res.status(400).json({ error: { message: `Ya existe un período escolar activo (${activoExistente.nombre}). Debe cerrarlo antes de activar uno nuevo.` } });
         return;
       }
     }

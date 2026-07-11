@@ -8,7 +8,7 @@ import { SearchableSelect } from './SearchableSelect';
 interface DocenteManagerProps {
   docentes: Docente[];
   currentUserRole: UserRole;
-  onAddDocente: (docente: Omit<Docente, 'id'>) => Promise<void>;
+  onAddDocente: (docente: Omit<Docente, 'id'>) => Promise<string | undefined>;
   onUpdateDocente?: (id: string, docente: Omit<Docente, 'id'>) => Promise<void>;
   onDeleteDocente?: (id: string) => Promise<void>;
   onToggleDocenteActive: (id: string) => Promise<void>;
@@ -214,8 +214,12 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         await onUpdateDocente(editingDocente.id, newDocente);
         setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} actualizado con éxito.`);
       } else {
-        await onAddDocente(newDocente);
-        setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} registrado con éxito.`);
+        const passwordTemporal = await onAddDocente(newDocente);
+        if (passwordTemporal) {
+          setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} registrado. Contraseña: ${passwordTemporal}`);
+        } else {
+          setSuccessMsg(`Docente ${newDocente.firstName} ${newDocente.lastName} registrado con éxito.`);
+        }
       }
       
       setErrorMsg('');

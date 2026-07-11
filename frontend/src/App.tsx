@@ -302,7 +302,7 @@ const handleLogout = async () => {
   const handleAddDocente = async (newDocente: Omit<Docente, 'id'>) => {
     try {
       const payload = {
-        cedula_docente: newDocente.cedula.replace('V-', '').replace('E-', ''), // backend handles raw
+        cedula_docente: newDocente.cedula,
         nombre1: newDocente.firstName,
         nombre2: newDocente.secondName,
         apellido1: newDocente.lastName,
@@ -312,26 +312,14 @@ const handleLogout = async () => {
         telefono: newDocente.phone,
         correo: newDocente.email
       };
-      const createdDocente = await api.post<any>('/api/docentes', payload);
-      
+      const response = await api.post<any>('/api/docentes', payload);
+      const createdDocente = response.docente || response;
+      const passwordTemporal = response.password_temporal;
+
       const parsedDocente = mapDocenteToDocenteType(createdDocente);
       setDocentes(p => [parsedDocente, ...p]);
 
-      // Automatically create user for login
-      if (newDocente.email) {
-        const tempPassword = 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
-        const userDto = {
-          username: newDocente.email.split('@')[0],
-          password: tempPassword,
-          idRol: 2, // Docente
-          idDocente: createdDocente.id_docente || createdDocente.id,
-          correo: newDocente.email
-        };
-        const createdUser = await api.post<any>('/api/usuarios', userDto).catch(e => console.warn('Error creating user for docente:', e.message));
-        if (createdUser) {
-          setUsers(p => [mapUsuarioToUser(createdUser), ...p]);
-        }
-      }
+      return passwordTemporal;
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al crear docente en BD');
@@ -451,8 +439,9 @@ const handleLogout = async () => {
         await api.patch(`/api/usuarios/${stripId(userId)}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
         setUsers(p => p.map(u => u.id === userId ? { ...u, active: !u.active } : u));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      throw new Error(e.response?.data?.error?.message || 'Error al cambiar estatus del usuario');
     }
   };
 

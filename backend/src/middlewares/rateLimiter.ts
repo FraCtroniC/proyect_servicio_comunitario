@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { sequelize } from '../models';
 import { QueryTypes } from 'sequelize';
 
@@ -19,7 +19,7 @@ const postgresStore = {
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  keyGenerator: (req) => req.ip || req.socket.remoteAddress || 'unknown',
+  keyGenerator: (req) => ipKeyGenerator(req.ip || req.socket.remoteAddress || 'unknown'),
   store: postgresStore as any,
   message: {
     error: {

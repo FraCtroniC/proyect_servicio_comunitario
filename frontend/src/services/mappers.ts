@@ -23,14 +23,14 @@ export function mapUsuarioToUser(dbUser: any): User {
 
 export function mapDocenteToDocenteType(dbDocente: any): Docente {
   return {
-    id: String(dbDocente.id_docente || dbDocente.id),
-    cedula: dbDocente.cedula_docente,
+    id: String(dbDocente.id_docente || dbDocente.idDocente || dbDocente.id),
+    cedula: dbDocente.cedula_docente || dbDocente.cedulaDocente,
     firstName: dbDocente.nombre1,
     secondName: dbDocente.nombre2 || undefined,
     lastName: dbDocente.apellido1,
     secondLastName: dbDocente.apellido2 || undefined,
-    id_especialidad: dbDocente.id_especialidad || undefined,
-    dateOfBirth: dbDocente.fecha_nac || undefined,
+    id_especialidad: dbDocente.id_especialidad || dbDocente.idEspecialidad || undefined,
+    dateOfBirth: dbDocente.fecha_nac || dbDocente.fechaNac || undefined,
     phone: dbDocente.telefono || undefined,
     email: dbDocente.correo || undefined,
     status: dbDocente.estatus || 'Activo',

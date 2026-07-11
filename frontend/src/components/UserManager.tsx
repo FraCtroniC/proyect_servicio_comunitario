@@ -15,7 +15,7 @@ interface UserManagerProps {
   onAddUser: (user: Partial<User> & { password?: string }) => Promise<void>;
   onEditUser: (userId: string, data: Partial<User> & { password?: string }) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
-  onToggleUserActive: (userId: string) => void;
+  onToggleUserActive: (userId: string) => Promise<void>;
 }
 
 export default function UserManager({ users, currentUserRole, onSetUserRole, onAddUser, onEditUser, onDeleteUser, onToggleUserActive }: UserManagerProps) {
@@ -207,12 +207,18 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
                   <div className="flex items-center">
                     <button 
                       id={`active-toggle-${u.id}`}
-                      onClick={() => {
+                      onClick={async () => {
                         if (u.id === 'usr-1' || u.id === 'usr-2') {
                           setErrorMsg('No se pueden desactivar los usuarios del staff fundadores de demostración.');
                           return;
                         }
-                        onToggleUserActive(u.id);
+                        try {
+                          await onToggleUserActive(u.id);
+                          setSuccessMsg(`Usuario ${u.name} ${u.active ? 'desactivado' : 'activado'} con éxito.`);
+                          setErrorMsg('');
+                        } catch (e: any) {
+                          setErrorMsg(e.message || 'Error al cambiar estatus del usuario.');
+                        }
                       }}
                       className="p-1 text-slate-400 hover:text-indigo-600 transition-colors pointer-events-auto cursor-pointer"
                       title={u.active ? "Desactivar Usuario" : "Activar Usuario"}

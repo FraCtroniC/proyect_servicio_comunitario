@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CalendarDays, Plus, Lock, CheckCircle2, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SchoolPeriod, UserRole } from '../types';
@@ -17,27 +17,47 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<SchoolPeriod | null>(null);
 
-  // Add Form
-  const [newName, setNewName] = useState('');
+  const currentYear = new Date().getFullYear();
+  const yearOptions = useMemo(() => {
+    const years: number[] = [];
+    for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+      years.push(y);
+    }
+    return years;
+  }, [currentYear]);
+
+  const existingYearStarts = useMemo(() => {
+    return new Set(periods.map(p => parseInt(p.name.split('-')[0], 10)).filter(n => !isNaN(n)));
+  }, [periods]);
+
+  const [startYear, setStartYear] = useState<string>(String(currentYear));
+  const generatedName = `${startYear}-${Number(startYear) + 1}`;
+
   const [newStatus, setNewStatus] = useState<'Activo' | 'Planificación'>('Planificación');
 
-  // Close Form
   const [confirmText, setConfirmText] = useState('');
 
   const openAddModal = () => {
-    setNewName('');
+    setStartYear(String(currentYear));
     setNewStatus('Planificación');
     setIsAddModalOpen(true);
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) {
-      toast.error('El nombre del periodo es requerido (ej. 2026-2027)');
+    if (existingYearStarts.has(Number(startYear))) {
+      toast.error(`Ya existe un período escolar para el año ${startYear}-${Number(startYear) + 1}.`);
       return;
     }
+    if (newStatus === 'Activo') {
+      const yaActivo = periods.find(p => p.status === 'Activo');
+      if (yaActivo) {
+        toast.error(`Ya existe un período activo (${yaActivo.name}). Debe cerrarlo antes de activar uno nuevo.`);
+        return;
+      }
+    }
     try {
-      await onAddPeriod(newName, newStatus);
+      await onAddPeriod(generatedName, newStatus);
       toast.success('Periodo creado exitosamente.');
       setIsAddModalOpen(false);
     } catch (error) {
@@ -76,6 +96,11 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
   const handleActivateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedPeriod) {
+      const yaActivo = periods.find(p => p.status === 'Activo' && p.id !== selectedPeriod.id);
+      if (yaActivo) {
+        toast.error(`Ya existe un período activo (${yaActivo.name}). Debe cerrarlo antes de activar uno nuevo.`);
+        return;
+      }
       try {
         await onUpdatePeriodStatus(selectedPeriod.id, 'Activo');
         toast.success(`Periodo ${selectedPeriod.name} activado exitosamente.`);
@@ -187,15 +212,26 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
         <form onSubmit={handleAddSubmit} className="space-y-4">
           
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Nombre del Año Escolar</label>
-            <input 
-              type="text"
-              placeholder="Ej. 2026-2027"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Año de Inicio</label>
+            <select
+              value={startYear}
+              onChange={(e) => setStartYear(e.target.value)}
               className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
-              required
-            />
+            >
+              {yearOptions.map(y => {
+                const taken = existingYearStarts.has(y);
+                return (
+                  <option key={y} value={y} disabled={taken}>
+                    {y}{taken ? ' — ya registrado' : ''}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-between">
+            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">Año Escolar Generado</span>
+            <span className="text-sm font-black text-indigo-700 tracking-wider">{generatedName}</span>
           </div>
 
           <div className="space-y-1">
