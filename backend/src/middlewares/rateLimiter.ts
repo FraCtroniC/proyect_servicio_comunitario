@@ -1,26 +1,47 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
-import { sequelize } from '../models';
-import { QueryTypes } from 'sequelize';
+import { getRedis } from '../../config/redis';
 
-const postgresStore = {
-  async increment(key: string) {
-    const [result] = await sequelize.query<{ count: string }>(
-      `SELECT COUNT(*)::int as count FROM login_audit
-       WHERE ip_address = $1
-       AND created_at > NOW() - INTERVAL '15 minutes'`,
-      { bind: [key], type: QueryTypes.SELECT }
-    );
-    return { totalHits: (Number(result?.count) || 0) + 1 };
-  },
-  async decrement() {},
-  async resetKey() {},
-};
+const WINDOW_MS = 15 * 60 * 1000;
+
+function makeRedisStore(prefix: string) {
+  return {
+    async increment(key: string) {
+      try {
+        const redisKey = `${prefix}:${key}`;
+        const redis = getRedis();
+        const current = await redis.incr(redisKey);
+        if (current === 1) {
+          await redis.pexpire(redisKey, WINDOW_MS);
+        }
+        return { totalHits: current };
+      } catch {
+        return { totalHits: 1 };
+      }
+    },
+    async decrement(key: string) {
+      try {
+        const redis = getRedis();
+        await redis.decr(`${prefix}:${key}`);
+      } catch {
+        // Silently fail
+      }
+    },
+    async resetKey(key: string) {
+      try {
+        const redis = getRedis();
+        await redis.del(`${prefix}:${key}`);
+      } catch {
+        // Silently fail
+      }
+    },
+  };
+}
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: WINDOW_MS,
   max: 10,
   keyGenerator: (req) => ipKeyGenerator(req.ip || req.socket.remoteAddress || 'unknown'),
-  store: postgresStore as any,
+  store: makeRedisStore('rl:auth') as any,
   message: {
     error: {
       message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.',
@@ -31,7 +52,7 @@ export const authLimiter = rateLimit({
 });
 
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: WINDOW_MS,
   max: 200,
   message: {
     error: {

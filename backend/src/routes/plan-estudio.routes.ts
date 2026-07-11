@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { PlanEstudioController } from '../controllers/plan-estudio.controller';
 import { validateCrearPlanEstudio } from '../validators/plan-estudio.validator';
 import { authorize } from '../middlewares/rbac.middleware';
+import { cacheable, invalidates } from '../middlewares/cache.middleware';
 
 export const planEstudioRoutes = Router();
 
-planEstudioRoutes.get('/', PlanEstudioController.listar);
-planEstudioRoutes.get('/:id', PlanEstudioController.obtenerPorId);
-planEstudioRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearPlanEstudio, PlanEstudioController.crear);
-planEstudioRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), PlanEstudioController.actualizar);
-planEstudioRoutes.delete('/:id', authorize('Administrador'), PlanEstudioController.eliminar);
+planEstudioRoutes.get('/', cacheable({ ttl: 3600 }), PlanEstudioController.listar);
+planEstudioRoutes.get('/:id', cacheable({ ttl: 3600 }), PlanEstudioController.obtenerPorId);
+planEstudioRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearPlanEstudio, invalidates('plan-estudio:*'), PlanEstudioController.crear);
+planEstudioRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), invalidates('plan-estudio:*'), PlanEstudioController.actualizar);
+planEstudioRoutes.delete('/:id', authorize('Administrador'), invalidates('plan-estudio:*'), PlanEstudioController.eliminar);
