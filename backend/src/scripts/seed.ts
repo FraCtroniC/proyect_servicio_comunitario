@@ -10,16 +10,16 @@ async function seed() {
     await sequelize.sync({ force: true });
     console.log('✅ Base de datos sincronizada (force: true).');
 
-    // 1. Roles (Asegurar que existan los roles base)
+    // 1. Roles (Asegurar que existan los roles base con IDs específicos)
     const roles = [
-      { nombre: 'Director', descripcion: 'Administrador del sistema' },
-      { nombre: 'Control de Estudios', descripcion: 'Gestión académica' },
-      { nombre: 'Docente', descripcion: 'Profesor de asignatura' },
+      { id_rol: 4, nombre: 'Administrador', descripcion: 'Administrador del sistema' },
+      { id_rol: 8, nombre: 'Control de Estudios', descripcion: 'Gestión académica' },
+      { id_rol: 5, nombre: 'Docente', descripcion: 'Profesor de asignatura' },
     ];
 
     for (const r of roles) {
       await Rol.findOrCreate({
-        where: { nombre: r.nombre },
+        where: { id_rol: r.id_rol },
         defaults: r
       });
     }
@@ -82,11 +82,11 @@ async function seed() {
     // Obtener roles existentes para saber sus IDs reales
     const rolDocente = await Rol.findOne({ where: { nombre: 'Docente' } });
     const rolControl = await Rol.findOne({ where: { nombre: 'Control de Estudios' } });
-    const rolDirector = await Rol.findOne({ where: { nombre: 'Director' } });
+    const rolDirector = await Rol.findOne({ where: { nombre: 'Administrador' } });
     
-    const idDoc = rolDocente ? rolDocente.get('id_rol') : 3;
-    const idCtrl = rolControl ? rolControl.get('id_rol') : 2;
-    const idDir = rolDirector ? rolDirector.get('id_rol') : 1;
+    const idDoc = rolDocente ? rolDocente.get('id_rol') : 5;
+    const idCtrl = rolControl ? rolControl.get('id_rol') : 8;
+    const idDir = rolDirector ? rolDirector.get('id_rol') : 4;
 
     for (let i = 0; i < docentesGenerados.length; i++) {
       const docente = docentesGenerados[i];

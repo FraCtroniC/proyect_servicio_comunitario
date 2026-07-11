@@ -1,9 +1,9 @@
 import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative, AcademicYear, Docente } from '../types';
 
 export function mapRole(idRol: number): UserRole {
-  if (idRol === 1) return 'super_admin';
-  if (idRol === 2) return 'docente';
-  if (idRol === 3 || idRol === 4) return 'control_estudios';
+  if (idRol === 4) return 'super_admin';
+  if (idRol === 5) return 'docente';
+  if (idRol === 8) return 'control_estudios';
   return 'docente';
 }
 
@@ -16,7 +16,9 @@ export function mapUsuarioToUser(dbUser: any): User {
     email: dbUser.correo || `${dbUser.username}@local.liceo`,
     role: mapRole(dbUser.idRol || dbUser.id_rol),
     active: dbUser.estatus === 'Activo',
-    cedula: dbUser.cedula || dbUser.docente?.cedula_docente || undefined,
+    cedula: dbUser.docente?.cedula_docente || undefined,
+    phone: dbUser.docente?.telefono || undefined,
+    username: dbUser.username || undefined,
     teacherId: dbUser.id_docente ? String(dbUser.id_docente) : undefined,
   };
 }

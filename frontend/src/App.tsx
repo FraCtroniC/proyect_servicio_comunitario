@@ -394,7 +394,7 @@ const handleLogout = async () => {
         username: newUser.cedula || newUser.email?.split('@')[0] || 'User',
         password: tempPassword,
         correo: newUser.email,
-        idRol: newUser.role === 'super_admin' ? 1 : (newUser.role === 'control_estudios' ? 3 : 2) // Asumiendo 1 Admin, 3 Secretaria, 2 Docente (fallback)
+        idRol: newUser.role === 'super_admin' ? 4 : (newUser.role === 'control_estudios' ? 8 : 5)
       };
       const created = await api.post<any>('/api/usuarios', dto);
       setUsers(p => [mapUsuarioToUser(created), ...p]);
@@ -410,12 +410,19 @@ const handleLogout = async () => {
       if (data.email) dto.correo = data.email;
       if (data.cedula) dto.username = data.cedula;
       if (data.password) dto.password = data.password;
-      if (data.role) dto.idRol = data.role === 'super_admin' ? 1 : (data.role === 'control_estudios' ? 3 : 2);
+      if (data.phone) dto.telefono = data.phone;
+      if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : (data.role === 'control_estudios' ? 8 : 5);
       
       const updated = await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
       setUsers(p => p.map(u => u.id === userId ? { ...u, ...mapUsuarioToUser(updated) } : u));
     } catch (e: any) {
       console.error(e);
+      const details = e.response?.data?.error?.details;
+      if (details && typeof details === 'object') {
+        const err = new Error('Error de validación') as any;
+        err.fieldErrors = details;
+        throw err;
+      }
       throw new Error(e.response?.data?.error?.message || 'Error al actualizar usuario');
     }
   };

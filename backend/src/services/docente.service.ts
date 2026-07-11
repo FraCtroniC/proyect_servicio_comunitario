@@ -8,7 +8,7 @@ const ROL_DOCENTE_ID = 5;
 const PASSWORD_LENGTH = 5;
 
 function limpiarCedula(cedula: string): string {
-  return cedula.replace(/^[Vv]-/, '');
+  return cedula.replace(/^[VvEe]-/, '');
 }
 
 function generarPassword(): string {
@@ -61,7 +61,7 @@ export const DocenteService = {
 
     try {
       const docente = await Docente.create({
-        cedula_docente: dto.cedula_docente,
+        cedula_docente: limpiarCedula(dto.cedula_docente),
         nombre1: dto.nombre1,
         nombre2: dto.nombre2 ?? null,
         apellido1: dto.apellido1,
