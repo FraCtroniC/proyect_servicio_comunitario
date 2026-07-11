@@ -157,7 +157,7 @@ export interface Classroom {
   id: string;
   name: string;         // e.g., "Aula 1-A", "Laboratorio de Química", "Cancha"
   capacity: number;
-  type: 'Teórica' | 'Laboratorio' | 'Deportiva' | 'Comunitaria';
+  type: 'Teórica' | 'Laboratorio' | 'Deportiva';
   resources: string[];  // e.g., "Pizarra Acrílica", "Proyector", "Microscopios"
 }
 

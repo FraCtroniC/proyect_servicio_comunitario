@@ -1026,36 +1026,26 @@ const handleLogout = async () => {
   };
 
   const handleAddClassroom = async (room: Classroom) => {
-    try {
-      const resp = await api.post<any>('/api/aulas', {
-        nombre_codigo: room.name,
-        capacidad: room.capacity,
-        tipo_espacio: room.type,
-        estatus: 'Activo'
-      });
-      const savedRoom = mapAulaToClassroom(resp);
-      setClassrooms(prev => [...prev, savedRoom]);
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e.message || 'Error al crear el aula en la base de datos');
-    }
+    const resp = await api.post<any>('/api/aulas', {
+      nombre_codigo: room.name,
+      capacidad: room.capacity,
+      tipo_espacio: room.type,
+      estatus: 'Activo'
+    });
+    const savedRoom = mapAulaToClassroom(resp);
+    setClassrooms(prev => [...prev, savedRoom]);
   };
 
   const handleEditClassroom = async (roomId: string, data: Partial<Classroom>) => {
-    try {
-      const id = Number(roomId.replace(/\D/g, ''));
-      if (id) {
-        const payload: any = {};
-        if (data.name) payload.nombre_codigo = data.name;
-        if (data.capacity) payload.capacidad = data.capacity;
-        if (data.type) payload.tipo_espacio = data.type;
-        
-        await api.patch<any>(`/api/aulas/${id}`, payload);
-        setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
-      }
-    } catch (e: any) {
-      console.error('Error al editar aula:', e);
-      throw new Error(e.message || 'Error al editar aula en BD');
+    const id = Number(roomId.replace(/\D/g, ''));
+    if (id) {
+      const payload: any = {};
+      if (data.name) payload.nombre_codigo = data.name;
+      if (data.capacity) payload.capacidad = data.capacity;
+      if (data.type) payload.tipo_espacio = data.type;
+      
+      await api.patch<any>(`/api/aulas/${id}`, payload);
+      setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
     }
   };
 

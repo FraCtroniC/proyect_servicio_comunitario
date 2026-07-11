@@ -33,9 +33,10 @@ export default function FacilitiesManager({
   // Add Classroom form states
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState<number | string>(30);
-  const [type, setType] = useState<'Teórica' | 'Laboratorio' | 'Deportiva' | 'Comunitaria'>('Teórica');
+  const [type, setType] = useState<'Teórica' | 'Laboratorio' | 'Deportiva'>('Teórica');
   const [resources, setResources] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -48,6 +49,7 @@ export default function FacilitiesManager({
     setResources('');
     setEditingRoomId(null);
     setErrorMsg('');
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
@@ -58,22 +60,24 @@ export default function FacilitiesManager({
     setResources(room.resources ? room.resources.join(', ') : '');
     setEditingRoomId(room.id);
     setErrorMsg('');
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+    setFieldErrors({});
     if (!name || capacity === '' || Number(capacity) <= 0) {
       setErrorMsg('Nombre y Capacidad (mayor a 0) son requeridos.');
       return;
     }
 
-    // Split resources
     const parsedResources = resources ? resources.split(',').map(r => r.trim()).filter(Boolean) : [];
 
     try {
       if (editingRoomId) {
-        onEditClassroom(editingRoomId, {
+        await onEditClassroom(editingRoomId, {
           name,
           capacity: Number(capacity),
           type,
@@ -88,17 +92,23 @@ export default function FacilitiesManager({
           type,
           resources: parsedResources
         };
-        onAddClassroom(newRoom);
+        await onAddClassroom(newRoom);
         setSuccessMsg(`Aula física "${newRoom.name}" agregada con éxito.`);
       }
       
       setErrorMsg('');
+      setFieldErrors({});
       setName('');
       setCapacity(30);
       setResources('');
       setIsModalOpen(false);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error al guardar el aula.');
+      const details = err.response?.data?.error?.details;
+      if (details && typeof details === 'object') {
+        setFieldErrors(details);
+      } else {
+        setErrorMsg(err.message || 'Error al guardar el aula.');
+      }
     }
   };
 
@@ -301,8 +311,9 @@ export default function FacilitiesManager({
                 placeholder="e.g. Laboratorio de Biología" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
+                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden focus:bg-white font-medium ${fieldErrors.nombre_codigo ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
               />
+              {fieldErrors.nombre_codigo && <p className="text-red-600 text-[11px]">{fieldErrors.nombre_codigo}</p>}
             </div>
 
             <div id="form-room-cap" className="space-y-1">
@@ -322,10 +333,9 @@ export default function FacilitiesManager({
                 onChange={(e) => setType(e.target.value as any)}
                 className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
               >
-                <option value="Teórica">Teórica (Aulas de EMG)</option>
+                <option value="Teórica">Teórica</option>
                 <option value="Laboratorio">Laboratorio Especializado</option>
                 <option value="Deportiva">Deportiva / Recreativa</option>
-                <option value="Comunitaria">Taller de Vinculación Comunitaria</option>
               </select>
             </div>
 
