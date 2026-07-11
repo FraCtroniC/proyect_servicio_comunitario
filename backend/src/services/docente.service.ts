@@ -60,6 +60,18 @@ export const DocenteService = {
     const now = new Date();
 
     try {
+      if (dto.fecha_nac) {
+        const dob = new Date(dto.fecha_nac);
+        let age = now.getFullYear() - dob.getFullYear();
+        const m = now.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
+          age--;
+        }
+        if (age < 18 || age > 70) {
+          throw new ValidationError({ fecha_nac: [`La edad del docente debe estar entre 18 y 70 años (actual: ${age} años)`] });
+        }
+      }
+
       const docente = await Docente.create({
         cedula_docente: limpiarCedula(dto.cedula_docente),
         nombre1: dto.nombre1,
@@ -112,6 +124,19 @@ export const DocenteService = {
     const docente = await Docente.findByPk(id);
     if (!docente) {
       throw new ValidationError({ docente: ['Docente no encontrado'] });
+    }
+
+    if (dto.fecha_nac !== undefined && dto.fecha_nac !== null) {
+      const now = new Date();
+      const dob = new Date(dto.fecha_nac);
+      let age = now.getFullYear() - dob.getFullYear();
+      const m = now.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
+        age--;
+      }
+      if (age < 18 || age > 70) {
+        throw new ValidationError({ fecha_nac: [`La edad del docente debe estar entre 18 y 70 años (actual: ${age} años)`] });
+      }
     }
 
     const updateData: any = {};

@@ -87,8 +87,8 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
         age--;
     }
-    if (age < 18) {
-        setDobError('El docente debe ser mayor de edad (18 años o más).');
+    if (age < 18 || age > 70) {
+        setDobError('La edad del docente debe estar entre 18 y 70 años.');
     } else {
         setDobError('');
     }
@@ -177,8 +177,8 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
         age--;
     }
-    if (age < 18) {
-        setDobError('El docente debe ser mayor de edad (18 años o más).');
+    if (age < 18 || age > 70) {
+        setDobError('La edad del docente debe estar entre 18 y 70 años.');
         return;
     }
 
