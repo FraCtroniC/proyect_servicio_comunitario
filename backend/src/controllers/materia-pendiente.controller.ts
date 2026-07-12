@@ -16,7 +16,7 @@ export const MateriaPendienteController = {
           { model: PeriodoEscolar, as: 'periodo' },
           { model: Docente, as: 'docente_evaluador' }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['created_at', 'DESC']]
       });
       res.json(materias);
     } catch (e) {

@@ -31,12 +31,16 @@ import { systemRoutes } from './system.routes';
 import { notificacionRoutes } from './notificacion.routes';
 import { materiaPendienteRoutes } from './materia-pendiente.routes';
 import { especialidadRoutes } from './especialidad.routes';
+import { horarioStreamRoutes } from './horario-stream.routes';
 
 export const routes = Router();
 
 // Auth and chatbot routes are public (no auth middleware)
 routes.use('/auth', authRoutes);
 routes.use('/chatbot', chatbotRoutes);
+
+// SSE stream route (handles its own auth via query token)
+routes.use('/horarios', horarioStreamRoutes);
 
 routes.get('/test-docentes', async (req, res) => {
   try {

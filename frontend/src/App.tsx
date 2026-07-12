@@ -45,6 +45,7 @@ import {
 
 import { api } from './services/api';
 import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative, mapDocenteToDocenteType } from './services/mappers';
+import { useScheduleStream } from './hooks/useScheduleStream';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -128,6 +129,22 @@ export default function App() {
   const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  useScheduleStream(isLoggedIn, (event) => {
+    if (event.tipo === 'create' && event.data) {
+      setScheduleEvents(prev => {
+        const exists = prev.some(e => e.id === String(event.data.id_horario));
+        if (exists) return prev;
+        return [...prev, mapHorarioToScheduleEvent(event.data)];
+      });
+    } else if (event.tipo === 'update' && event.data) {
+      setScheduleEvents(prev => prev.map(e =>
+        e.id === String(event.data.id_horario) ? mapHorarioToScheduleEvent(event.data) : e
+      ));
+    } else if (event.tipo === 'delete' && event.data) {
+      setScheduleEvents(prev => prev.filter(e => e.id !== String(event.data.id_horario)));
+    }
+  });
 
   useEffect(() => {
     try {
@@ -952,8 +969,6 @@ const handleLogout = async () => {
         id_dia: idDia,
         id_bloque: idBloque,
         id_aula: Number(evt.classroomId.replace(/\D/g, '')) || Number(evt.classroomId),
-        dia_nombre: evt.day,
-        bloque_rango: evt.timeBlock
       };
 
       const created = await api.post<any>('/api/horarios', payload);
@@ -974,7 +989,6 @@ const handleLogout = async () => {
         const dayObj = referenceData.dias.find((d: any) => d.nombre === evt.day);
         const dayMap: Record<string, number> = { Lunes: 1, Martes: 2, Miércoles: 3, Jueves: 4, Viernes: 5 };
         payload.id_dia = dayObj?.id_dia || dayMap[evt.day] || 1;
-        payload.dia_nombre = evt.day;
       }
       if (evt.timeBlock) {
         const bloque = referenceData.bloques.find((b: any) =>
@@ -982,7 +996,6 @@ const handleLogout = async () => {
           `${b.hora_inicio.substring(0, 5)} - ${b.hora_fin.substring(0, 5)}` === evt.timeBlock
         );
         payload.id_bloque = bloque?.id_bloque || Number(evt.timeBlock.split(':')[0]) || 1;
-        payload.bloque_rango = evt.timeBlock;
       }
       if (evt.year && evt.section) {
         const seccion = sections.find(s => s.grade === evt.year && s.letter === evt.section);

@@ -17,6 +17,15 @@ export default defineConfig(() => {
           target: 'http://localhost:3000',
           changeOrigin: true,
           secure: false,
+          configure: (proxy) => {
+            proxy.on('proxyRes', (proxyRes) => {
+              const contentType = proxyRes.headers['content-type'] || '';
+              if (contentType.includes('text/event-stream')) {
+                proxyRes.headers['cache-control'] = 'no-cache';
+                proxyRes.headers['x-accel-buffering'] = 'no';
+              }
+            });
+          },
         },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

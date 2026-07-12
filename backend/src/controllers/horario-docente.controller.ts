@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { HorarioDocente, Asignatura, Seccion, DiaSemana, BloqueHorario, Aula } from '../models';
+import { HorarioDocente, Asignatura, Seccion, GradoAno, DiaSemana, BloqueHorario, Aula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { broadcastHorarioEvent } from './horario-stream.controller';
 
 export const HorarioDocenteController = {
   listar: wrapAsync(async (req: Request, res: Response) => {
@@ -11,7 +12,7 @@ export const HorarioDocenteController = {
       where,
       include: [
         { model: Asignatura, as: 'asignatura' },
-        { model: Seccion, as: 'seccion' },
+        { model: Seccion, as: 'seccion', include: [{ model: GradoAno, as: 'grado' }] },
         { model: DiaSemana, as: 'dia' },
         { model: BloqueHorario, as: 'bloque' },
         { model: Aula, as: 'aula' }
@@ -31,27 +32,22 @@ export const HorarioDocenteController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    let { id_dia, id_bloque, dia_nombre, bloque_rango, ...resto } = req.body;
-    
-    if (dia_nombre) {
-      const [dia] = await DiaSemana.findOrCreate({
-        where: { nombre: dia_nombre },
-        defaults: { nombre: dia_nombre }
-      });
-      id_dia = dia.get('id_dia');
-    }
-
-    if (bloque_rango) {
-      const [hora_inicio, hora_fin] = bloque_rango.split(' - ').map((h: string) => h.trim() + ':00');
-      const [bloque] = await BloqueHorario.findOrCreate({
-        where: { hora_inicio },
-        defaults: { hora_inicio, hora_fin: hora_fin || hora_inicio, tipo_bloque: 'Clase', numero_bloque: 1 }
-      });
-      id_bloque = bloque.get('id_bloque');
-    }
+    const { id_dia, id_bloque, ...resto } = req.body;
 
     const result = await HorarioDocente.create({ ...resto, id_dia, id_bloque });
+
     res.status(201).json({ data: result });
+
+    const completo = await HorarioDocente.findByPk(result.get('id_horario'), {
+      include: [
+        { model: Asignatura, as: 'asignatura' },
+        { model: Seccion, as: 'seccion', include: [{ model: GradoAno, as: 'grado' }] },
+        { model: DiaSemana, as: 'dia' },
+        { model: BloqueHorario, as: 'bloque' },
+        { model: Aula, as: 'aula' }
+      ]
+    });
+    broadcastHorarioEvent({ tipo: 'create', data: completo });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
@@ -62,27 +58,22 @@ export const HorarioDocenteController = {
       return;
     }
     
-    let { id_dia, id_bloque, dia_nombre, bloque_rango, ...resto } = req.body;
-    
-    if (dia_nombre) {
-      const [dia] = await DiaSemana.findOrCreate({
-        where: { nombre: dia_nombre },
-        defaults: { nombre: dia_nombre }
-      });
-      id_dia = dia.get('id_dia');
-    }
-
-    if (bloque_rango) {
-      const [hora_inicio, hora_fin] = bloque_rango.split(' - ').map((h: string) => h.trim() + (h.split(':').length === 2 ? ':00' : ''));
-      const [bloque] = await BloqueHorario.findOrCreate({
-        where: { hora_inicio },
-        defaults: { hora_inicio, hora_fin: hora_fin || hora_inicio, tipo_bloque: 'Clase', numero_bloque: 1 }
-      });
-      id_bloque = bloque.get('id_bloque');
-    }
+    const { id_dia, id_bloque, ...resto } = req.body;
 
     await record.update({ ...resto, id_dia, id_bloque });
+
     res.json({ data: record });
+
+    const completo = await HorarioDocente.findByPk(id, {
+      include: [
+        { model: Asignatura, as: 'asignatura' },
+        { model: Seccion, as: 'seccion', include: [{ model: GradoAno, as: 'grado' }] },
+        { model: DiaSemana, as: 'dia' },
+        { model: BloqueHorario, as: 'bloque' },
+        { model: Aula, as: 'aula' }
+      ]
+    });
+    broadcastHorarioEvent({ tipo: 'update', data: completo });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
@@ -94,5 +85,6 @@ export const HorarioDocenteController = {
     }
     await record.destroy();
     res.status(204).send();
+    broadcastHorarioEvent({ tipo: 'delete', data: { id_horario: id } });
   }),
 };

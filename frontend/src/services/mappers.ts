@@ -127,7 +127,7 @@ export function mapHorarioToScheduleEvent(dbHorario: any): ScheduleEvent {
     id: String(dbHorario.id_horario),
     day: dayName as any,
     timeBlock: timeBlock,
-    year: dbHorario.seccion?.grado?.numero || 1,
+    year: dbHorario.seccion?.grado?.numero || dbHorario.id_grado || 1,
     section: dbHorario.seccion?.letra || 'A',
     subjectId: String(dbHorario.id_asignatura),
     teacherId: String(dbHorario.id_docente),
