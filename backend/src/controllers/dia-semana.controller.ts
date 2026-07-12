@@ -4,7 +4,7 @@ import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const DiaSemanaController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await DiaSemana.findAll();
+    const result = await DiaSemana.findAll({ order: [['id_dia', 'ASC']] });
     res.json({ data: result });
   }),
 

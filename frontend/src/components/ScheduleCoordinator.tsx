@@ -16,7 +16,7 @@ interface ScheduleCoordinatorProps {
   docentes: Docente[];
   classrooms: Classroom[];
   sections: Section[];
-  referenceData: { dias: any[]; bloques: any[] };
+  referenceData: { dias: any[]; bloques: any[]; grados: any[] };
   currentUserRole: UserRole;
   onAddScheduleEvent: (evt: ScheduleEvent) => void;
   onUpdateScheduleEvent?: (evtId: string, evt: Partial<ScheduleEvent>) => void;
@@ -36,6 +36,32 @@ export default function ScheduleCoordinator({
   onUpdateScheduleEvent,
   onRemoveScheduleEvent
 }: ScheduleCoordinatorProps) {
+  // Static timeblocks structured for the grid rendering
+  // const timeBlocks = [
+  //   { label: 'Bloque 1', time: '07:00 - 07:45', isRecess: false },
+  //   { label: 'Bloque 2', time: '07:45 - 08:30', isRecess: false },
+  //   { label: 'Receso Corto', time: '08:30 - 08:45', isRecess: true },
+  //   { label: 'Bloque 3', time: '08:45 - 09:30', isRecess: false },
+  //   { label: 'Bloque 4', time: '09:30 - 10:15', isRecess: false },
+  //   { label: 'Receso Largo', time: '10:15 - 10:30', isRecess: true },
+  //   { label: 'Bloque 5', time: '10:30 - 11:15', isRecess: false },
+  //   { label: 'Bloque 6', time: '11:15 - 12:00', isRecess: false }
+  // ];
+
+  const formatTime = (t: string) => t.length > 5 ? t.substring(0, 5) : t;
+
+  const timeBlocks = (referenceData.bloques || [])
+    .slice()
+    .sort((a: any, b: any) => (a.numero_bloque ?? 0) - (b.numero_bloque ?? 0))
+    .map((b: any) => ({
+      label: b.tipo_bloque === 'Receso' ? 'Receso' : `Bloque ${b.numero_bloque ?? ''}`,
+      time: `${formatTime(b.hora_inicio)} - ${formatTime(b.hora_fin)}`,
+      isRecess: b.tipo_bloque === 'Receso',
+    }));
+
+  // const days: ('Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes')[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+  const days: string[] = (referenceData.dias || []).map((d: any) => d.nombre);
+
   // Filters to display current schedules
   const [filterType, setFilterType] = useState<'section' | 'teacher' | 'classroom'>('section');
   const [filterYear, setFilterYear] = useState<AcademicYear>(5);
@@ -44,7 +70,7 @@ export default function ScheduleCoordinator({
   const [filterClassroomId, setFilterClassroomId] = useState<string>('rm-201');
 
   // Input states for assigning a block
-  const [formDay, setFormDay] = useState<'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes'>('Lunes');
+  const [formDay, setFormDay] = useState<string>(days[0] || 'Lunes');
   const [formBlock, setFormBlock] = useState<string>('');
   const [formYear, setFormYear] = useState<AcademicYear>(1);
   const [formSection, setFormSection] = useState<string>('');
@@ -58,20 +84,6 @@ export default function ScheduleCoordinator({
 
   // Editing state
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
-
-  // Static timeblocks structured for the grid rendering
-  const timeBlocks = [
-    { label: 'Bloque 1', time: '07:00 - 07:45', isRecess: false },
-    { label: 'Bloque 2', time: '07:45 - 08:30', isRecess: false },
-    { label: 'Receso Corto', time: '08:30 - 08:45', isRecess: true },
-    { label: 'Bloque 3', time: '08:45 - 09:30', isRecess: false },
-    { label: 'Bloque 4', time: '09:30 - 10:15', isRecess: false },
-    { label: 'Receso Largo', time: '10:15 - 10:30', isRecess: true },
-    { label: 'Bloque 5', time: '10:30 - 11:15', isRecess: false },
-    { label: 'Bloque 6', time: '11:15 - 12:00', isRecess: false }
-  ];
-
-  const days: ('Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes')[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<ScheduleEvent | null>(null);
 
@@ -270,14 +282,12 @@ export default function ScheduleCoordinator({
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Día</label>
                   <select
                     value={formDay}
-                    onChange={(e) => setFormDay(e.target.value as any)}
+                    onChange={(e) => setFormDay(e.target.value)}
                     className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
-                    <option value="Lunes">Lunes</option>
-                    <option value="Martes">Martes</option>
-                    <option value="Miércoles">Miércoles</option>
-                    <option value="Jueves">Jueves</option>
-                    <option value="Viernes">Viernes</option>
+                    {days.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-0.5">
@@ -304,11 +314,10 @@ export default function ScheduleCoordinator({
                     onChange={(e) => setFormYear(Number(e.target.value) as AcademicYear)}
                     className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
-                    <option value={1}>1er Año</option>
-                    <option value={2}>2do Año</option>
-                    <option value={3}>3er Año</option>
-                    <option value={4}>4to Año</option>
-                    <option value={5}>5to Año</option>
+                    <option value="">Seleccionar...</option>
+                    {referenceData.grados.map((g: any) => (
+                      <option key={g.id_grado} value={g.numero}>{g.nombre}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-0.5">
@@ -428,11 +437,10 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFilterYear(Number(e.target.value) as AcademicYear)}
                   className="bg-white border rounded p-1 font-bold focus:outline-hidden"
                 >
-                  <option value={1}>1er Año</option>
-                  <option value={2}>2do Año</option>
-                  <option value={3}>3er Año</option>
-                  <option value={4}>4to Año</option>
-                  <option value={5}>5to Año</option>
+                  <option value="">Seleccionar Año...</option>
+                  {referenceData.grados.map((g: any) => (
+                    <option key={g.id_grado} value={g.numero}>{g.nombre}</option>
+                  ))}
                 </select>
                 <select
                   value={filterSection}

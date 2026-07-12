@@ -4,7 +4,7 @@ import { wrapAsync } from '../shared/utils/wrapAsync';
 
 export const BloqueHorarioController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await BloqueHorario.findAll();
+    const result = await BloqueHorario.findAll({ order: [['numero_bloque', 'ASC']] });
     res.json({ data: result });
   }),
 

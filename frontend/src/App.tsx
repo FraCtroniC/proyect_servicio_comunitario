@@ -113,7 +113,7 @@ export default function App() {
 
   const [sections, setSections] = useState<Section[]>([]);
   const [representatives, setRepresentatives] = useState<any[]>([]);
-  const [referenceData, setReferenceData] = useState<{ dias: any[]; bloques: any[] }>({ dias: [], bloques: [] });
+  const [referenceData, setReferenceData] = useState<{ dias: any[]; bloques: any[]; grados: any[] }>({ dias: [], bloques: [], grados: [] });
 
   // Persistence arrays from Backend
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -198,7 +198,8 @@ const handleLogout = async () => {
             asistenciasData,
             asistenciasEstudiantesData,
             matriculasData,
-            docentesData
+            docentesData,
+            gradosData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -218,7 +219,8 @@ const handleLogout = async () => {
             api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
-            api.get<any[]>('/api/docentes').catch(() => ({ data: [] }))
+            api.get<any[]>('/api/docentes').catch(() => ({ data: [] })),
+            api.get<any[]>('/api/grados').catch(() => ({ data: [] }))
           ]);
           
           const seccionesMap = aulasData.reduce((acc, a) => {
@@ -258,7 +260,8 @@ const handleLogout = async () => {
           setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
           setReferenceData({
             dias: Array.isArray(diasData) ? diasData : ((diasData as any)?.data || []),
-            bloques: Array.isArray(bloquesData) ? bloquesData : ((bloquesData as any)?.data || [])
+            bloques: Array.isArray(bloquesData) ? bloquesData : ((bloquesData as any)?.data || []),
+            grados: Array.isArray(gradosData) ? gradosData : ((gradosData as any)?.data || [])
           });
 
           // Cache matrículas
