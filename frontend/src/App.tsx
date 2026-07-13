@@ -1,9 +1,10 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSocket } from './hooks/useSocket';
 import { motion, AnimatePresence } from 'motion/react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
@@ -151,6 +152,22 @@ export default function App() {
     }
   }, []);
 
+  // WebSocket: escuchar cambios en periodos escolares
+  useSocket(isLoggedIn, (event, payload) => {
+    if (event === 'periodo:create') {
+      setPeriods(prev => [...prev, mapPeriodoToSchoolPeriod(payload.data)]);
+    } else if (event === 'periodo:update') {
+      setPeriods(prev => prev.map(p =>
+        p.id === String(payload.data.id_periodo)
+          ? mapPeriodoToSchoolPeriod(payload.data) : p
+      ));
+    } else if (event === 'periodo:delete') {
+      setPeriods(prev => prev.filter(p =>
+        p.id !== String(payload.data.id_periodo)
+      ));
+    }
+  });
+
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setCurrentUserRole(user.role);
@@ -229,10 +246,14 @@ const handleLogout = async () => {
             return acc;
           }, {});
 
+          const parsedPeriodos = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+          const activeDbPeriod = parsedPeriodos.find((p: any) => p.estatus === 'Activo');
+          const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
+
           setUsers(usuariosData.map(mapUsuarioToUser));
           const parsedDocentes = (Array.isArray(docentesData) ? docentesData : (docentesData as any)?.data || []).map(mapDocenteToDocenteType);
           setDocentes(parsedDocentes);
-          setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [])));
+          setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
           
@@ -839,14 +860,19 @@ const handleLogout = async () => {
 
   const refreshStudents = useCallback(async () => {
     try {
-      const [estudiantesData, representantesData, matriculasData, seccionesData] = await Promise.all([
+      const [estudiantesData, representantesData, matriculasData, seccionesData, periodosData] = await Promise.all([
         api.get<any[]>('/api/estudiantes'),
         api.get<any[]>('/api/representantes').catch(() => []),
         api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
         api.get<any[]>('/api/secciones').catch(() => []),
+        api.get<any[]>('/api/periodos').catch(() => ({ data: [] }))
       ]);
+      const periodosList = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+      const activeDbPeriod = periodosList.find((p: any) => p.estatus === 'Activo');
+      const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
+
       const matriculasList = Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [];
-      setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [])));
+      setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
       setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
     } catch (e) {
       console.error('Error al refrescar estudiantes:', e);
@@ -1131,6 +1157,7 @@ const handleLogout = async () => {
       nombre_codigo: room.name,
       capacidad: room.capacity,
       tipo_espacio: room.type,
+      ubicacion: room.location,
       estatus: 'Activo'
     });
     const savedRoom = mapAulaToClassroom(resp);
@@ -1144,6 +1171,7 @@ const handleLogout = async () => {
       if (data.name) payload.nombre_codigo = data.name;
       if (data.capacity) payload.capacidad = data.capacity;
       if (data.type) payload.tipo_espacio = data.type;
+      if (data.location !== undefined) payload.ubicacion = data.location;
       
       await api.patch<any>(`/api/aulas/${id}`, payload);
       setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));

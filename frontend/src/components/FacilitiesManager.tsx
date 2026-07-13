@@ -34,7 +34,7 @@ export default function FacilitiesManager({
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState<number | string>(30);
   const [type, setType] = useState<'Teórica' | 'Laboratorio' | 'Deportiva'>('Teórica');
-  const [resources, setResources] = useState('');
+  const [location, setLocation] = useState('Planta Baja');
   const [errorMsg, setErrorMsg] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
@@ -46,7 +46,7 @@ export default function FacilitiesManager({
     setName('');
     setCapacity(30);
     setType('Teórica');
-    setResources('');
+    setLocation('Planta Baja');
     setEditingRoomId(null);
     setErrorMsg('');
     setFieldErrors({});
@@ -57,7 +57,7 @@ export default function FacilitiesManager({
     setName(room.name);
     setCapacity(room.capacity);
     setType(room.type);
-    setResources(room.resources ? room.resources.join(', ') : '');
+    setLocation(room.location || 'Planta Baja');
     setEditingRoomId(room.id);
     setErrorMsg('');
     setFieldErrors({});
@@ -73,15 +73,13 @@ export default function FacilitiesManager({
       return;
     }
 
-    const parsedResources = resources ? resources.split(',').map(r => r.trim()).filter(Boolean) : [];
-
     try {
       if (editingRoomId) {
         await onEditClassroom(editingRoomId, {
           name,
           capacity: Number(capacity),
           type,
-          resources: parsedResources
+          location
         });
         setSuccessMsg(`Aula física "${name}" editada con éxito.`);
       } else {
@@ -90,7 +88,7 @@ export default function FacilitiesManager({
           name,
           capacity: Number(capacity),
           type,
-          resources: parsedResources
+          location
         };
         await onAddClassroom(newRoom);
         setSuccessMsg(`Aula física "${newRoom.name}" agregada con éxito.`);
@@ -100,7 +98,7 @@ export default function FacilitiesManager({
       setFieldErrors({});
       setName('');
       setCapacity(30);
-      setResources('');
+      setLocation('Planta Baja');
       setIsModalOpen(false);
     } catch (err: any) {
       const details = err.details;
@@ -210,15 +208,13 @@ export default function FacilitiesManager({
                        return null;
                     })()}
 
-                    {room.resources.length > 0 && (
-                      <div id={`room-resources-${room.id}`} className="space-y-1 pt-1.5 border-t border-slate-150 mt-2">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider">Recursos de Inventario:</span>
+                    {room.location && (
+                      <div id={`room-location-${room.id}`} className="space-y-1 pt-1.5 border-t border-slate-150 mt-2">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider">Ubicación:</span>
                         <div className="flex flex-wrap gap-1">
-                          {room.resources.map((res, i) => (
-                            <span key={i} className="text-[9px] bg-white border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded">
-                              {res}
+                            <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded">
+                              {room.location}
                             </span>
-                          ))}
                         </div>
                       </div>
                     )}
@@ -339,15 +335,17 @@ export default function FacilitiesManager({
               </select>
             </div>
 
-            <div id="form-room-res" className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Inventario de Recursos (Separado por coma)</label>
-              <textarea 
-                placeholder="e.g. Proyector, Microscopios, Ventiladores, Acondicionador de Aire" 
-                value={resources}
-                onChange={(e) => setResources(e.target.value)}
-                rows={3}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white font-medium"
-              />
+            <div id="form-room-loc" className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Ubicación (Nivel / Piso)</label>
+              <select 
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              >
+                <option value="Planta Baja">Planta Baja</option>
+                <option value="Piso 1">Piso 1</option>
+                <option value="Piso 2">Piso 2</option>
+              </select>
             </div>
 
             <button

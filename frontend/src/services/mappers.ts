@@ -47,12 +47,15 @@ export function mapPeriodoToSchoolPeriod(dbPeriodo: any): SchoolPeriod {
   };
 }
 
-export function mapEstudianteToStudent(dbStudent: any, matriculas?: any[], secciones?: any[]): Student {
+export function mapEstudianteToStudent(dbStudent: any, matriculas?: any[], secciones?: any[], activePeriodId?: number): Student {
   let academicYear: number = 1;
   let section: string = 'A';
 
   if (matriculas && secciones) {
-    const studentMatriculas = matriculas.filter((m: any) => m.id_estudiante === dbStudent.id_estudiante);
+    let studentMatriculas = matriculas.filter((m: any) => m.id_estudiante === dbStudent.id_estudiante);
+    if (activePeriodId) {
+      studentMatriculas = studentMatriculas.filter((m: any) => m.id_periodo === activePeriodId);
+    }
     const activeMatricula = studentMatriculas.find((m: any) => m.estatus_matricula === 'Activo') || studentMatriculas[0];
     if (activeMatricula) {
       const seccion = secciones.find((s: any) => s.id_seccion === activeMatricula.id_seccion);
@@ -97,7 +100,7 @@ export function mapAulaToClassroom(dbAula: any): Classroom {
     name: dbAula.nombre_codigo,
     capacity: dbAula.capacidad || 30,
     type: dbAula.tipo_espacio as any,
-    resources: []
+    location: dbAula.ubicacion || ''
   };
 }
 
