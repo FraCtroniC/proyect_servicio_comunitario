@@ -100,7 +100,7 @@ export function mapAulaToClassroom(dbAula: any): Classroom {
     name: dbAula.nombre_codigo,
     capacity: dbAula.capacidad || 30,
     type: dbAula.tipo_espacio as any,
-    resources: []
+    location: dbAula.ubicacion || ''
   };
 }
 

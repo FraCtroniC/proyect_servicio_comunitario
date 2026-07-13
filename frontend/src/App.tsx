@@ -1145,6 +1145,7 @@ const handleLogout = async () => {
       nombre_codigo: room.name,
       capacidad: room.capacity,
       tipo_espacio: room.type,
+      ubicacion: room.location,
       estatus: 'Activo'
     });
     const savedRoom = mapAulaToClassroom(resp);
@@ -1158,6 +1159,7 @@ const handleLogout = async () => {
       if (data.name) payload.nombre_codigo = data.name;
       if (data.capacity) payload.capacidad = data.capacity;
       if (data.type) payload.tipo_espacio = data.type;
+      if (data.location !== undefined) payload.ubicacion = data.location;
       
       await api.patch<any>(`/api/aulas/${id}`, payload);
       setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
