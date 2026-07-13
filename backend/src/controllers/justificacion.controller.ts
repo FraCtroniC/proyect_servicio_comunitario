@@ -4,7 +4,6 @@ import { AsistenciaDocente } from '../models/AsistenciaDocente';
 import { Docente } from '../models/Docente';
 import { sequelize } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
-import { broadcastJustificacionEvent } from './justificacion-stream.controller';
 
 export const JustificacionController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -83,8 +82,6 @@ export const JustificacionController = {
 
       return justificacion;
     });
-
-    broadcastJustificacionEvent({ tipo: 'create', data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -120,8 +117,6 @@ export const JustificacionController = {
       }
       await record.destroy({ transaction: t });
     });
-
-    broadcastJustificacionEvent({ tipo: 'delete', data: record });
     res.status(204).send();
   }),
 };

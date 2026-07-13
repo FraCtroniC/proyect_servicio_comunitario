@@ -24,9 +24,10 @@ interface StudentManagerProps {
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
   onUpdateStudentProfile?: (studentId: string, studentData: any) => Promise<void>;
   onNavigateToPending?: (studentId: string) => void;
+  onRefreshData?: () => Promise<void>;
 }
 
-export default function StudentManager({ students, sections, classrooms, currentUserRole, representatives, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending }: StudentManagerProps) {
+export default function StudentManager({ students, sections, classrooms, currentUserRole, representatives, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending, onRefreshData }: StudentManagerProps) {
   // Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(5); // Default showing 5th year for rich showcase
   const [selectedSection, setSelectedSection] = useState<string>('A');
@@ -85,6 +86,12 @@ export default function StudentManager({ students, sections, classrooms, current
     repFirstName, repSecondName, repLastName, repSecondLastName, repCedula,
     repCedulaType, repPhone, repEmail, repAddress, modalMode, isStudentModalOpen
   ]);
+
+  useEffect(() => {
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  }, []);
 
   const handleOpenProfile = async (s: Student) => {
     setSelectedStudent(s);

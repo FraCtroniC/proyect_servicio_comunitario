@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter, Edit2, XCircle, User as UserIcon, MapPin, BookOpen, Trash2 } from 'lucide-react';
 import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente } from '../types';
 import { SearchableSelect } from './SearchableSelect';
@@ -21,6 +21,7 @@ interface ScheduleCoordinatorProps {
   onAddScheduleEvent: (evt: ScheduleEvent) => void;
   onUpdateScheduleEvent?: (evtId: string, evt: Partial<ScheduleEvent>) => void;
   onRemoveScheduleEvent: (evtId: string) => void;
+  onRefreshData?: () => Promise<void>;
 }
 
 export default function ScheduleCoordinator({
@@ -34,7 +35,8 @@ export default function ScheduleCoordinator({
   currentUserRole,
   onAddScheduleEvent,
   onUpdateScheduleEvent,
-  onRemoveScheduleEvent
+  onRemoveScheduleEvent,
+  onRefreshData
 }: ScheduleCoordinatorProps) {
   // Static timeblocks structured for the grid rendering
   // const timeBlocks = [
@@ -81,6 +83,12 @@ export default function ScheduleCoordinator({
   // Warning/Conflict reporting
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleSuccess, setScheduleSuccess] = useState('');
+
+  useEffect(() => {
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  }, []);
 
   // Editing state
   const [editingEvent, setEditingEvent] = useState<string | null>(null);

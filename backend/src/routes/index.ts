@@ -31,12 +31,7 @@ import { systemRoutes } from './system.routes';
 import { notificacionRoutes } from './notificacion.routes';
 import { materiaPendienteRoutes } from './materia-pendiente.routes';
 import { especialidadRoutes } from './especialidad.routes';
-import { horarioStreamRoutes } from './horario-stream.routes';
-import { estudianteStreamRoutes } from './estudiante-stream.routes';
-import { representanteStreamRoutes } from './representante-stream.routes';
-import { AsistenciaEstudianteStreamController } from '../controllers/asistencia-estudiante-stream.controller';
-import { AsistenciaDocenteStreamController } from '../controllers/asistencia-docente-stream.controller';
-import { JustificacionStreamController } from '../controllers/justificacion-stream.controller';
+
 
 export const routes = Router();
 
@@ -44,13 +39,6 @@ export const routes = Router();
 routes.use('/auth', authRoutes);
 routes.use('/chatbot', chatbotRoutes);
 
-// SSE stream routes (handle their own auth via query token, registered BEFORE auth middleware)
-routes.use('/horarios', horarioStreamRoutes);
-routes.use('/estudiantes', estudianteStreamRoutes);
-routes.use('/representantes', representanteStreamRoutes);
-routes.get('/asistencias-estudiantes/stream', AsistenciaEstudianteStreamController.connect);
-routes.get('/asistencias/stream', AsistenciaDocenteStreamController.connect);
-routes.get('/justificaciones/stream', JustificacionStreamController.connect);
 
 routes.get('/test-docentes', async (req, res) => {
   try {

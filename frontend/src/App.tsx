@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,12 +45,7 @@ import {
 
 import { api } from './services/api';
 import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative, mapDocenteToDocenteType } from './services/mappers';
-import { useScheduleStream } from './hooks/useScheduleStream';
-import { useStudentStream } from './hooks/useStudentStream';
-import { useRepresentativeStream } from './hooks/useRepresentativeStream';
-import { useAsistenciaEstudianteStream } from './hooks/useAsistenciaEstudianteStream';
-import { useAsistenciaDocenteStream } from './hooks/useAsistenciaDocenteStream';
-import { useJustificacionStream } from './hooks/useJustificacionStream';
+
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -134,165 +129,6 @@ export default function App() {
   const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  useScheduleStream(isLoggedIn, (event) => {
-    if (event.tipo === 'create' && event.data) {
-      setScheduleEvents(prev => {
-        const exists = prev.some(e => e.id === String(event.data.id_horario));
-        if (exists) return prev;
-        return [...prev, mapHorarioToScheduleEvent(event.data)];
-      });
-    } else if (event.tipo === 'update' && event.data) {
-      setScheduleEvents(prev => prev.map(e =>
-        e.id === String(event.data.id_horario) ? mapHorarioToScheduleEvent(event.data) : e
-      ));
-    } else if (event.tipo === 'delete' && event.data) {
-      setScheduleEvents(prev => prev.filter(e => e.id !== String(event.data.id_horario)));
-    }
-  });
-
-  useStudentStream(isLoggedIn, (event) => {
-    if (event.tipo === 'create' && event.data) {
-      setStudents(prev => {
-        const id = String(event.data.id_estudiante);
-        const exists = prev.some(s => s.id === id);
-        if (exists) return prev;
-        return [mapEstudianteToStudent(event.data), ...prev];
-      });
-    } else if (event.tipo === 'update' && event.data) {
-      setStudents(prev => {
-        const id = String(event.data.id_estudiante);
-        return prev.map(s => {
-          if (s.id !== id) return s;
-          const mapped = mapEstudianteToStudent(event.data);
-          return { ...mapped, academicYear: s.academicYear, section: s.section };
-        });
-      });
-    } else if (event.tipo === 'delete' && event.data) {
-      setStudents(prev => prev.filter(s => s.id !== String(event.data.id_estudiante)));
-    }
-  });
-
-  useRepresentativeStream(isLoggedIn, (event) => {
-    if (event.tipo === 'create' && event.data) {
-      setRepresentatives(prev => {
-        const id = event.data.id_representante;
-        const exists = prev.some(r => r.id_representante === id);
-        if (exists) return prev;
-        return [event.data, ...prev];
-      });
-    } else if (event.tipo === 'update' && event.data) {
-      setRepresentatives(prev => {
-        const id = event.data.id_representante;
-        return prev.map(r => r.id_representante === id ? event.data : r);
-      });
-    } else if (event.tipo === 'delete' && event.data) {
-      setRepresentatives(prev => prev.filter(r => r.id_representante !== event.data.id_representante));
-    }
-  });
-
-  useAsistenciaEstudianteStream(isLoggedIn, (event) => {
-    if (event.tipo === 'create' && event.data) {
-      const d = event.data;
-      setAttendance(prev => {
-        const id = String(d.id_asistencia_est);
-        const exists = prev.some(a => a.id === id);
-        if (exists) return prev;
-        return [...prev, {
-          id,
-          studentId: String(d.matricula?.id_estudiante || ''),
-          matriculaId: String(d.id_matricula),
-          date: d.fecha,
-          academicYear: (d.matricula?.seccion?.id_grado || 1) as any,
-          section: d.matricula?.seccion?.letra || 'A',
-          status: d.estatus === 'Ausente' ? 'A' : d.estatus === 'Justificado' ? 'J' : 'P',
-        }];
-      });
-    } else if (event.tipo === 'update' && event.data) {
-      const d = event.data;
-      setAttendance(prev => prev.map(a =>
-        a.id === String(d.id_asistencia_est)
-          ? { ...a, status: d.estatus === 'Ausente' ? 'A' : d.estatus === 'Justificado' ? 'J' : 'P' }
-          : a
-      ));
-    } else if (event.tipo === 'batch' && event.data) {
-      const records = Array.isArray(event.data) ? event.data : [];
-      setAttendance(prev => {
-        const updated = [...prev];
-        for (const d of records) {
-          const id = String(d.id_asistencia_est);
-          const idx = updated.findIndex(a => a.id === id);
-          const mapped = {
-            id,
-            studentId: String(d.matricula?.id_estudiante || ''),
-            matriculaId: String(d.id_matricula),
-            date: d.fecha,
-            academicYear: (d.matricula?.seccion?.id_grado || 1) as any,
-            section: d.matricula?.seccion?.letra || 'A',
-            status: d.estatus === 'Ausente' ? 'A' : d.estatus === 'Justificado' ? 'J' : 'P',
-          };
-          if (idx >= 0) { updated[idx] = mapped; } else { updated.push(mapped); }
-        }
-        return updated;
-      });
-    }
-  });
-
-  useAsistenciaDocenteStream(isLoggedIn, (event) => {
-    if (event.tipo === 'create' && event.data) {
-      const d = event.data;
-      setTeacherLogs(prev => {
-        const id = String(d.id_asistencia);
-        const exists = prev.some(l => l.id === id);
-        if (exists) return prev;
-        return [{
-          id,
-          teacherId: String(d.id_docente),
-          date: d.fecha,
-          clockInTime: d.hora_entrada,
-          clockOutTime: d.hora_salida,
-          status: d.estatus === 'Puntual' ? 'OnTime' : d.estatus === 'Retardo' ? 'Late' : d.estatus === 'Justificado' ? 'Justified' : 'Absent',
-          justificaciones: [],
-        }, ...prev];
-      });
-    } else if (event.tipo === 'update' && event.data) {
-      const d = event.data;
-      setTeacherLogs(prev => prev.map(l =>
-        l.id === String(d.id_asistencia)
-          ? {
-              ...l,
-              clockInTime: d.hora_entrada || l.clockInTime,
-              clockOutTime: d.hora_salida || l.clockOutTime,
-              status: d.estatus === 'Puntual' ? 'OnTime' : d.estatus === 'Retardo' ? 'Late' : d.estatus === 'Justificado' ? 'Justified' : d.estatus === 'Ausente' ? 'Absent' : l.status,
-            }
-          : l
-      ));
-    } else if (event.tipo === 'delete' && event.data) {
-      setTeacherLogs(prev => prev.filter(l => l.id !== String(event.data.id_asistencia)));
-    }
-  });
-
-  useJustificacionStream(isLoggedIn, (event) => {
-    if (event.tipo === 'create' && event.data) {
-      const d = event.data;
-      setTeacherLogs(prev => prev.map(l => {
-        if (l.id === String(d.id_asistencia)) {
-          const currentJusts = l.justificaciones || [];
-          return { ...l, status: 'Justified' as const, justificaciones: [...currentJusts, d] };
-        }
-        return l;
-      }));
-    } else if (event.tipo === 'delete' && event.data) {
-      const d = event.data;
-      setTeacherLogs(prev => prev.map(l => {
-        if (l.id === String(d.id_asistencia)) {
-          const currentJusts = (l.justificaciones || []).filter((j: any) => j.id !== d.id);
-          return { ...l, status: 'Absent' as const, justificaciones: currentJusts };
-        }
-        return l;
-      }));
-    }
-  });
 
   useEffect(() => {
     try {
@@ -992,6 +828,66 @@ const handleLogout = async () => {
     }
   }, [sections, studyPlans]);
 
+  const refreshSchedule = useCallback(async () => {
+    try {
+      const horariosData = await api.get<any[]>('/api/horarios');
+      setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
+    } catch (e) {
+      console.error('Error al refrescar horarios:', e);
+    }
+  }, []);
+
+  const refreshStudents = useCallback(async () => {
+    try {
+      const [estudiantesData, representantesData, matriculasData, seccionesData] = await Promise.all([
+        api.get<any[]>('/api/estudiantes'),
+        api.get<any[]>('/api/representantes').catch(() => []),
+        api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
+        api.get<any[]>('/api/secciones').catch(() => []),
+      ]);
+      const matriculasList = Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [];
+      setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [])));
+      setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
+    } catch (e) {
+      console.error('Error al refrescar estudiantes:', e);
+    }
+  }, []);
+
+  const refreshAttendance = useCallback(async () => {
+    try {
+      const [asistenciasData, asistenciasEstudiantesData] = await Promise.all([
+        api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
+        api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
+      ]);
+
+      if (Array.isArray(asistenciasData)) {
+        setTeacherLogs(asistenciasData.map((a: any) => ({
+          id: String(a.id_asistencia),
+          teacherId: String(a.id_docente),
+          date: a.fecha,
+          clockInTime: a.hora_entrada,
+          clockOutTime: a.hora_salida,
+          status: a.estatus === 'Puntual' ? 'OnTime' : a.estatus === 'Retardo' ? 'Late' : a.estatus === 'Justificado' ? 'Justified' : 'Absent',
+          justificaciones: a.justificaciones || []
+        })));
+      }
+
+      if (Array.isArray(asistenciasEstudiantesData)) {
+        setAttendance(asistenciasEstudiantesData.map((a: any) => ({
+          id: String(a.id_asistencia_est),
+          studentId: String(a.matricula?.id_estudiante || ''),
+          matriculaId: String(a.id_matricula),
+          date: a.fecha,
+          academicYear: a.matricula?.seccion?.id_grado || 1,
+          section: a.matricula?.seccion?.letra || 'A',
+          status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P')
+        })));
+      }
+    } catch (e) {
+      console.error('Error al refrescar asistencias:', e);
+    }
+  }, []);
+
   const resolveMatriculaId = (studentId: string, year: number, section: string): number | null => {
     const activePeriod = periods.find(p => p.status === 'Activo');
     const matchingSection = sections.find(s => s.grade === year && s.letter === section);
@@ -1580,6 +1476,7 @@ const handleLogout = async () => {
                     setViewPendingStudentId(id);
                     setActiveTab('pendientes');
                   }}
+                  onRefreshData={refreshStudents}
                 />
               )}
 
@@ -1660,6 +1557,7 @@ const handleLogout = async () => {
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
+                  onRefreshData={refreshAttendance}
                 />
               )}
 
@@ -1676,6 +1574,7 @@ const handleLogout = async () => {
                   onAddScheduleEvent={handleAddScheduleEvent}
                   onUpdateScheduleEvent={handleUpdateScheduleEvent}
                   onRemoveScheduleEvent={handleRemoveScheduleEvent}
+                  onRefreshData={refreshSchedule}
                 />
               )}
 
