@@ -28,6 +28,7 @@ import { initAuditoria, Auditoria } from './Auditoria';
 import { initEvaluacion, Evaluacion } from './Evaluacion';
 import { initNotaParcial, NotaParcial } from './NotaParcial';
 import { initAsistenciaEstudiante, AsistenciaEstudiante } from './AsistenciaEstudiante';
+import { initJustificacionEstudiante, JustificacionEstudiante } from './JustificacionEstudiante';
 import { initMateriaPendiente, MateriaPendiente } from './MateriaPendiente';
 import { initLoginAudit, LoginAudit } from './LoginAudit';
 import { initRefreshToken, RefreshToken } from './RefreshToken';
@@ -41,7 +42,6 @@ if (!environment.databaseUrl) {
 
 const sequelize = new Sequelize(environment.databaseUrl, config);
 
-// Inicializar todos los modelos
 initRol(sequelize);
 initEspecialidad(sequelize);
 initDocente(sequelize);
@@ -68,6 +68,7 @@ initAuditoria(sequelize);
 initEvaluacion(sequelize);
 initNotaParcial(sequelize);
 initAsistenciaEstudiante(sequelize);
+initJustificacionEstudiante(sequelize);
 initMateriaPendiente(sequelize);
 initLoginAudit(sequelize);
 initRefreshToken(sequelize);
@@ -99,12 +100,12 @@ const models = {
   Evaluacion,
   NotaParcial,
   AsistenciaEstudiante,
+  JustificacionEstudiante,
   MateriaPendiente,
   LoginAudit,
   RefreshToken
 };
 
-// Configurar todas las asociaciones
 Object.values(models).forEach((model: any) => {
   if (model.associate) {
     model.associate(models);
@@ -140,6 +141,7 @@ export {
   Evaluacion,
   NotaParcial,
   AsistenciaEstudiante,
+  JustificacionEstudiante,
   MateriaPendiente,
   LoginAudit,
   RefreshToken

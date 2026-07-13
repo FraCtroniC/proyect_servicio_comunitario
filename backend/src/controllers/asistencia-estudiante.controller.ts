@@ -2,11 +2,15 @@ import { Op, fn, col } from 'sequelize';
 import { Request, Response } from 'express';
 import { AsistenciaEstudiante, Matricula, Estudiante, Seccion, Calificacion, PeriodoEscolar, sequelize } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
-import { ASISTENCIA_ESTUDIANTE_STATUS } from '../shared/constants';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-
-const ALLOWED_CREATE_FIELDS = ['id_matricula', 'fecha', 'estatus', 'observacion'];
-const ALLOWED_UPDATE_FIELDS = ['estatus', 'observacion'];
+import { validateZod } from '../validators/zod.middleware';
+import {
+  crearAsistenciaEstudianteSchema,
+  crearBatchAsistenciaEstudianteSchema,
+  actualizarAsistenciaEstudianteSchema,
+  syncInasistenciasSchema,
+  syncInasistenciasBatchSchema,
+} from '../validators/asistencia-estudiante.schema';
 
 const MATRICULA_INCLUDES = [{
   model: Matricula, as: 'matricula',
@@ -15,17 +19,6 @@ const MATRICULA_INCLUDES = [{
     { model: Seccion, as: 'seccion' }
   ]
 }];
-
-function isValidDate(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  return !isNaN(d.getTime());
-}
-
-function isFutureDate(dateStr: string): boolean {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  return new Date(dateStr) > today;
-}
 
 export const AsistenciaEstudianteController = {
   listar: wrapAsync(async (req: Request, res: Response) => {
@@ -70,81 +63,49 @@ export const AsistenciaEstudianteController = {
   }),
 
   crear: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
-    const payload: any = {};
-    for (const field of ALLOWED_CREATE_FIELDS) {
-      if (req.body[field] !== undefined) payload[field] = req.body[field];
-    }
-
-    if (!payload.id_matricula || !payload.fecha) {
-      res.status(400).json({ error: { message: 'id_matricula y fecha son requeridos' } });
+    const parsed = crearAsistenciaEstudianteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
-    }
-
-    if (!isValidDate(payload.fecha)) {
-      res.status(400).json({ error: { message: 'fecha no es una fecha válida' } });
-      return;
-    }
-
-    if (isFutureDate(payload.fecha)) {
-      res.status(400).json({ error: { message: 'No se puede registrar asistencia en una fecha futura' } });
-      return;
-    }
-
-    if (payload.estatus && !ASISTENCIA_ESTUDIANTE_STATUS.includes(payload.estatus)) {
-      res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}` } });
-      return;
-    }
-
-    if (payload.observacion === '') {
-      payload.observacion = null;
     }
 
     const existing = await AsistenciaEstudiante.findOne({
-      where: { id_matricula: payload.id_matricula, fecha: payload.fecha }
+      where: { id_matricula: parsed.data.id_matricula, fecha: parsed.data.fecha }
     });
     if (existing) {
       res.status(409).json({ error: { message: 'Ya existe un registro de asistencia para este estudiante en esta fecha' } });
       return;
     }
 
-    payload.id_usuario_crea = req.user!.idUsuario;
-    const nueva = await AsistenciaEstudiante.create(payload);
+    const nueva = await AsistenciaEstudiante.create({
+      ...parsed.data,
+      id_usuario_crea: req.user!.idUsuario,
+    });
     const completa = await AsistenciaEstudiante.findByPk(nueva.id_asistencia_est, { include: MATRICULA_INCLUDES });
     res.status(201).json(completa || nueva);
   }),
 
   crearBatch: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
-    const { registros } = req.body;
-
-    if (!Array.isArray(registros) || registros.length === 0) {
-      res.status(400).json({ error: { message: 'registros debe ser un array no vacío' } });
+    const parsed = crearBatchAsistenciaEstudianteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
-    }
-
-    if (registros.some((r: any) => !r.id_matricula || !r.fecha)) {
-      res.status(400).json({ error: { message: 'Cada registro debe tener id_matricula y fecha' } });
-      return;
-    }
-
-    for (const r of registros) {
-      if (r.estatus && !ASISTENCIA_ESTUDIANTE_STATUS.includes(r.estatus)) {
-        res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}` } });
-        return;
-      }
-      if (!isValidDate(r.fecha)) {
-        res.status(400).json({ error: { message: `fecha ${r.fecha} no es válida` } });
-        return;
-      }
-      if (isFutureDate(r.fecha)) {
-        res.status(400).json({ error: { message: `No se puede registrar asistencia en fecha futura: ${r.fecha}` } });
-        return;
-      }
     }
 
     const idUsuario = req.user!.idUsuario;
     const result = await sequelize.transaction(async (t) => {
       const creados: any[] = [];
-      for (const r of registros) {
+      for (const r of parsed.data.registros) {
         const payload = {
           id_matricula: r.id_matricula,
           fecha: r.fecha,
@@ -238,14 +199,20 @@ export const AsistenciaEstudianteController = {
   }),
 
   syncInasistencias: wrapAsync(async (req: Request, res: Response) => {
-    const { id_matricula, id_periodo } = req.body;
-
-    if (!id_matricula) {
-      res.status(400).json({ error: { message: 'id_matricula es requerido' } });
+    const parsed = syncInasistenciasSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
     }
 
-    const periodoId = Number(id_periodo) || null;
+    const { id_matricula, id_periodo } = parsed.data;
+
+    const periodoId = id_periodo || null;
     let periodo: any = null;
     if (!periodoId) {
       periodo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
@@ -261,7 +228,7 @@ export const AsistenciaEstudianteController = {
     await sequelize.transaction(async (t) => {
       const ausenciasCount = await AsistenciaEstudiante.count({
         where: {
-          id_matricula: Number(id_matricula),
+          id_matricula,
           estatus: 'Ausente'
         },
         include: [{
@@ -275,22 +242,28 @@ export const AsistenciaEstudianteController = {
 
       await Calificacion.update(
         { inasistencias_asignatura: ausenciasCount },
-        { where: { id_matricula: Number(id_matricula) }, transaction: t }
+        { where: { id_matricula }, transaction: t }
       );
     });
 
-    res.json({ data: { id_matricula: Number(id_matricula) } });
+    res.json({ data: { id_matricula } });
   }),
 
   syncInasistenciasBatch: wrapAsync(async (req: Request, res: Response) => {
-    const { ids_matricula, id_periodo } = req.body;
-
-    if (!Array.isArray(ids_matricula) || ids_matricula.length === 0) {
-      res.status(400).json({ error: { message: 'ids_matricula debe ser un array no vacío' } });
+    const parsed = syncInasistenciasBatchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
     }
 
-    const periodoId = Number(id_periodo) || null;
+    const { ids_matricula, id_periodo } = parsed.data;
+
+    const periodoId = id_periodo || null;
     let periodo: any = null;
     if (!periodoId) {
       periodo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
@@ -303,13 +276,11 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
-    const ids = ids_matricula.map(Number);
-
     const results = await sequelize.transaction(async (t) => {
       const counts = await AsistenciaEstudiante.findAll({
         attributes: ['id_matricula', [fn('COUNT', col('AsistenciaEstudiante.id_asistencia_est')), 'total_ausencias']],
         where: {
-          id_matricula: { [Op.in]: ids },
+          id_matricula: { [Op.in]: ids_matricula },
           estatus: 'Ausente'
         },
         include: [{
@@ -328,7 +299,7 @@ export const AsistenciaEstudianteController = {
         countMap[r.id_matricula] = Number(r.total_ausencias);
       }
 
-      for (const id of ids) {
+      for (const id of ids_matricula) {
         const ausencias = countMap[id] || 0;
         await Calificacion.update(
           { inasistencias_asignatura: ausencias },
@@ -336,7 +307,7 @@ export const AsistenciaEstudianteController = {
         );
       }
 
-      return ids.map(id => ({ id_matricula: id, inasistencias: countMap[id] || 0 }));
+      return ids_matricula.map(id => ({ id_matricula: id, inasistencias: countMap[id] || 0 }));
     });
 
     res.json({ data: results, meta: { total: results.length } });
@@ -350,23 +321,33 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
-    const payload: any = {};
-    for (const field of ALLOWED_UPDATE_FIELDS) {
-      if (req.body[field] !== undefined) payload[field] = req.body[field];
-    }
-
-    if (payload.estatus && !ASISTENCIA_ESTUDIANTE_STATUS.includes(payload.estatus)) {
-      res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}` } });
+    const parsed = actualizarAsistenciaEstudianteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
     }
 
-    if (payload.observacion === '') {
-      payload.observacion = null;
-    }
-
-    payload.id_usuario_modifica = req.user!.idUsuario;
-    await record.update(payload);
+    await record.update({
+      ...parsed.data,
+      id_usuario_modifica: req.user!.idUsuario,
+    });
     const completa = await AsistenciaEstudiante.findByPk(record.id_asistencia_est, { include: MATRICULA_INCLUDES });
     res.json(completa || record);
-  })
+  }),
+
+  eliminar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
+    const id = Number(req.params.id);
+    const record = await AsistenciaEstudiante.findByPk(id);
+    if (!record) {
+      res.status(404).json({ error: { message: 'Asistencia de estudiante no encontrada' } });
+      return;
+    }
+    await record.destroy();
+    res.status(204).send();
+  }),
 };

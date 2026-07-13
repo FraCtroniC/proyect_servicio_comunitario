@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText } from 'lucide-react';
+import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
@@ -24,6 +24,7 @@ interface AttendanceTrackerProps {
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
   onSyncInasistencias?: (ids_matricula: string[]) => void;
   onJustifyTeacherAbsence?: (logId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
+  onDeleteAttendance?: (attendanceId: string) => void;
   onRefreshData?: () => Promise<void>;
 }
 
@@ -41,6 +42,7 @@ export default function AttendanceTracker({
   onUpdateTeacherLog,
   onSyncInasistencias,
   onJustifyTeacherAbsence,
+  onDeleteAttendance,
   onRefreshData
 }: AttendanceTrackerProps) {
   // Navigation
@@ -64,6 +66,7 @@ export default function AttendanceTracker({
   // Justification Modal state
   const [teacherJustifyLog, setTeacherJustifyLog] = useState<TeacherScheduleLog | null>(null);
   const [justifyMotivo, setJustifyMotivo] = useState('');
+
   
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [justifySoporte, setJustifySoporte] = useState('');
@@ -308,6 +311,7 @@ export default function AttendanceTracker({
                     <th className="py-2.5 text-center">Estado de Asistencia</th>
                     <th className="py-2.5">Observación</th>
                     <th className="py-2.5 text-right">Porcentaje Mes</th>
+                    <th className="py-2.5 text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-705">
@@ -390,12 +394,29 @@ export default function AttendanceTracker({
                               {rate}%
                             </span>
                           </td>
+                          <td className="py-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {currentUserRole === 'super_admin' && todayAtt && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm('¿Eliminar este registro de asistencia?')) {
+                                      onDeleteAttendance?.(todayAtt.id);
+                                    }
+                                  }}
+                                  className="text-[9px] text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                                  title="Eliminar registro"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-500 font-bold">
+                      <td colSpan={6} className="py-8 text-center text-slate-500 font-bold">
                         No hay estudiantes matriculados activos en {selectedYear}° Año "{selectedSection}" para tomar asistencia.
                       </td>
                     </tr>
@@ -653,6 +674,7 @@ export default function AttendanceTracker({
           </div>
         </div>
       </Modal>
+
     </div>
   );
 }

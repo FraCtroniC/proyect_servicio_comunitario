@@ -2,22 +2,12 @@ import { Op } from 'sequelize';
 import { Response } from 'express';
 import { AsistenciaDocente, Justificacion, Docente, sequelize } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
-import { ASISTENCIA_DOCENTE_STATUS, HORA_LIMITE_PUNTUAL } from '../shared/constants';
+import { HORA_LIMITE_PUNTUAL } from '../shared/constants';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-
-const ALLOWED_CREATE_FIELDS = ['id_docente', 'fecha', 'hora_entrada', 'hora_salida', 'estatus'];
-const ALLOWED_UPDATE_FIELDS = ['hora_entrada', 'hora_salida', 'estatus'];
-
-function isValidDate(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  return !isNaN(d.getTime());
-}
-
-function isFutureDate(dateStr: string): boolean {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  return new Date(dateStr) > today;
-}
+import {
+  crearAsistenciaDocenteSchema,
+  actualizarAsistenciaDocenteSchema,
+} from '../validators/asistencia-docente.schema';
 
 function compareTime(t1: string, t2: string): number {
   const [h1, m1] = t1.split(':').map(Number);
@@ -32,7 +22,7 @@ export const AsistenciaDocenteController = {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
     const offset = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { fecha_anulacion: null };
     if (req.query.fecha) where.fecha = String(req.query.fecha);
     if (req.query.id_docente) where.id_docente = Number(req.query.id_docente);
     if (req.query.estatus) where.estatus = String(req.query.estatus);
@@ -64,7 +54,7 @@ export const AsistenciaDocenteController = {
         { model: Docente, as: 'docente' }
       ]
     });
-    if (!result) {
+    if (!result || result.fecha_anulacion) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
@@ -72,30 +62,18 @@ export const AsistenciaDocenteController = {
   }),
 
   crear: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
-    const payload: any = {};
-    for (const field of ALLOWED_CREATE_FIELDS) {
-      if (req.body[field] !== undefined) payload[field] = req.body[field];
-    }
-
-    if (!payload.id_docente || !payload.fecha) {
-      res.status(400).json({ error: { message: 'id_docente y fecha son requeridos' } });
+    const parsed = crearAsistenciaDocenteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
     }
 
-    if (!isValidDate(payload.fecha)) {
-      res.status(400).json({ error: { message: 'fecha no es una fecha válida' } });
-      return;
-    }
-
-    if (isFutureDate(payload.fecha)) {
-      res.status(400).json({ error: { message: 'No se puede registrar asistencia en una fecha futura' } });
-      return;
-    }
-
-    if (payload.estatus && !ASISTENCIA_DOCENTE_STATUS.includes(payload.estatus)) {
-      res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_DOCENTE_STATUS.join(', ')}` } });
-      return;
-    }
+    const payload = parsed.data;
 
     if (!payload.estatus && payload.hora_entrada) {
       payload.estatus = compareTime(payload.hora_entrada, HORA_LIMITE_PUNTUAL) <= 0
@@ -111,27 +89,33 @@ export const AsistenciaDocenteController = {
       return;
     }
 
-    const result = await AsistenciaDocente.create(payload);
+    const result = await AsistenciaDocente.create({
+      ...payload,
+      id_usuario_crea: req.user!.idUsuario,
+    });
     res.status(201).json({ data: result });
   }),
 
   actualizar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const id = Number(req.params.id);
     const record = await AsistenciaDocente.findByPk(id);
-    if (!record) {
+    if (!record || record.fecha_anulacion) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
 
-    const payload: any = {};
-    for (const field of ALLOWED_UPDATE_FIELDS) {
-      if (req.body[field] !== undefined) payload[field] = req.body[field];
-    }
-
-    if (payload.estatus && !ASISTENCIA_DOCENTE_STATUS.includes(payload.estatus)) {
-      res.status(400).json({ error: { message: `estatus debe ser: ${ASISTENCIA_DOCENTE_STATUS.join(', ')}` } });
+    const parsed = actualizarAsistenciaDocenteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const details: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const path = issue.path.join('.') || '_root';
+        (details[path] ??= []).push(issue.message);
+      }
+      res.status(400).json({ error: { message: 'Error de validación', details } });
       return;
     }
+
+    const payload = parsed.data;
 
     const horaEntrada = payload.hora_entrada ?? record.hora_entrada;
     const horaSalida = payload.hora_salida ?? record.hora_salida;
@@ -141,25 +125,31 @@ export const AsistenciaDocenteController = {
       return;
     }
 
-    await record.update(payload);
+    await record.update({
+      ...payload,
+      id_usuario_modifica: req.user!.idUsuario,
+    });
     res.json({ data: record });
   }),
 
   eliminar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const id = Number(req.params.id);
     const record = await AsistenciaDocente.findByPk(id);
-    if (!record) {
+    if (!record || record.fecha_anulacion) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    await record.destroy();
+    await record.update({
+      fecha_anulacion: new Date(),
+      id_usuario_modifica: req.user!.idUsuario,
+    });
     res.status(204).send();
   }),
 
   estadisticas: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { id_docente, fecha_desde, fecha_hasta } = req.query;
 
-    const whereConditions: string[] = [];
+    const whereConditions: string[] = ['ad.fecha_anulacion IS NULL'];
     const replacements: any[] = [];
 
     if (id_docente) {
@@ -175,7 +165,7 @@ export const AsistenciaDocenteController = {
       replacements.push(String(fecha_hasta));
     }
 
-    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
 
     const query = `
       SELECT

@@ -1001,6 +1001,18 @@ const handleLogout = async () => {
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
   };
 
+  const handleDeleteAttendance = async (attendanceId: string) => {
+    try {
+      const realId = attendanceId.replace(/^[a-zA-Z]+-/, '');
+      await api.delete(`/api/asistencias-estudiantes/${realId}`);
+      setAttendance(p => p.filter(a => a.id !== attendanceId));
+      toast.success('Registro de asistencia eliminado');
+    } catch (e: any) {
+      console.error('Error al eliminar asistencia:', e);
+      toast.error('Error al eliminar: ' + (e?.response?.data?.error?.message || e.message));
+    }
+  };
+
   const handleJustifyTeacherAbsence = async (logId: string, motivo: string, soporteDigital?: string) => {
     try {
       const idAsistencia = Number(logId.replace(/\D/g, ''));
@@ -1560,6 +1572,7 @@ const handleLogout = async () => {
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
+                    onDeleteAttendance={handleDeleteAttendance}
                   onRefreshData={refreshAttendance}
                 />
               )}
