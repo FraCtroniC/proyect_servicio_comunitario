@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PeriodoEscolar } from '../models/PeriodoEscolar';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 export const PeriodoEscolarController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -35,6 +36,7 @@ export const PeriodoEscolarController = {
       }
     }
     const result = await PeriodoEscolar.create(req.body);
+    getIO().emit('periodo:create', { data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -61,6 +63,7 @@ export const PeriodoEscolarController = {
       }
     }
     await record.update(req.body);
+    getIO().emit('periodo:update', { data: record });
     res.json({ data: record });
   }),
 
@@ -72,6 +75,7 @@ export const PeriodoEscolarController = {
       return;
     }
     await record.destroy();
+    getIO().emit('periodo:delete', { data: { id_periodo: id } });
     res.status(204).send();
   }),
 };

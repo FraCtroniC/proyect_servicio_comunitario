@@ -18,6 +18,10 @@ export default defineConfig(() => {
           changeOrigin: true,
           secure: false,
         },
+        '/socket.io': {
+          target: 'http://localhost:3000',
+          ws: true,
+        },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
