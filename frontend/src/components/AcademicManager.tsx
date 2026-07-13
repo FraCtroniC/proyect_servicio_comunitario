@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Layers, ShieldAlert, Users, BookOpen, ChevronRight } from 'lucide-react';
+import { Layers, ShieldAlert, Users, BookOpen, ChevronRight, X, GraduationCap, MapPin, UserCheck } from 'lucide-react';
 import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User, Classroom, Docente } from '../types';
 import { Modal } from './Modal';
 import { SearchableSelect } from './SearchableSelect';
@@ -36,14 +36,25 @@ export default function AcademicManager({
   const [secError, setSecError] = useState('');
   const [secSuccess, setSecSuccess] = useState('');
   const [secLoading, setSecLoading] = useState(false);
+  const [secGradoError, setSecGradoError] = useState('');
+  const [secLetraError, setSecLetraError] = useState('');
 
   const [viewGrade, setViewGrade] = useState<number>(0);
+  const [viewPeriod, setViewPeriod] = useState<string>('active');
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
   const activePeriods = periods.filter(p => p.status === 'Activo' || p.status === 'Planificación');
+  const activePeriod = periods.find(p => p.status === 'Activo');
 
-  const filteredSections = viewGrade === 0
-    ? sections
-    : sections.filter(s => s.grade === viewGrade);
+  const filteredSections = sections.filter(s => {
+    if (viewPeriod === 'active') {
+      if (!activePeriod || s.periodId !== activePeriod.id) return false;
+    } else if (viewPeriod !== 'all') {
+      if (s.periodId !== viewPeriod) return false;
+    }
+    if (viewGrade !== 0 && s.grade !== viewGrade) return false;
+    return true;
+  });
 
   const groupedSections = filteredSections.reduce((acc, s) => {
     const key = s.grade;
@@ -55,11 +66,33 @@ export default function AcademicManager({
   const getStudentCount = (sectionId: string) =>
     students.filter(s => s.academicYear === sections.find(sec => sec.id === sectionId)?.grade && s.section === sections.find(sec => sec.id === sectionId)?.letter).length;
 
-  const getTeacherName = (teacherGuideId: string) =>
-    users.find(u => u.teacherId === teacherGuideId || u.id === teacherGuideId)?.name || `Docente #${teacherGuideId}`;
+  const getTeacherName = (teacherGuideId: string) => {
+    const d = docentes.find(d => d.id === teacherGuideId);
+    return d ? `${d.firstName} ${d.lastName}` : `Docente #${teacherGuideId}`;
+  };
+
+  const getTeacher = (teacherGuideId: string) =>
+    docentes.find(d => d.id === teacherGuideId);
 
   const getClassroom = (roomId: string) =>
     classrooms?.find(c => c.id === roomId);
+
+  const getPeriod = (periodId: string) =>
+    periods.find(p => p.id === periodId);
+
+  const checkDuplicate = (grado: number, letra: string, periodo: string) => {
+    if (!periodo) { setSecGradoError(''); setSecLetraError(''); return; }
+    const exists = sections.some(
+      s => s.grade === grado && s.letter === letra && s.periodId === periodo
+    );
+    if (exists) {
+      setSecGradoError('Ya existe una sección para este grado en el periodo seleccionado');
+      setSecLetraError('Ya existe una sección con esta letra para este grado en el periodo seleccionado');
+    } else {
+      setSecGradoError('');
+      setSecLetraError('');
+    }
+  };
 
   const handleCreateSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +104,9 @@ export default function AcademicManager({
     if (!secDocente) { setSecError('Seleccione un docente guía.'); setSecLoading(false); return; }
     if (!secAula) { setSecError('Seleccione un Aula Base.'); setSecLoading(false); return; }
 
+    checkDuplicate(secGrado, secLetra, secPeriodo);
+    if (secGradoError || secLetraError) { setSecLoading(false); return; }
+
     try {
       await onCreateSection(secPeriodo, secGrado, secLetra, secDocente, secAula);
       setSecSuccess(`Sección ${secGrado}° "${secLetra}" creada exitosamente.`);
@@ -81,6 +117,23 @@ export default function AcademicManager({
       setSecLoading(false);
     }
   };
+
+  const openCreateModal = () => {
+    setSecPeriodo('');
+    setSecGrado(1);
+    setSecLetra('A');
+    setSecDocente('');
+    setSecAula('');
+    setSecError('');
+    setSecSuccess('');
+    setSecGradoError('');
+    setSecLetraError('');
+    setIsSectionModalOpen(true);
+  };
+
+  const inputBase = "w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden transition-colors";
+  const inputNormal = `${inputBase} border-slate-200 focus:border-indigo-500`;
+  const inputError = `${inputBase} border-rose-400 focus:border-rose-500`;
 
   return (
     <div id="academic-manager-container" className="space-y-6 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
@@ -94,7 +147,7 @@ export default function AcademicManager({
           <p className="text-xs text-slate-500 mt-1">Administración de Secciones Activas por Grado y Periodo Escolar.</p>
         </div>
         <span className="text-[10px] bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded mt-2 md:mt-0">
-          Total: {sections.length} secciones
+          Total: {filteredSections.length} secciones
         </span>
       </div>
 
@@ -103,6 +156,17 @@ export default function AcademicManager({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-800">Secciones Aperturadas</h3>
+              <select
+                value={viewPeriod}
+                onChange={(e) => setViewPeriod(e.target.value)}
+                className="text-[10px] p-1.5 bg-slate-50 border border-slate-200 rounded font-bold"
+              >
+                <option value="active">Periodo Actual</option>
+                <option value="all">Todos los Períodos</option>
+                {periods.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
+                ))}
+              </select>
               <select
                 value={viewGrade}
                 onChange={(e) => setViewGrade(Number(e.target.value))}
@@ -116,7 +180,7 @@ export default function AcademicManager({
             </div>
             {['super_admin', 'control_estudios'].includes(currentUserRole) && (
               <button
-                onClick={() => setIsSectionModalOpen(true)}
+                onClick={openCreateModal}
                 className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
               >
                 <Layers className="w-4 h-4" />
@@ -137,7 +201,11 @@ export default function AcademicManager({
                       const ocupados = getStudentCount(s.id);
                       const isFull = cupos > 0 && ocupados >= cupos;
                       return (
-                        <div key={s.id} className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between">
+                        <div
+                          key={s.id}
+                          onClick={() => setSelectedSection(s)}
+                          className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+                        >
                           <div>
                             <span className="text-sm font-black text-indigo-700">Sección "{s.letter}"</span>
                             <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
@@ -162,9 +230,9 @@ export default function AcademicManager({
             </div>
           ) : (
             <div className="p-8 text-center text-slate-500 text-xs">
-              {viewGrade === 0
+              {viewGrade === 0 && viewPeriod === 'all'
                 ? 'No hay secciones aperturadas. Use el botón "Aperturar Sección" para crear una nueva.'
-                : `No hay secciones para ${viewGrade}° Año.`}
+                : `No hay secciones para los filtros seleccionados.`}
             </div>
           )}
         </div>
@@ -179,12 +247,15 @@ export default function AcademicManager({
             <div className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-[11px]">{secSuccess}</div>
           )}
 
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Periodo Académico</label>
             <select
               value={secPeriodo}
-              onChange={(e) => setSecPeriodo(e.target.value)}
-              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              onChange={(e) => {
+                setSecPeriodo(e.target.value);
+                checkDuplicate(secGrado, secLetra, e.target.value);
+              }}
+              className={inputNormal}
             >
               <option value="">Seleccione un periodo</option>
               {activePeriods.map(p => (
@@ -194,34 +265,45 @@ export default function AcademicManager({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Grado / Año</label>
               <select
                 value={secGrado}
-                onChange={(e) => setSecGrado(Number(e.target.value))}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setSecGrado(val);
+                  checkDuplicate(val, secLetra, secPeriodo);
+                }}
+                onBlur={() => checkDuplicate(secGrado, secLetra, secPeriodo)}
+                className={secGradoError ? inputError : inputNormal}
               >
                 {[1,2,3,4,5].map(g => (
                   <option key={g} value={g}>{g}° Año</option>
                 ))}
               </select>
+              {secGradoError && <p className="text-rose-500 text-xs mt-1 font-semibold">{secGradoError}</p>}
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Letra</label>
               <select
                 value={secLetra}
-                onChange={(e) => setSecLetra(e.target.value)}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+                onChange={(e) => {
+                  setSecLetra(e.target.value);
+                  checkDuplicate(secGrado, e.target.value, secPeriodo);
+                }}
+                onBlur={() => checkDuplicate(secGrado, secLetra, secPeriodo)}
+                className={secLetraError ? inputError : inputNormal}
               >
                 {['A','B','C','D','E','F'].map(l => (
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
+              {secLetraError && <p className="text-rose-500 text-xs mt-1 font-semibold">{secLetraError}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
               <SearchableSelect
                 options={docentes.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} ${d.cedula ? `(${d.cedula})` : ''}` }))}
@@ -231,7 +313,7 @@ export default function AcademicManager({
               />
             </div>
             
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
               <SearchableSelect
                 options={(classrooms || []).filter(c => c.type === 'Teórica').map(c => {
@@ -258,6 +340,98 @@ export default function AcademicManager({
           </button>
         </form>
       </Modal>
+
+      {selectedSection && (
+        <Modal isOpen={!!selectedSection} onClose={() => setSelectedSection(null)} title="Detalle de Sección">
+          {(() => {
+            const aula = getClassroom(selectedSection.homeClassroomId);
+            const teacher = getTeacher(selectedSection.teacherGuideId);
+            const period = getPeriod(selectedSection.periodId);
+            const ocupados = getStudentCount(selectedSection.id);
+            const cupos = aula ? aula.capacity : 0;
+            const isFull = cupos > 0 && ocupados >= cupos;
+
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-lg">
+                  <GraduationCap className="h-8 w-8 text-indigo-600" />
+                  <div>
+                    <p className="text-sm font-black text-indigo-800">{selectedSection.grade}° Año - Sección "{selectedSection.letter}"</p>
+                    <p className="text-[10px] text-indigo-500 font-medium">ID: {selectedSection.id}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Layers className="h-3 w-3 text-slate-400" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Periodo</span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">{period?.name || 'No definido'}</p>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${
+                      period?.status === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {period?.status || 'N/A'}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <UserCheck className="h-3 w-3 text-slate-400" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Docente Guía</span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {teacher ? `${teacher.firstName} ${teacher.lastName}` : `Docente #${selectedSection.teacherGuideId}`}
+                    </p>
+                    {teacher?.cedula && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">{teacher.cedula}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <MapPin className="h-3 w-3 text-slate-400" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Aula Base</span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">{aula?.name || 'No asignada'}</p>
+                    {aula && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">Capacidad: {aula.capacity}</p>
+                    )}
+                  </div>
+
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Users className="h-3 w-3 text-slate-400" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Estudiantes</span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">{ocupados} / {cupos || '?'} cupos</p>
+                    {isFull && (
+                      <span className="text-[9px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">LLENO</span>
+                    )}
+                    {cupos > 0 && !isFull && (
+                      <div className="mt-1.5 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${ocupados / cupos > 0.8 ? 'bg-amber-400' : 'bg-indigo-400'}`}
+                          style={{ width: `${Math.min((ocupados / cupos) * 100, 100)}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedSection(null)}
+                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            );
+          })()}
+        </Modal>
+      )}
 
     </div>
   );

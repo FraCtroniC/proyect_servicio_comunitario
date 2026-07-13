@@ -206,11 +206,11 @@ export function mapEvaluacionesDbToPlans(evaluacionesDb: any[], studyPlans: any[
 export function mapSeccionToSection(dbSeccion: any): Section {
   return {
     id: String(dbSeccion.id_seccion),
-    grade: dbSeccion.id_grado || dbSeccion.grado?.numero || 1,
+    grade: dbSeccion.grado?.numero || dbSeccion.id_grado || 1,
     letter: dbSeccion.letra,
-    periodId: String(dbSeccion.id_periodo),
-    teacherGuideId: String(dbSeccion.id_docente_guia),
-    homeClassroomId: String(dbSeccion.id_aula || ''),
+    periodId: String(dbSeccion.periodo?.id_periodo || dbSeccion.id_periodo),
+    teacherGuideId: String(dbSeccion.docenteGuia?.id_docente || dbSeccion.id_docente_guia),
+    homeClassroomId: String(dbSeccion.aula?.id_aula || dbSeccion.id_aula || ''),
   };
 }
 
