@@ -17,6 +17,22 @@ export const databaseConfig: Record<string, Options> = {
     },
     logging: false,
   },
+  test: {
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+    pool: {
+      max: 10,
+      min: 2,
+      acquire: 30000,
+      idle: 10000,
+    },
+    logging: false,
+  },
   production: {
     dialect: 'postgres',
     dialectOptions: {

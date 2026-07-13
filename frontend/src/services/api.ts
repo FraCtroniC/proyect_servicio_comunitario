@@ -100,30 +100,40 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   return resJson.data !== undefined ? resJson.data : resJson;
 }
 
+let refreshPromise: Promise<string | null> | null = null;
+
 async function refreshSession(): Promise<string | null> {
-  try {
-    const csrfToken = getCsrfToken();
-    const response = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
-      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    if (data.ok && data.token) {
-      const existing = sessionStorage.getItem(SESSION_KEY);
-      if (existing) {
-        const session = JSON.parse(existing);
-        session.sessionToken = data.token;
-        session.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const csrfToken = getCsrfToken();
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (data.ok && data.token) {
+        const existing = sessionStorage.getItem(SESSION_KEY);
+        if (existing) {
+          const session = JSON.parse(existing);
+          session.sessionToken = data.token;
+          session.expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
+        return data.token;
       }
-      return data.token;
+      return null;
+    } catch {
+      return null;
+    } finally {
+      refreshPromise = null;
     }
-    return null;
-  } catch {
-    return null;
-  }
+  })();
+
+  return refreshPromise;
 }
 
 async function initCsrf() {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -229,10 +229,14 @@ const handleLogout = async () => {
             return acc;
           }, {});
 
+          const parsedPeriodos = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+          const activeDbPeriod = parsedPeriodos.find((p: any) => p.estatus === 'Activo');
+          const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
+
           setUsers(usuariosData.map(mapUsuarioToUser));
           const parsedDocentes = (Array.isArray(docentesData) ? docentesData : (docentesData as any)?.data || []).map(mapDocenteToDocenteType);
           setDocentes(parsedDocentes);
-          setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [])));
+          setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
           
@@ -839,14 +843,19 @@ const handleLogout = async () => {
 
   const refreshStudents = useCallback(async () => {
     try {
-      const [estudiantesData, representantesData, matriculasData, seccionesData] = await Promise.all([
+      const [estudiantesData, representantesData, matriculasData, seccionesData, periodosData] = await Promise.all([
         api.get<any[]>('/api/estudiantes'),
         api.get<any[]>('/api/representantes').catch(() => []),
         api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
         api.get<any[]>('/api/secciones').catch(() => []),
+        api.get<any[]>('/api/periodos').catch(() => ({ data: [] }))
       ]);
+      const periodosList = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+      const activeDbPeriod = periodosList.find((p: any) => p.estatus === 'Activo');
+      const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
+
       const matriculasList = Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [];
-      setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [])));
+      setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
       setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
     } catch (e) {
       console.error('Error al refrescar estudiantes:', e);
