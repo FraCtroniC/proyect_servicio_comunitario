@@ -527,7 +527,7 @@ export default function StudentManager({ students, sections, classrooms, current
               Exportar Nómina
             </button>
 
-            {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+{['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
               <button
                 onClick={handleOpenCreate}
                 className="md:ml-auto flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
@@ -570,8 +570,8 @@ export default function StudentManager({ students, sections, classrooms, current
                       <td className="py-3">
                         <span className={getStatusStyle(s.status)}>{s.status}</span>
                       </td>
-                      {['super_admin', 'control_estudios'].includes(currentUserRole) && (
-                        <td className="py-3 text-right flex items-center justify-end gap-2">
+{['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
+              <td className="py-3 text-right flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenEdit(s)}
                             className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
@@ -974,7 +974,7 @@ export default function StudentManager({ students, sections, classrooms, current
               )}
             </div>
 
-            {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+            {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
               <button 
                 onClick={async () => {
                   const asigId = window.prompt('Ingrese el ID de la asignatura a matricular (Pendiente):');

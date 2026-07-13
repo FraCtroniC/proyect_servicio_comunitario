@@ -119,6 +119,8 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         mappedRole = 'super_admin';
       } else if (backendRol.includes('control')) {
         mappedRole = 'control_estudios';
+      } else if (backendRol.includes('coordinador')) {
+        mappedRole = 'coordinador';
       } else if (backendRol.includes('docente') || backendRol.includes('profesor')) {
         mappedRole = 'docente';
       }
@@ -241,8 +243,8 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
 
         {/* Brand & Emblem */}
         <div id="login-brand" className="text-center space-y-2">
-          <div className="mx-auto h-12 w-12 bg-blue-600 text-white font-extrabold text-xl rounded flex items-center justify-center shadow-lg shadow-blue-900/40 border border-blue-500">
-            LB
+          <div className="mx-auto h-14 w-14 bg-white rounded-full flex items-center justify-center shadow-lg shadow-blue-900/40 border-2 border-blue-500 overflow-hidden">
+            <img src="/logo_leo.jpg" alt="Logo L.N.E.O." className="h-full w-full object-cover" />
           </div>
           <div>
             <h1 className="text-white font-black text-base md:text-lg tracking-widest uppercase block leading-tight">

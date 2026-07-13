@@ -1260,7 +1260,7 @@ const handleLogout = async () => {
     {
       group: 'Principal',
       items: [
-        { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] }
+        { id: 'dashboard', label: 'Indicadores', icon: LayoutDashboard, allowedRoles: ['super_admin', 'control_estudios'] }
       ]
     },
     {
@@ -1274,15 +1274,15 @@ const handleLogout = async () => {
     {
       group: 'Planificación Académica',
       items: [
-        { id: 'subjects', label: 'Plan de Estudio', icon: Book, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] },
-        { id: 'docentes', label: 'Gestión de Docentes', icon: Briefcase, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] },
-        { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] }
+        { id: 'subjects', label: 'Plan de Estudio', icon: Book, allowedRoles: ['super_admin', 'control_estudios'] },
+        { id: 'docentes', label: 'Gestión de Docentes', icon: Briefcase, allowedRoles: ['super_admin', 'control_estudios'] },
+        { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'docente'] }
       ]
     },
     {
       group: 'Organización Escolar',
       items: [
-        { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] },
+        { id: 'academic', label: 'Gestión de Secciones', icon: GraduationCap, allowedRoles: ['super_admin', 'control_estudios'] },
         { id: 'students', label: 'Estudiantes', icon: Users, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] }
       ]
     },
@@ -1291,13 +1291,13 @@ const handleLogout = async () => {
       items: [
         { id: 'grades', label: 'Calificaciones', icon: Award, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] },
         { id: 'attendance', label: 'Control Asistencia', icon: Calendar, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] },
-        { id: 'pendientes', label: 'Materias Pendientes', icon: BookOpen, allowedRoles: ['super_admin', 'control_estudios', 'coordinador'] }
+        { id: 'pendientes', label: 'Materias Pendientes', icon: BookOpen, allowedRoles: ['super_admin', 'control_estudios'] }
       ]
     },
     {
       group: 'Sistema',
       items: [
-        { id: 'documentation', label: 'Documentación', icon: BookOpen, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] }
+        { id: 'documentation', label: 'Documentación', icon: BookOpen, allowedRoles: ['super_admin', 'control_estudios', 'docente'] }
       ]
     }
   ];
@@ -1319,6 +1319,8 @@ const handleLogout = async () => {
         return { label: 'Director Principal', color: 'bg-red-600 text-white border-red-500' };
       case 'control_estudios':
         return { label: 'Ctrl de Estudios', color: 'bg-indigo-600 text-white border-indigo-500' };
+      case 'coordinador':
+        return { label: 'Coordinador', color: 'bg-amber-600 text-white border-amber-500' };
       case 'docente':
         return { label: 'Profesor / Docencia', color: 'bg-emerald-600 text-white border-emerald-500' };
     }
@@ -1333,7 +1335,8 @@ const handleLogout = async () => {
   const CHATBOT_ROLE_MAP: Record<UserRole, number> = {
     super_admin: 1,
     control_estudios: 2,
-    docente: 3,
+    coordinador: 3,
+    docente: 4,
   };
 
   const activePeriod = periods.find(p => p.status === 'Activo');
