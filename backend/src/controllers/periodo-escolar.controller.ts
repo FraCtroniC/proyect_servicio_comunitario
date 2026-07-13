@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { PeriodoEscolar } from '../models/PeriodoEscolar';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 export const PeriodoEscolarController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
