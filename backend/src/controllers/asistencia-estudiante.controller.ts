@@ -4,9 +4,18 @@ import { AsistenciaEstudiante, Matricula, Estudiante, Seccion, Calificacion, Per
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { ASISTENCIA_ESTUDIANTE_STATUS } from '../shared/constants';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { broadcastAsistenciaEstudianteEvent } from './asistencia-estudiante-stream.controller';
 
 const ALLOWED_CREATE_FIELDS = ['id_matricula', 'fecha', 'estatus', 'observacion'];
 const ALLOWED_UPDATE_FIELDS = ['estatus', 'observacion'];
+
+const MATRICULA_INCLUDES = [{
+  model: Matricula, as: 'matricula',
+  include: [
+    { model: Estudiante, as: 'estudiante' },
+    { model: Seccion, as: 'seccion' }
+  ]
+}];
 
 function isValidDate(dateStr: string): boolean {
   const d = new Date(dateStr);
@@ -101,7 +110,9 @@ export const AsistenciaEstudianteController = {
 
     payload.id_usuario_crea = req.user!.idUsuario;
     const nueva = await AsistenciaEstudiante.create(payload);
-    res.status(201).json(nueva);
+    const completa = await AsistenciaEstudiante.findByPk(nueva.id_asistencia_est, { include: MATRICULA_INCLUDES });
+    broadcastAsistenciaEstudianteEvent({ tipo: 'create', data: completa || nueva });
+    res.status(201).json(completa || nueva);
   }),
 
   crearBatch: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
@@ -158,7 +169,12 @@ export const AsistenciaEstudianteController = {
       return creados;
     });
 
-    res.status(201).json({ data: result, meta: { total: result.length } });
+    const completos = await Promise.all(
+      result.map((r: any) => AsistenciaEstudiante.findByPk(r.id_asistencia_est, { include: MATRICULA_INCLUDES }))
+    );
+    const data = completos.map((r, i) => r || result[i]);
+    broadcastAsistenciaEstudianteEvent({ tipo: 'batch', data });
+    res.status(201).json({ data, meta: { total: data.length } });
   }),
 
   estadisticas: wrapAsync(async (req: Request, res: Response) => {
@@ -353,6 +369,8 @@ export const AsistenciaEstudianteController = {
 
     payload.id_usuario_modifica = req.user!.idUsuario;
     await record.update(payload);
-    res.json(record);
+    const completa = await AsistenciaEstudiante.findByPk(record.id_asistencia_est, { include: MATRICULA_INCLUDES });
+    broadcastAsistenciaEstudianteEvent({ tipo: 'update', data: completa || record });
+    res.json(completa || record);
   })
 };

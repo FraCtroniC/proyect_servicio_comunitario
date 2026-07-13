@@ -48,6 +48,9 @@ import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsigna
 import { useScheduleStream } from './hooks/useScheduleStream';
 import { useStudentStream } from './hooks/useStudentStream';
 import { useRepresentativeStream } from './hooks/useRepresentativeStream';
+import { useAsistenciaEstudianteStream } from './hooks/useAsistenciaEstudianteStream';
+import { useAsistenciaDocenteStream } from './hooks/useAsistenciaDocenteStream';
+import { useJustificacionStream } from './hooks/useJustificacionStream';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -185,6 +188,109 @@ export default function App() {
       });
     } else if (event.tipo === 'delete' && event.data) {
       setRepresentatives(prev => prev.filter(r => r.id_representante !== event.data.id_representante));
+    }
+  });
+
+  useAsistenciaEstudianteStream(isLoggedIn, (event) => {
+    if (event.tipo === 'create' && event.data) {
+      const d = event.data;
+      setAttendance(prev => {
+        const id = String(d.id_asistencia_est);
+        const exists = prev.some(a => a.id === id);
+        if (exists) return prev;
+        return [...prev, {
+          id,
+          studentId: String(d.matricula?.id_estudiante || ''),
+          matriculaId: String(d.id_matricula),
+          date: d.fecha,
+          academicYear: (d.matricula?.seccion?.id_grado || 1) as any,
+          section: d.matricula?.seccion?.letra || 'A',
+          status: d.estatus === 'Ausente' ? 'A' : d.estatus === 'Justificado' ? 'J' : 'P',
+        }];
+      });
+    } else if (event.tipo === 'update' && event.data) {
+      const d = event.data;
+      setAttendance(prev => prev.map(a =>
+        a.id === String(d.id_asistencia_est)
+          ? { ...a, status: d.estatus === 'Ausente' ? 'A' : d.estatus === 'Justificado' ? 'J' : 'P' }
+          : a
+      ));
+    } else if (event.tipo === 'batch' && event.data) {
+      const records = Array.isArray(event.data) ? event.data : [];
+      setAttendance(prev => {
+        const updated = [...prev];
+        for (const d of records) {
+          const id = String(d.id_asistencia_est);
+          const idx = updated.findIndex(a => a.id === id);
+          const mapped = {
+            id,
+            studentId: String(d.matricula?.id_estudiante || ''),
+            matriculaId: String(d.id_matricula),
+            date: d.fecha,
+            academicYear: (d.matricula?.seccion?.id_grado || 1) as any,
+            section: d.matricula?.seccion?.letra || 'A',
+            status: d.estatus === 'Ausente' ? 'A' : d.estatus === 'Justificado' ? 'J' : 'P',
+          };
+          if (idx >= 0) { updated[idx] = mapped; } else { updated.push(mapped); }
+        }
+        return updated;
+      });
+    }
+  });
+
+  useAsistenciaDocenteStream(isLoggedIn, (event) => {
+    if (event.tipo === 'create' && event.data) {
+      const d = event.data;
+      setTeacherLogs(prev => {
+        const id = String(d.id_asistencia);
+        const exists = prev.some(l => l.id === id);
+        if (exists) return prev;
+        return [{
+          id,
+          teacherId: String(d.id_docente),
+          date: d.fecha,
+          clockInTime: d.hora_entrada,
+          clockOutTime: d.hora_salida,
+          status: d.estatus === 'Puntual' ? 'OnTime' : d.estatus === 'Retardo' ? 'Late' : d.estatus === 'Justificado' ? 'Justified' : 'Absent',
+          justificaciones: [],
+        }, ...prev];
+      });
+    } else if (event.tipo === 'update' && event.data) {
+      const d = event.data;
+      setTeacherLogs(prev => prev.map(l =>
+        l.id === String(d.id_asistencia)
+          ? {
+              ...l,
+              clockInTime: d.hora_entrada || l.clockInTime,
+              clockOutTime: d.hora_salida || l.clockOutTime,
+              status: d.estatus === 'Puntual' ? 'OnTime' : d.estatus === 'Retardo' ? 'Late' : d.estatus === 'Justificado' ? 'Justified' : d.estatus === 'Ausente' ? 'Absent' : l.status,
+            }
+          : l
+      ));
+    } else if (event.tipo === 'delete' && event.data) {
+      setTeacherLogs(prev => prev.filter(l => l.id !== String(event.data.id_asistencia)));
+    }
+  });
+
+  useJustificacionStream(isLoggedIn, (event) => {
+    if (event.tipo === 'create' && event.data) {
+      const d = event.data;
+      setTeacherLogs(prev => prev.map(l => {
+        if (l.id === String(d.id_asistencia)) {
+          const currentJusts = l.justificaciones || [];
+          return { ...l, status: 'Justified' as const, justificaciones: [...currentJusts, d] };
+        }
+        return l;
+      }));
+    } else if (event.tipo === 'delete' && event.data) {
+      const d = event.data;
+      setTeacherLogs(prev => prev.map(l => {
+        if (l.id === String(d.id_asistencia)) {
+          const currentJusts = (l.justificaciones || []).filter((j: any) => j.id !== d.id);
+          return { ...l, status: 'Absent' as const, justificaciones: currentJusts };
+        }
+        return l;
+      }));
     }
   });
 
@@ -894,21 +1000,27 @@ const handleLogout = async () => {
 
       if (existingAtt && existingAtt.id.startsWith('att-')) {
         const created = await api.post<any>('/api/asistencias-estudiantes', payload);
+        const newId = String(created.id_asistencia_est || created.id);
         setAttendance(p => {
           const idx = p.findIndex(a => a.studentId === studentId && a.date === date);
           if (idx >= 0) {
             const copy = [...p];
-            copy[idx] = { ...copy[idx], status, id: String(created.id_asistencia_est || created.id) };
+            copy[idx] = { ...copy[idx], status, id: newId, matriculaId: String(matriculaId) };
             return copy;
           }
-          return [...p, { id: String(created.id_asistencia_est || created.id), studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }];
+          return [...p, { id: newId, studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }];
         });
+        toast.success('Asistencia guardada');
       } else if (existingAtt) {
-        await api.patch(`/api/asistencias-estudiantes/${existingAtt.id}`, { estatus: dbStatus, ...(observacion ? { observacion } : {}) });
+        const realId = existingAtt.id.replace(/^[a-zA-Z]+-/, '');
+        await api.patch(`/api/asistencias-estudiantes/${realId}`, { estatus: dbStatus, ...(observacion ? { observacion } : {}) });
         setAttendance(p => p.map(a => a.id === existingAtt.id ? { ...a, status, matriculaId: String(matriculaId) } : a));
+        toast.success('Asistencia guardada');
       } else {
         const created = await api.post<any>('/api/asistencias-estudiantes', payload);
-        setAttendance(p => [...p, { id: String(created.id_asistencia_est || created.id), studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }]);
+        const newId = String(created.id_asistencia_est || created.id);
+        setAttendance(p => [...p, { id: newId, studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }]);
+        toast.success('Asistencia guardada');
       }
     } catch (e: any) {
       console.error('Error al guardar asistencia estudiantil', e);
@@ -918,8 +1030,7 @@ const handleLogout = async () => {
 
   const handleAddTeacherLog = async (log: TeacherScheduleLog) => {
     try {
-      const user = users.find(u => u.id === log.teacherId);
-      const idDocente = user?.teacherId ? Number(user.teacherId) : Number(log.teacherId.replace(/\D/g, '')) || 1;
+      const idDocente = Number(log.teacherId);
       const payload = {
         id_docente: idDocente,
         fecha: log.date,
@@ -1193,7 +1304,7 @@ const handleLogout = async () => {
 
   const activePeriod = periods.find(p => p.status === 'Activo');
   const sectionsForSchedule = activePeriod
-    ? sections.filter(s => s.periodId === String(activePeriod.id))
+    ? sections.filter(s => String(s.periodId) === String(activePeriod.id))
     : sections;
 
   return (
@@ -1502,7 +1613,9 @@ const handleLogout = async () => {
                 <AttendanceTracker
                   students={students}
                   users={users}
-                  sections={sections}
+                  docentes={docentes}
+                  sections={sectionsForSchedule}
+                  periods={periods}
                   attendance={attendance}
                   teacherLogs={teacherLogs}
                   currentUserRole={currentUserRole}

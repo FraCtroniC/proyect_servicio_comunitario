@@ -3,17 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Student, Attendance, User, TeacherScheduleLog, AcademicYear, UserRole, Section } from '../types';
+import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
 
 interface AttendanceTrackerProps {
   students: Student[];
   users: User[];
+  docentes: Docente[];
   sections: Section[];
+  periods: SchoolPeriod[];
   attendance: Attendance[];
   teacherLogs: TeacherScheduleLog[];
   currentUserRole: UserRole;
@@ -27,7 +29,9 @@ interface AttendanceTrackerProps {
 export default function AttendanceTracker({
   students,
   users,
+  docentes,
   sections,
+  periods,
   attendance,
   teacherLogs,
   currentUserRole,
@@ -48,8 +52,11 @@ export default function AttendanceTracker({
   // Observación state per student
   const [observaciones, setObservaciones] = useState<Record<string, string>>({});
 
+  // Loading state for attendance marking
+  const [loadingStudentId, setLoadingStudentId] = useState<string | null>(null);
+
   // Teacher clock-in Emulator
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('t-1');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [clockSuccessMsg, setClockSuccessMsg] = useState('');
 
   // Justification Modal state
@@ -59,11 +66,42 @@ export default function AttendanceTracker({
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [justifySoporte, setJustifySoporte] = useState('');
 
+  const activePeriod = periods.find(p => p.status === 'Activo');
+  const schoolYearStart = (() => {
+    if (!activePeriod) return '2025-01-01';
+    const match = activePeriod.name.match(/^(\d{4})/);
+    if (match) return `${match[1]}-01-01`;
+    return '2025-01-01';
+  })();
+  const schoolYearEnd = (() => {
+    if (!activePeriod) return '2026-12-31';
+    const match = activePeriod.name.match(/(\d{4})$/);
+    if (match) return `${match[1]}-12-31`;
+    return '2026-12-31';
+  })();
+  const todayString = new Date().toISOString().split('T')[0];
+  const maxDate = todayString < schoolYearEnd ? todayString : schoolYearEnd;
+
+  const attendanceSummary = (() => {
+    const todayRecords = attendance.filter(a => a.date === selectedDate);
+    return {
+      presentes: todayRecords.filter(a => a.status === 'P').length,
+      ausentes: todayRecords.filter(a => a.status === 'A').length,
+      justificados: todayRecords.filter(a => a.status === 'J').length,
+    };
+  })();
+
   // Filtering students and their attendance records for the selected date
   const sectionStudents = students.filter(s => s.academicYear === selectedYear && s.section === selectedSection && s.status === 'Activo');
 
   // Teacher actions
-  const activeTeachers = users.filter(u => u.role === 'docente');
+  const activeTeachers = docentes.filter(d => d.status === 'Activo');
+
+  useEffect(() => {
+    if (!selectedTeacherId && activeTeachers.length > 0) {
+      setSelectedTeacherId(activeTeachers[0].id);
+    }
+  }, [selectedTeacherId, activeTeachers]);
 
   const handleTeacherClockIn = () => {
     const exists = teacherLogs.find(l => l.teacherId === selectedTeacherId && l.date === selectedDate);
@@ -83,7 +121,7 @@ export default function AttendanceTracker({
     };
 
     onAddTeacherLog(newLog);
-    const teacherName = users.find(u => u.id === selectedTeacherId)?.name || "Docente";
+    const teacherName = docentes.find(d => d.id === selectedTeacherId)?.firstName || "Docente";
     setClockSuccessMsg(`Entrada registrada para ${teacherName} a las ${newLog.clockInTime}.`);
     setTimeout(() => setClockSuccessMsg(''), 5000);
   };
@@ -137,7 +175,12 @@ export default function AttendanceTracker({
         <div id="stud-att-container" className="space-y-6">
 
           {/* Action buttons */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 items-center">
+            {activePeriod && (
+              <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold">
+                Período: {activePeriod.name}
+              </span>
+            )}
             <button
               onClick={() => {
                 const desde = new Date();
@@ -206,7 +249,20 @@ export default function AttendanceTracker({
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                min={schoolYearStart}
+                max={maxDate}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val > maxDate) {
+                    toast.error(`La fecha no puede ser posterior al ${maxDate}.`);
+                    return;
+                  }
+                  if (val < schoolYearStart) {
+                    toast.error(`La fecha no puede ser anterior al ${schoolYearStart}.`);
+                    return;
+                  }
+                  setSelectedDate(val);
+                }}
                 className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium font-mono"
               />
             </div>
@@ -221,7 +277,18 @@ export default function AttendanceTracker({
           <div id="stud-att-list" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
             <div id="stud-att-header" className="flex items-center justify-between border-b pb-2 border-slate-100">
               <h3 className="text-sm font-bold text-slate-800">Planilla de Control Asistencia Diaria</h3>
-              <span className="text-[10px] text-slate-500 font-mono">Simulado para: <strong>{selectedDate}</strong></span>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                  Presentes: {attendanceSummary.presentes}
+                </span>
+                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+                  Ausentes: {attendanceSummary.ausentes}
+                </span>
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                  Justificados: {attendanceSummary.justificados}
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">Simulado para: <strong>{selectedDate}</strong></span>
+              </div>
             </div>
 
             <div id="stud-att-scroller" className="overflow-x-auto">
@@ -247,17 +314,27 @@ export default function AttendanceTracker({
                       const rate = studentHistory.length > 0 ? Math.round((presents / studentHistory.length) * 100) : 100;
 
                       return (
-                        <tr id={`att-std-row-${student.id}`} key={student.id} className="hover:bg-slate-50/40">
+                        <tr id={`att-std-row-${student.id}`} key={student.id} className={`hover:bg-slate-50/40 transition-colors ${loadingStudentId === student.id ? 'bg-indigo-50/50' : ''}`}>
                           <td className="py-3 pr-2">
-                            <span className="font-bold text-slate-800 text-[11px] block">{student.lastName}, {student.firstName}</span>
+                            <span className="font-bold text-slate-800 text-[11px] block flex items-center gap-1.5">
+                              {loadingStudentId === student.id && (
+                                <svg className="animate-spin h-3 w-3 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                              )}
+                              {student.lastName}, {student.firstName}
+                            </span>
                           </td>
                           <td className="py-3 font-mono font-bold text-slate-500 text-[11px]">{student.cedula}</td>
                           <td className="py-3">
                             <div className="flex items-center justify-center gap-1.5 max-w-[170px] mx-auto">
                               {(['P', 'A', 'J'] as const).map(flag => {
                                 const isSelected = currentStatus === flag;
+                                const isLoading = loadingStudentId === student.id;
                                 
                                 const getFlagTheme = (f: 'P' | 'A' | 'J') => {
+                                  if (isLoading) return 'bg-slate-100 text-slate-400 cursor-not-allowed';
                                   if (f === 'P') return isSelected ? 'bg-green-600 text-white' : 'bg-slate-50 hover:bg-green-50 text-slate-500';
                                   if (f === 'A') return isSelected ? 'bg-rose-600 text-white' : 'bg-slate-50 hover:bg-rose-50 text-slate-500';
                                   return isSelected ? 'bg-amber-600 text-white' : 'bg-slate-50 hover:bg-amber-50 text-slate-500';
@@ -267,14 +344,21 @@ export default function AttendanceTracker({
                                   <button
                                     id={`att-flag-${student.id}-${flag}`}
                                     key={flag}
-                                    onClick={() => {
+                                    disabled={isLoading}
+                                    onClick={async () => {
                                       if (currentUserRole !== 'super_admin' && currentUserRole !== 'docente' && currentUserRole !== 'control_estudios') {
                                         toast.error("Error: Solo los docentes o el cuerpo de Control de Estudios pueden pasar asistencia.");
                                         return;
                                       }
-                                      onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '');
+                                      if (isLoading) return;
+                                      setLoadingStudentId(student.id);
+                                      try {
+                                        await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '');
+                                      } finally {
+                                        setLoadingStudentId(null);
+                                      }
                                     }}
-                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-xs font-bold transition-all p-0 focus:outline-hidden pointer-events-auto cursor-pointer ${getFlagTheme(flag)}`}
+                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-xs font-bold transition-all p-0 focus:outline-hidden ${isLoading ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'} ${getFlagTheme(flag)}`}
                                     title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
                                   >
                                     {flag}
@@ -339,8 +423,8 @@ export default function AttendanceTracker({
                   onChange={(e) => setSelectedTeacherId(e.target.value)}
                   className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
                 >
-                  {activeTeachers.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.cedula})</option>
+                  {activeTeachers.map(d => (
+                    <option key={d.id} value={d.id}>{d.firstName} {d.lastName} ({d.cedula})</option>
                   ))}
                 </select>
               </div>
@@ -403,12 +487,12 @@ export default function AttendanceTracker({
                 <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-705">
                   {teacherLogs.filter(l => l.date === selectedDate).length > 0 ? (
                     teacherLogs.filter(l => l.date === selectedDate).map(log => {
-                      const teacher = users.find(u => u.id === log.teacherId);
+                      const teacher = docentes.find(d => d.id === log.teacherId);
                       
                       return (
                         <tr id={`punch-row-${log.id}`} key={log.id} className="hover:bg-slate-50/40">
                           <td className="py-3">
-                            <span className="font-bold text-slate-800 text-[11px] block">{teacher?.name?.split(' ')[0]}</span>
+                            <span className="font-bold text-slate-800 text-[11px] block">{teacher?.firstName}</span>
                           </td>
                           <td className="py-3 font-mono text-[10px] text-slate-500">{teacher?.cedula?.replace(/^[A-Z]-/, '')}</td>
                           <td className="py-3 text-center text-slate-800 font-mono font-bold">{log.clockInTime}</td>
