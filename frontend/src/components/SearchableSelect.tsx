@@ -67,15 +67,34 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
         onClick={() => {
           if (disabled) return;
           if (wrapperRef.current) setRect(wrapperRef.current.getBoundingClientRect());
-          setIsOpen(!isOpen);
-          if (!isOpen) setSearchTerm('');
+          setIsOpen(true);
         }}
-        className={`w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded flex items-center justify-between font-medium transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer focus-within:border-indigo-500 focus-within:bg-white'}`}
+        className={`w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded flex items-center justify-between font-medium transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-text focus-within:border-indigo-500 focus-within:bg-white'}`}
       >
-        <span className={selectedOption ? 'text-slate-800' : 'text-slate-500'}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
-        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <input
+          type="text"
+          className="w-full bg-transparent focus:outline-hidden text-slate-800 placeholder-slate-500"
+          placeholder={selectedOption ? selectedOption.label : placeholder}
+          value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : '')}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => {
+            if (wrapperRef.current) setRect(wrapperRef.current.getBoundingClientRect());
+            setIsOpen(true);
+            setSearchTerm('');
+          }}
+          disabled={disabled}
+        />
+        <ChevronDown 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (disabled) return;
+            setIsOpen(!isOpen);
+          }}
+          className={`w-4 h-4 text-slate-400 transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`} 
+        />
       </div>
 
       {isOpen && rect && createPortal(
@@ -89,28 +108,8 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
             maxHeight: '240px'
           }}
         >
-          <div className="p-2 border-b border-slate-100 flex items-center gap-2">
-            <Search className="w-4 h-4 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              autoFocus
-              className="w-full text-sm focus:outline-hidden"
-              placeholder="Escribe para buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
           <div className="overflow-y-auto p-1 custom-scrollbar">
-            <div 
-              className={`p-2 text-sm rounded-lg cursor-pointer transition-colors ${value === '' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
-              onClick={() => {
-                onChange('');
-                setIsOpen(false);
-              }}
-            >
-              {placeholder}
-            </div>
+
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div

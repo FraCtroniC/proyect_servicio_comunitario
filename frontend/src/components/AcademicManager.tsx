@@ -156,17 +156,20 @@ export default function AcademicManager({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-800">Secciones Aperturadas</h3>
-              <select
-                value={viewPeriod}
-                onChange={(e) => setViewPeriod(e.target.value)}
-                className="text-[10px] p-1.5 bg-slate-50 border border-slate-200 rounded font-bold"
-              >
-                <option value="active">Periodo Actual</option>
-                <option value="all">Todos los Períodos</option>
-                {periods.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
-                ))}
-              </select>
+              <div className="w-56">
+                <SearchableSelect
+                  value={viewPeriod}
+                  onChange={(val) => setViewPeriod(val as string)}
+                  options={[
+                    { value: 'active', label: 'Periodo Actual' },
+                    { value: 'all', label: 'Todos los Períodos' },
+                    ...periods.map(p => ({
+                      value: p.id,
+                      label: `${p.name} (${p.status})`
+                    }))
+                  ]}
+                />
+              </div>
               <select
                 value={viewGrade}
                 onChange={(e) => setViewGrade(Number(e.target.value))}
