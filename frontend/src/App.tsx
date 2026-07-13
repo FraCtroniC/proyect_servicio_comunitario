@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSocket } from './hooks/useSocket';
 import { motion, AnimatePresence } from 'motion/react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
@@ -150,6 +151,22 @@ export default function App() {
       console.error('Error al restaurar sesión:', e);
     }
   }, []);
+
+  // WebSocket: escuchar cambios en periodos escolares
+  useSocket(isLoggedIn, (event, payload) => {
+    if (event === 'periodo:create') {
+      setPeriods(prev => [...prev, mapPeriodoToSchoolPeriod(payload.data)]);
+    } else if (event === 'periodo:update') {
+      setPeriods(prev => prev.map(p =>
+        p.id === String(payload.data.id_periodo)
+          ? mapPeriodoToSchoolPeriod(payload.data) : p
+      ));
+    } else if (event === 'periodo:delete') {
+      setPeriods(prev => prev.filter(p =>
+        p.id !== String(payload.data.id_periodo)
+      ));
+    }
+  });
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);

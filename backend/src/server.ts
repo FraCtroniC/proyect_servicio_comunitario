@@ -1,7 +1,9 @@
+import { createServer } from 'http';
 import app from './app';
 import { environment } from '../config/environment';
 import { sequelize } from './models';
 import { connectRedis, closeRedis } from '../config/redis';
+import { initSocket } from './socket';
 
 async function main() {
   try {
@@ -24,7 +26,10 @@ async function main() {
     process.exit(1);
   }
 
-  app.listen(environment.port, () => {
+  const httpServer = createServer(app);
+  initSocket(httpServer);
+
+  httpServer.listen(environment.port, () => {
     console.log(`Servidor corriendo en puerto ${environment.port}`);
     console.log(`Entorno: ${environment.nodeEnv}`);
 
