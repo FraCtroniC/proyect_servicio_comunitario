@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Representante } from '../models/Representante';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { broadcastRepresentanteEvent } from './representante-stream.controller';
 
 export const RepresentanteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -21,6 +22,7 @@ export const RepresentanteController = {
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await Representante.create(req.body);
     res.status(201).json({ data: result });
+    broadcastRepresentanteEvent({ tipo: 'create', data: result });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
@@ -32,6 +34,7 @@ export const RepresentanteController = {
     }
     await record.update(req.body);
     res.json({ data: record });
+    broadcastRepresentanteEvent({ tipo: 'update', data: record });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
@@ -43,5 +46,6 @@ export const RepresentanteController = {
     }
     await record.destroy();
     res.status(204).send();
+    broadcastRepresentanteEvent({ tipo: 'delete', data: record });
   }),
 };

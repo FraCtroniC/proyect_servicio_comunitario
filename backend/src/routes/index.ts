@@ -32,6 +32,8 @@ import { notificacionRoutes } from './notificacion.routes';
 import { materiaPendienteRoutes } from './materia-pendiente.routes';
 import { especialidadRoutes } from './especialidad.routes';
 import { horarioStreamRoutes } from './horario-stream.routes';
+import { estudianteStreamRoutes } from './estudiante-stream.routes';
+import { representanteStreamRoutes } from './representante-stream.routes';
 
 export const routes = Router();
 
@@ -39,8 +41,10 @@ export const routes = Router();
 routes.use('/auth', authRoutes);
 routes.use('/chatbot', chatbotRoutes);
 
-// SSE stream route (handles its own auth via query token)
+// SSE stream routes (handle their own auth via query token)
 routes.use('/horarios', horarioStreamRoutes);
+routes.use('/estudiantes', estudianteStreamRoutes);
+routes.use('/representantes', representanteStreamRoutes);
 
 routes.get('/test-docentes', async (req, res) => {
   try {

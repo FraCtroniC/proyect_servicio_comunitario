@@ -46,6 +46,8 @@ import {
 import { api } from './services/api';
 import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative, mapDocenteToDocenteType } from './services/mappers';
 import { useScheduleStream } from './hooks/useScheduleStream';
+import { useStudentStream } from './hooks/useStudentStream';
+import { useRepresentativeStream } from './hooks/useRepresentativeStream';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -143,6 +145,46 @@ export default function App() {
       ));
     } else if (event.tipo === 'delete' && event.data) {
       setScheduleEvents(prev => prev.filter(e => e.id !== String(event.data.id_horario)));
+    }
+  });
+
+  useStudentStream(isLoggedIn, (event) => {
+    if (event.tipo === 'create' && event.data) {
+      setStudents(prev => {
+        const id = String(event.data.id_estudiante);
+        const exists = prev.some(s => s.id === id);
+        if (exists) return prev;
+        return [mapEstudianteToStudent(event.data), ...prev];
+      });
+    } else if (event.tipo === 'update' && event.data) {
+      setStudents(prev => {
+        const id = String(event.data.id_estudiante);
+        return prev.map(s => {
+          if (s.id !== id) return s;
+          const mapped = mapEstudianteToStudent(event.data);
+          return { ...mapped, academicYear: s.academicYear, section: s.section };
+        });
+      });
+    } else if (event.tipo === 'delete' && event.data) {
+      setStudents(prev => prev.filter(s => s.id !== String(event.data.id_estudiante)));
+    }
+  });
+
+  useRepresentativeStream(isLoggedIn, (event) => {
+    if (event.tipo === 'create' && event.data) {
+      setRepresentatives(prev => {
+        const id = event.data.id_representante;
+        const exists = prev.some(r => r.id_representante === id);
+        if (exists) return prev;
+        return [event.data, ...prev];
+      });
+    } else if (event.tipo === 'update' && event.data) {
+      setRepresentatives(prev => {
+        const id = event.data.id_representante;
+        return prev.map(r => r.id_representante === id ? event.data : r);
+      });
+    } else if (event.tipo === 'delete' && event.data) {
+      setRepresentatives(prev => prev.filter(r => r.id_representante !== event.data.id_representante));
     }
   });
 
@@ -508,6 +550,10 @@ const handleLogout = async () => {
       const created = await api.post<any>('/api/estudiantes', estPayload);
       const studentId = created.id_estudiante || created.id;
 
+      setStudents(prev => prev.map(s =>
+        s.id === newStudent.id ? { ...s, id: String(studentId) } : s
+      ));
+
       const activePeriod = periods.find(p => p.status === 'Activo');
       const matchingSection = sections.find(s => s.grade === newStudent.academicYear && s.letter === newStudent.section);
       if (activePeriod && matchingSection) {
@@ -518,8 +564,6 @@ const handleLogout = async () => {
           estatus_matricula: 'Activo'
         }).catch((e: any) => console.warn('Matrícula no creada:', e.message));
       }
-
-      setStudents(p => [{ ...newStudent, id: String(studentId) }, ...p]);
     } catch (e) {
       console.error(e);
       toast.error('Error al crear estudiante en BD');
@@ -539,6 +583,23 @@ const handleLogout = async () => {
     try {
       const realId = stripId(studentId);
       
+      const stuResp = await api.get<any>(`/api/estudiantes/${realId}`);
+      const repId = stuResp.id_representante;
+
+      if (repId) {
+        const repPayload: any = {
+          cedula_rep: updatedData.representativeCedula,
+          nombre1: updatedData.repFirstName || updatedData.representativeName.split(' ')[0],
+          nombre2: updatedData.repSecondName || undefined,
+          apellido1: updatedData.repLastName || updatedData.representativeName.split(' ').slice(1).join(' ') || 'N/A',
+          apellido2: updatedData.repSecondLastName || undefined,
+          telefono: updatedData.representativePhone,
+          correo: updatedData.representativeEmail,
+          direccion: updatedData.representativeAddress
+        };
+        await api.patch(`/api/representantes/${repId}`, repPayload);
+      }
+      
       const stuNameParts = updatedData.firstName.trim().split(' ');
       const stuLastParts = updatedData.lastName.trim().split(' ');
       const estPayload: any = {
@@ -555,24 +616,7 @@ const handleLogout = async () => {
         estatus_estudiante: updatedData.status
       };
       
-      const stuResp = await api.get<any>(`/api/estudiantes/${realId}`);
-      const repId = stuResp.data?.id_representante;
-      
       await api.patch(`/api/estudiantes/${realId}`, estPayload);
-      
-      if (repId) {
-        const repPayload: any = {
-          cedula_rep: updatedData.representativeCedula,
-          nombre1: updatedData.repFirstName || updatedData.representativeName.split(' ')[0],
-          nombre2: updatedData.repSecondName || undefined,
-          apellido1: updatedData.repLastName || updatedData.representativeName.split(' ').slice(1).join(' ') || 'N/A',
-          apellido2: updatedData.repSecondLastName || undefined,
-          telefono: updatedData.representativePhone,
-          correo: updatedData.representativeEmail,
-          direccion: updatedData.representativeAddress
-        };
-        await api.patch(`/api/representantes/${repId}`, repPayload);
-      }
       
       setStudents(p => p.map(s => s.id === studentId ? { ...s, ...updatedData } : s));
     } catch (e) {
@@ -1147,6 +1191,11 @@ const handleLogout = async () => {
     docente: 3,
   };
 
+  const activePeriod = periods.find(p => p.status === 'Activo');
+  const sectionsForSchedule = activePeriod
+    ? sections.filter(s => s.periodId === String(activePeriod.id))
+    : sections;
+
   return (
     <div id="mppe-app-root" className="h-screen overflow-hidden bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
       <Toaster 
@@ -1377,6 +1426,7 @@ const handleLogout = async () => {
                   sections={sections}
                   classrooms={classrooms}
                   currentUserRole={currentUserRole}
+                  representatives={representatives}
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
                   onUpdateStudentProfile={handleUpdateStudentProfile}
@@ -1471,7 +1521,7 @@ const handleLogout = async () => {
                   users={users}
                   docentes={docentes}
                   classrooms={classrooms}
-                  sections={sections}
+                  sections={sectionsForSchedule}
                   referenceData={referenceData}
                   currentUserRole={currentUserRole}
                   onAddScheduleEvent={handleAddScheduleEvent}

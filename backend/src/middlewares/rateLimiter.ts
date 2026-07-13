@@ -54,6 +54,7 @@ export const authLimiter = rateLimit({
 export const apiLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: 200,
+  skip: (req) => req.url.includes('/stream'),
   message: {
     error: {
       message: 'Límite de solicitudes alcanzado. Intenta de nuevo más tarde.',

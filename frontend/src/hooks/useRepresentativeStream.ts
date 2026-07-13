@@ -16,14 +16,14 @@ function getSessionToken(): string | null {
   return null;
 }
 
-export interface HorarioStreamEvent {
+export interface RepresentativeStreamEvent {
   tipo: 'create' | 'update' | 'delete';
   data: any;
 }
 
-export function useScheduleStream(
+export function useRepresentativeStream(
   isLoggedIn: boolean,
-  onEvent: (event: HorarioStreamEvent) => void
+  onEvent: (event: RepresentativeStreamEvent) => void
 ) {
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
@@ -33,17 +33,17 @@ export function useScheduleStream(
     if (!token) return;
 
     const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-    const url = `${baseUrl}/api/horarios/stream?token=${encodeURIComponent(token)}`;
+    const url = `${baseUrl}/api/representantes/stream?token=${encodeURIComponent(token)}`;
     const es = new EventSource(url);
 
     es.onopen = () => {
-      console.log('[SSE] Conexión establecida');
+      console.log('[SSE-Representantes] Conexión establecida');
     };
 
     es.onmessage = (msg) => {
       try {
-        const event: HorarioStreamEvent = JSON.parse(msg.data);
-        console.log('[SSE] Evento recibido:', event.tipo, event.data?.id_horario);
+        const event: RepresentativeStreamEvent = JSON.parse(msg.data);
+        console.log('[SSE-Representantes] Evento recibido:', event.tipo, event.data?.id_representante);
         onEventRef.current(event);
       } catch {
         // ignorar mensajes malformados
@@ -51,7 +51,7 @@ export function useScheduleStream(
     };
 
     es.onerror = () => {
-      console.warn('[SSE] Conexión perdida, reconectando en 3s...');
+      console.warn('[SSE-Representantes] Conexión perdida, reconectando en 3s...');
       es.close();
       setTimeout(() => {
         if (document.visibilityState !== 'hidden') {

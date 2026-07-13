@@ -30,6 +30,49 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
   const [posicion, setPosicion] = useState<number>(1);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  const validateName = (val: string): boolean => /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/.test(val.trim());
+
+  const handleFieldChange = (name: string, val: string, setter: (v: any) => void, type: 'text' | 'number' = 'text') => {
+    setter(type === 'number' ? Number(val) : val);
+    const newErrors = { ...fieldErrors };
+    if (type === 'text' && name === 'nombre') {
+      if (val && !validateName(val)) { newErrors[name] = 'Solo se permiten letras y espacios.'; }
+      else if (!val.trim()) { newErrors[name] = 'El nombre es requerido.'; }
+      else { delete newErrors[name]; }
+    }
+    if (name === 'codigo') {
+      if (/\s/.test(val)) { newErrors[name] = 'El código no puede contener espacios.'; }
+      else if (!val.trim()) { newErrors[name] = 'El código es requerido.'; }
+      else { delete newErrors[name]; }
+    }
+    if (type === 'number' && name === 'posicion') {
+      if (Number(val) < 1) { newErrors[name] = 'La posición debe ser mayor a 0.'; }
+      else { delete newErrors[name]; }
+    }
+    setFieldErrors(newErrors);
+  };
+
+  const checkDuplicate = (field: string) => {
+    const newErrors = { ...fieldErrors };
+    const otherPlans = studyPlans.filter(p => editingPlan ? p.id !== editingPlan.id : true);
+    if (field === 'codigo') {
+      const dup = otherPlans.find(p => p.codigo?.toUpperCase() === codigo.toUpperCase() && p.year === year);
+      if (dup) { newErrors.codigo = 'Este código ya existe para el año seleccionado.'; }
+      else { delete newErrors.codigo; }
+    }
+    if (field === 'posicion') {
+      const dup = otherPlans.find(p => p.posicion === posicion && p.year === year);
+      if (dup) { newErrors.posicion = 'Esta posición ya está ocupada en el año seleccionado.'; }
+      else { delete newErrors.posicion; }
+    }
+    if (field === 'nombre') {
+      const dup = otherPlans.find(p => p.subjectName.toLowerCase() === nombre.trim().toLowerCase() && p.year === year);
+      if (dup) { newErrors.nombre = 'Esta materia ya está registrada en el año seleccionado.'; }
+      else { delete newErrors.nombre; }
+    }
+    setFieldErrors(newErrors);
+  };
+
   const openAddModal = () => {
     setEditingPlan(null);
     setNombre('');
@@ -69,7 +112,10 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
     } catch (err: any) {
       const details = err.details;
       if (details && typeof details === 'object') {
-        setFieldErrors(details);
+        const mapped = { ...details };
+        if (mapped.id_asignatura) { mapped.nombre = mapped.id_asignatura; delete mapped.id_asignatura; }
+        if (mapped.codigo_asignatura) { mapped.codigo = mapped.codigo_asignatura; delete mapped.codigo_asignatura; }
+        setFieldErrors(mapped);
       } else {
         toast.error(err.message || 'Error al guardar en el plan de estudio');
       }
@@ -197,11 +243,12 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
               type="text"
               placeholder="Ej. Castellano"
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.id_asignatura ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
+              onChange={(e) => handleFieldChange('nombre', e.target.value, setNombre)}
+              onBlur={() => checkDuplicate('nombre')}
+              className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.nombre ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
               required
             />
-            {fieldErrors.id_asignatura && <p className="text-red-600 text-[11px]">{fieldErrors.id_asignatura}</p>}
+            {fieldErrors.nombre && <p className="text-red-600 text-[11px]">{fieldErrors.nombre}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -211,11 +258,12 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                 type="text"
                 placeholder="Ej. CAS1"
                 value={codigo}
-                onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-mono font-bold uppercase ${fieldErrors.codigo_asignatura ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
+                onChange={(e) => handleFieldChange('codigo', e.target.value.toUpperCase(), setCodigo)}
+                onBlur={() => checkDuplicate('codigo')}
+                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-mono font-bold uppercase ${fieldErrors.codigo ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
                 required
               />
-              {fieldErrors.codigo_asignatura && <p className="text-red-600 text-[11px]">{fieldErrors.codigo_asignatura}</p>}
+              {fieldErrors.codigo && <p className="text-red-600 text-[11px]">{fieldErrors.codigo}</p>}
             </div>
 
             <div className="space-y-1">
@@ -224,7 +272,8 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                 type="number"
                 min="1"
                 value={posicion}
-                onChange={(e) => setPosicion(Number(e.target.value))}
+                onChange={(e) => handleFieldChange('posicion', e.target.value, setPosicion, 'number')}
+                onBlur={() => checkDuplicate('posicion')}
                 className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.posicion ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
                 required
               />
@@ -236,7 +285,8 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
             <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Año Escolar</label>
             <select
               value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
+              onChange={(e) => { setYear(Number(e.target.value)); }}
+              onBlur={() => { checkDuplicate('codigo'); checkDuplicate('posicion'); }}
               className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
             >
               <option value={1}>1er Año</option>
@@ -250,7 +300,8 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
           <div className="pt-2">
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+              disabled={Object.keys(fieldErrors).length > 0}
+              className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors cursor-pointer ${Object.keys(fieldErrors).length > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               {editingPlan ? "Guardar Cambios" : "Guardar Materia"}
             </button>

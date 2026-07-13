@@ -19,13 +19,14 @@ interface StudentManagerProps {
   sections: Section[];
   classrooms?: import('../types').Classroom[];
   currentUserRole: UserRole;
+  representatives: any[];
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
   onUpdateStudentProfile?: (studentId: string, studentData: any) => Promise<void>;
   onNavigateToPending?: (studentId: string) => void;
 }
 
-export default function StudentManager({ students, sections, classrooms, currentUserRole, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending }: StudentManagerProps) {
+export default function StudentManager({ students, sections, classrooms, currentUserRole, representatives, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending }: StudentManagerProps) {
   // Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(5); // Default showing 5th year for rich showcase
   const [selectedSection, setSelectedSection] = useState<string>('A');
@@ -216,6 +217,7 @@ export default function StudentManager({ students, sections, classrooms, current
   const validateName = (val: string) => /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]*$/.test(val);
   const validateNumber = (val: string) => /^[0-9-]*$/.test(val);
   const validateCedula = (val: string) => /^[0-9]{7,9}$/.test(val);
+  const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
@@ -263,7 +265,32 @@ export default function StudentManager({ students, sections, classrooms, current
       if (exists) newErrors['cedula'] = 'Esta cédula ya está registrada.';
       else delete newErrors['cedula'];
     } else {
-      delete newErrors['repCedula'];
+      const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
+      const currentRepCedula = currentStudent?.representativeCedula || '';
+      const exists = representatives.some(r => r.cedula_rep === fullCedula && r.cedula_rep !== currentRepCedula);
+      if (exists) newErrors['repCedula'] = 'Esta cédula de representante ya está registrada.';
+      else delete newErrors['repCedula'];
+    }
+    setErrors(newErrors);
+  };
+
+  const checkRepField = (field: 'telefono' | 'correo', value: string) => {
+    if (!value) return;
+    const newErrors = { ...errors };
+
+    if (field === 'correo' && !validateEmail(value)) {
+      newErrors['repEmail'] = 'Formato de correo inválido.';
+      setErrors(newErrors);
+      return;
+    }
+
+    const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
+    const currentRepCedula = currentStudent?.representativeCedula || '';
+    const exists = representatives.some(r => r[field] === value && r.cedula_rep !== currentRepCedula);
+    if (exists) {
+      newErrors[field === 'telefono' ? 'repPhone' : 'repEmail'] = `Este ${field === 'telefono' ? 'teléfono' : 'correo'} ya está registrado.`;
+    } else {
+      delete newErrors[field === 'telefono' ? 'repPhone' : 'repEmail'];
     }
     setErrors(newErrors);
   };
@@ -346,7 +373,7 @@ export default function StudentManager({ students, sections, classrooms, current
     let cleanRepCedula = `${repCedulaType}-${repCedula.trim()}`;
 
     const newStudent: Student = {
-      id: 'std-' + Date.now(),
+      id: modalMode === 'edit' ? editingStudentId : 'std-' + Date.now(),
       firstName: firstName.trim() + (secondName.trim() ? ` ${secondName.trim()}` : ''),
       lastName: lastName.trim() + (secondLastName.trim() ? ` ${secondLastName.trim()}` : ''),
       cedula: cleanCedula,
@@ -813,6 +840,7 @@ export default function StudentManager({ students, sections, classrooms, current
                   placeholder="e.g. 0414-1112233" 
                   value={repPhone} 
                   onChange={(e) => handleFieldChange('repPhone', e.target.value, setRepPhone)}
+                  onBlur={(e) => checkRepField('telefono', e.target.value)}
                   className={`w-full text-sm p-2 bg-slate-50 border ${errors.repPhone ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium font-mono`}
                 />
                 {errors.repPhone && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repPhone}</p>}
@@ -877,8 +905,10 @@ export default function StudentManager({ students, sections, classrooms, current
                   placeholder="ej: carmen@email.com" 
                   value={repEmail} 
                   onChange={(e) => setRepEmail(e.target.value)}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  onBlur={(e) => checkRepField('correo', e.target.value)}
+                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repEmail ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
+                {errors.repEmail && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repEmail}</p>}
               </div>
               <div className="space-y-0.5">
                 <label className="text-xs font-semibold text-slate-500">Dirección Rep.</label>
@@ -895,7 +925,8 @@ export default function StudentManager({ students, sections, classrooms, current
 
           <button 
             type="submit" 
-            className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer text-center"
+            disabled={Object.keys(errors).length > 0}
+            className={`w-full py-2.5 text-white font-bold text-xs rounded-lg shadow-sm transition-colors text-center ${Object.keys(errors).length > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-700 hover:bg-indigo-800 cursor-pointer'}`}
           >
             {modalMode === 'create' ? 'Inscribir y Matricular' : 'Guardar Cambios'}
           </button>
