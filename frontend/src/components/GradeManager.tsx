@@ -26,6 +26,7 @@ interface GradeManagerProps {
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
   onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => Promise<void>;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
+  onRefreshData?: () => Promise<void>;
 }
 
 export default function GradeManager({
@@ -40,16 +41,22 @@ export default function GradeManager({
   sections,
   onUpdateGrade,
   onSaveGrades,
-  onUpdateEvaluationPlan
+  onUpdateEvaluationPlan,
+  onRefreshData
 }: GradeManagerProps) {
   // Navigation inside Grade Module
   const [activeSubTab, setActiveSubTab] = useState<'carga' | 'sabana' | 'boletin' | 'certificadas'>('carga');
 
-  // Filters for Carga / Sábana
+  // Filters for Carga
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
   const [selectedSection, setSelectedSection] = useState<string>('A');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [selectedLapso, setSelectedLapso] = useState<1 | 2 | 3>(1);
+
+  // Filters for Sábana (independent)
+  const [sabanaYear, setSabanaYear] = useState<AcademicYear>(5);
+  const [sabanaSection, setSabanaSection] = useState<string>('A');
+  const [sabanaSubjectId, setSabanaSubjectId] = useState<string>('');
 
   // Audit log modal state
   const [selectedAuditLog, setSelectedAuditLog] = useState<any | null>(null);
@@ -69,6 +76,53 @@ export default function GradeManager({
       setSelectedSubjectId(subjects[0].id);
     }
   }, [subjects, selectedSubjectId]);
+
+  // Sections available for the selected year (from active period)
+  const availableSections = useMemo(() => {
+    const filtered = sections.filter(s => s.grade === selectedYear);
+    const unique = [...new Map(filtered.map(s => [s.letter, s])).values()];
+    return unique.sort((a, b) => a.letter.localeCompare(b.letter));
+  }, [sections, selectedYear]);
+
+  // Reset selectedSection when year changes and current section is not available
+  useEffect(() => {
+    if (availableSections.length > 0 && !availableSections.find(s => s.letter === selectedSection)) {
+      setSelectedSection(availableSections[0].letter);
+    }
+  }, [availableSections, selectedSection]);
+
+  // Sections available for Sábana (independent from Carga)
+  const availableSectionsSabana = useMemo(() => {
+    const filtered = sections.filter(s => s.grade === sabanaYear);
+    const unique = [...new Map(filtered.map(s => [s.letter, s])).values()];
+    return unique.sort((a, b) => a.letter.localeCompare(b.letter));
+  }, [sections, sabanaYear]);
+
+  // Reset sabanaSection when year changes and current section is not available
+  useEffect(() => {
+    if (availableSectionsSabana.length > 0 && !availableSectionsSabana.find(s => s.letter === sabanaSection)) {
+      setSabanaSection(availableSectionsSabana[0].letter);
+    }
+  }, [availableSectionsSabana, sabanaSection]);
+
+  // Sync sabanaSubjectId with loaded subjects
+  useEffect(() => {
+    if (subjects.length > 0 && (!sabanaSubjectId || !subjects.find(s => s.id === sabanaSubjectId))) {
+      setSabanaSubjectId(subjects[0].id);
+    }
+  }, [subjects, sabanaSubjectId]);
+
+  // Students for Sábana (independent filter)
+  const sabanaStudents = useMemo(() => {
+    return students.filter(s => s.academicYear === sabanaYear && s.section === sabanaSection && s.status === 'Activo');
+  }, [students, sabanaYear, sabanaSection]);
+
+  // Refresh data from server when switching subtabs
+  useEffect(() => {
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  }, [activeSubTab, onRefreshData]);
 
   // Boletín states
   const [selectedStudentId, setSelectedStudentId] = useState<string>(students[0]?.id || '');
@@ -492,8 +546,9 @@ export default function GradeManager({
                 onChange={(e) => setSelectedSection(e.target.value)}
                 className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value="A">Sección "A"</option>
-                <option value="B">Sección "B"</option>
+                {availableSections.map(s => (
+                  <option key={s.id} value={s.letter}>Sección "{s.letter}"</option>
+                ))}
               </select>
             </div>
 
@@ -835,14 +890,14 @@ export default function GradeManager({
       {activeSubTab === 'sabana' && (
         <div id="tab-sabana-container" className="space-y-6">
           
-          {/* Selectors specifically for Saba */}
+          {/* Selectors specifically for Sábana */}
           <div id="sabana-controls" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             
             <div id="sabana-ctrl-year" className="flex flex-col gap-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase">Año Académico</span>
               <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear)}
+                value={sabanaYear}
+                onChange={(e) => setSabanaYear(Number(e.target.value) as AcademicYear)}
                 className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 <option value={1}>1er Año</option>
@@ -856,17 +911,27 @@ export default function GradeManager({
             <div id="sabana-ctrl-section" className="flex flex-col gap-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase">Sección</span>
               <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
+                value={sabanaSection}
+                onChange={(e) => setSabanaSection(e.target.value)}
                 className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value="A">Sección "A"</option>
-                <option value="B">Sección "B"</option>
+                {availableSectionsSabana.map(s => (
+                  <option key={s.id} value={s.letter}>Sección "{s.letter}"</option>
+                ))}
               </select>
             </div>
 
+            <div id="sabana-ctrl-subject" className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase">Asignatura</span>
+              <SearchableSelect
+                options={subjects.filter(s => s.years.includes(sabanaYear)).map(s => ({ value: s.id, label: s.name }))}
+                value={sabanaSubjectId}
+                onChange={(val) => setSabanaSubjectId(String(val))}
+              />
+            </div>
+
             <p className="text-[11px] text-slate-500 italic max-w-sm mt-3">
-              Muestra el consolidado oficial de Lapsos 1, 2 y 3 para la asignatura de <strong>{getSubjectName(selectedSubjectId)}</strong>.
+              Muestra el consolidado oficial de Lapsos 1, 2 y 3 para la asignatura de <strong>{getSubjectName(sabanaSubjectId)}</strong>.
             </p>
 
             <button
@@ -878,7 +943,7 @@ export default function GradeManager({
               <span>Imprimir Formato MPPE</span>
             </button>
             <button
-              onClick={() => exportGradesToExcel(students, subjects, grades, evaluationPlans, selectedYear, selectedSection)}
+              onClick={() => exportGradesToExcel(students, subjects, grades, evaluationPlans, sabanaYear, sabanaSection)}
               className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
             >
               <Printer className="h-4 w-4" /> Excel (Sábana)
@@ -905,7 +970,7 @@ export default function GradeManager({
             <div id="sabana-sheet-title" className="text-center font-black text-xs space-y-1 text-slate-900 uppercase">
               <h4>ACTA INTEGRAL DE EVALUACIONES CONTINUAS ("SÁBANA DE NOTAS")</h4>
               <p className="text-[11px] font-semibold text-slate-500 font-mono">
-                Año Escolar: 2025-2026 | {selectedYear}° Año EMG - Sección "{selectedSection}" | Asignatura: {getSubjectName(selectedSubjectId)?.toUpperCase() || ''}
+                Año Escolar: 2025-2026 | {sabanaYear}° Año EMG - Sección "{sabanaSection}" | Asignatura: {getSubjectName(sabanaSubjectId)?.toUpperCase() || ''}
               </p>
             </div>
 
@@ -925,22 +990,22 @@ export default function GradeManager({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-300 font-medium text-slate-705">
-                  {activeSectionStudents.length > 0 ? (
-                    activeSectionStudents.map((student, idx) => {
+                  {sabanaStudents.length > 0 ? (
+                    sabanaStudents.map((student, idx) => {
                       // Get L1 Average
-                      const l1Plan = evaluationPlans.find(p => p.subjectId === selectedSubjectId && p.year === selectedYear && p.section === selectedSection && p.lapso === 1);
-                      const l1Avg = l1Plan ? calculateEvaluationAverage(grades, l1Plan.evaluations, student.id, selectedSubjectId, 1) : { rounded: 0, raw: 0 };
+                      const l1Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 1);
+                      const l1Avg = l1Plan ? calculateEvaluationAverage(grades, l1Plan.evaluations, student.id, sabanaSubjectId, 1) : { rounded: 0, raw: 0 };
 
                       // Get L2 Average
-                      const l2Plan = evaluationPlans.find(p => p.subjectId === selectedSubjectId && p.year === selectedYear && p.section === selectedSection && p.lapso === 2);
-                      const l2Avg = l2Plan ? calculateEvaluationAverage(grades, l2Plan.evaluations, student.id, selectedSubjectId, 2) : { rounded: 0, raw: 0 };
+                      const l2Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 2);
+                      const l2Avg = l2Plan ? calculateEvaluationAverage(grades, l2Plan.evaluations, student.id, sabanaSubjectId, 2) : { rounded: 0, raw: 0 };
 
                       // Get L3 Average
-                      const l3Plan = evaluationPlans.find(p => p.subjectId === selectedSubjectId && p.year === selectedYear && p.section === selectedSection && p.lapso === 3);
-                      const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, selectedSubjectId, 3) : { rounded: 0, raw: 0 };
+                      const l3Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 3);
+                      const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, sabanaSubjectId, 3) : { rounded: 0, raw: 0 };
 
                       // Calculate final rounded score
-                      const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, selectedSubjectId);
+                      const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId);
 
                       return (
                         <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-[11px]">
@@ -1225,7 +1290,7 @@ export default function GradeManager({
                 <ScrollText className="h-5 w-5 text-amber-600" />
                 <h3 className="text-sm font-bold text-slate-800">Histórico de Notas Certificadas</h3>
               </div>
-              {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+              {['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) && (
                 <button
                   onClick={handleOpenCertLoadModal}
                   className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"

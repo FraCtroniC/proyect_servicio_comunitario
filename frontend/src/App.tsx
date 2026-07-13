@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast, { Toaster } from 'react-hot-toast';
 import {
@@ -893,8 +893,12 @@ const handleLogout = async () => {
         tabla_afectada: 'notas_parciales',
         valores_nuevos: { asignatura: subjectName, year: year, section: section, lapso, detalles, planEvaluaciones }
       };
-      const createdAudit = await api.post<any>('/api/auditorias', auditPayload);
-      setAuditLogs(p => [createdAudit, ...p]);
+      try {
+        const createdAudit = await api.post<any>('/api/auditorias', auditPayload);
+        setAuditLogs(p => [createdAudit, ...p]);
+      } catch {
+        // Auditoría es secundaria — si falla por permisos, no bloquea el guardado
+      }
 
     } catch (e: any) {
       console.error("Error al guardar calificaciones:", e);
@@ -957,6 +961,36 @@ const handleLogout = async () => {
       toast.error(`Error al guardar el plan de evaluación: ${msg}`);
     }
   };
+
+  const refreshGrades = useCallback(async () => {
+    try {
+      const [calificacionesData, planesResp, notasResp, auditoriaData] = await Promise.all([
+        api.get<any[]>('/api/calificaciones'),
+        api.get<any[]>('/api/evaluaciones/planes').catch(() => ({ data: [] })),
+        api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] })),
+        api.get<any[]>('/api/auditorias').catch(() => []),
+      ]);
+
+      const seccionesMap = sections.reduce((acc: Record<number, any>, s) => {
+        acc[Number(s.id)] = { letra: s.letter };
+        return acc;
+      }, {});
+
+      const dbEvaluationsList = (Array.isArray((planesResp as any)?.data) ? (planesResp as any).data : (Array.isArray(planesResp) ? planesResp : [])) || [];
+      setEvaluationPlans(mapEvaluacionesDbToPlans(dbEvaluationsList, studyPlans, seccionesMap));
+
+      const dbNotasParciales = (Array.isArray((notasResp as any)?.data) ? (notasResp as any).data : (Array.isArray(notasResp) ? notasResp : [])) || [];
+      if (dbNotasParciales.length > 0) {
+        setGrades(dbNotasParciales.map((n: any) => mapNotaParcialToGrade(n, String(n.id_matricula))));
+      } else {
+        setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+      }
+
+      setAuditLogs(auditoriaData.sort((a: any, b: any) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
+    } catch (e) {
+      console.error('Error al refrescar calificaciones:', e);
+    }
+  }, [sections, studyPlans]);
 
   const resolveMatriculaId = (studentId: string, year: number, section: string): number | null => {
     const activePeriod = periods.find(p => p.status === 'Activo');
@@ -1306,6 +1340,7 @@ const handleLogout = async () => {
   const sectionsForSchedule = activePeriod
     ? sections.filter(s => String(s.periodId) === String(activePeriod.id))
     : sections;
+  const sectionsForGrades = sectionsForSchedule;
 
   return (
     <div id="mppe-app-root" className="h-screen overflow-hidden bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
@@ -1592,10 +1627,11 @@ const handleLogout = async () => {
                   currentUserRole={currentUserRole}
                   studyPlans={studyPlans}
                   periods={periods}
-                  sections={sections}
+                  sections={sectionsForGrades}
                   onUpdateGrade={handleUpdateGrade}
                   onSaveGrades={handleSaveGrades}
                   onUpdateEvaluationPlan={handleUpdateEvaluationPlan}
+                  onRefreshData={refreshGrades}
                 />
               )}
 

@@ -7,6 +7,6 @@ export const escalaCalificacionRoutes = Router();
 
 escalaCalificacionRoutes.get('/', cacheable({ ttl: 3600 }), EscalaCalificacionController.listar);
 escalaCalificacionRoutes.get('/:id', cacheable({ ttl: 3600 }), EscalaCalificacionController.obtenerPorId);
-escalaCalificacionRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), invalidates('escalas:*'), EscalaCalificacionController.crear);
-escalaCalificacionRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), invalidates('escalas:*'), EscalaCalificacionController.actualizar);
+escalaCalificacionRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Docente'), invalidates('escalas:*'), EscalaCalificacionController.crear);
+escalaCalificacionRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Docente'), invalidates('escalas:*'), EscalaCalificacionController.actualizar);
 escalaCalificacionRoutes.delete('/:id', authorize('Administrador'), invalidates('escalas:*'), EscalaCalificacionController.eliminar);

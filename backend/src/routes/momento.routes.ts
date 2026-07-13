@@ -8,6 +8,6 @@ export const momentoRoutes = Router();
 
 momentoRoutes.get('/', cacheable({ ttl: 3600 }), MomentoController.listar);
 momentoRoutes.get('/:id', cacheable({ ttl: 3600 }), MomentoController.obtenerPorId);
-momentoRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador'), validateCrearMomento, invalidates('momentos:*'), MomentoController.crear);
-momentoRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador'), invalidates('momentos:*'), MomentoController.actualizar);
+momentoRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Docente'), validateCrearMomento, invalidates('momentos:*'), MomentoController.crear);
+momentoRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Docente'), invalidates('momentos:*'), MomentoController.actualizar);
 momentoRoutes.delete('/:id', authorize('Administrador'), invalidates('momentos:*'), MomentoController.eliminar);
