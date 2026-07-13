@@ -4,7 +4,6 @@ import { AsistenciaDocente, Justificacion, Docente, sequelize } from '../models'
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { ASISTENCIA_DOCENTE_STATUS, HORA_LIMITE_PUNTUAL } from '../shared/constants';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-import { broadcastAsistenciaDocenteEvent } from './asistencia-docente-stream.controller';
 
 const ALLOWED_CREATE_FIELDS = ['id_docente', 'fecha', 'hora_entrada', 'hora_salida', 'estatus'];
 const ALLOWED_UPDATE_FIELDS = ['hora_entrada', 'hora_salida', 'estatus'];
@@ -113,7 +112,6 @@ export const AsistenciaDocenteController = {
     }
 
     const result = await AsistenciaDocente.create(payload);
-    broadcastAsistenciaDocenteEvent({ tipo: 'create', data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -144,7 +142,6 @@ export const AsistenciaDocenteController = {
     }
 
     await record.update(payload);
-    broadcastAsistenciaDocenteEvent({ tipo: 'update', data: record });
     res.json({ data: record });
   }),
 
@@ -156,7 +153,6 @@ export const AsistenciaDocenteController = {
       return;
     }
     await record.destroy();
-    broadcastAsistenciaDocenteEvent({ tipo: 'delete', data: record });
     res.status(204).send();
   }),
 

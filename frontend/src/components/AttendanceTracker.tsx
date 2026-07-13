@@ -24,6 +24,7 @@ interface AttendanceTrackerProps {
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
   onSyncInasistencias?: (ids_matricula: string[]) => void;
   onJustifyTeacherAbsence?: (logId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
+  onRefreshData?: () => Promise<void>;
 }
 
 export default function AttendanceTracker({
@@ -39,7 +40,8 @@ export default function AttendanceTracker({
   onAddTeacherLog,
   onUpdateTeacherLog,
   onSyncInasistencias,
-  onJustifyTeacherAbsence
+  onJustifyTeacherAbsence,
+  onRefreshData
 }: AttendanceTrackerProps) {
   // Navigation
   const [trackerTab, setTrackerTab] = useState<'students' | 'teachers'>('students');
@@ -65,6 +67,12 @@ export default function AttendanceTracker({
   
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [justifySoporte, setJustifySoporte] = useState('');
+
+  useEffect(() => {
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  }, []);
 
   const activePeriod = periods.find(p => p.status === 'Activo');
   const schoolYearStart = (() => {

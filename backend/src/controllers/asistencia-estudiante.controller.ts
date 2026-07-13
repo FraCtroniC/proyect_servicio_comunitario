@@ -4,7 +4,6 @@ import { AsistenciaEstudiante, Matricula, Estudiante, Seccion, Calificacion, Per
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { ASISTENCIA_ESTUDIANTE_STATUS } from '../shared/constants';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-import { broadcastAsistenciaEstudianteEvent } from './asistencia-estudiante-stream.controller';
 
 const ALLOWED_CREATE_FIELDS = ['id_matricula', 'fecha', 'estatus', 'observacion'];
 const ALLOWED_UPDATE_FIELDS = ['estatus', 'observacion'];
@@ -111,7 +110,6 @@ export const AsistenciaEstudianteController = {
     payload.id_usuario_crea = req.user!.idUsuario;
     const nueva = await AsistenciaEstudiante.create(payload);
     const completa = await AsistenciaEstudiante.findByPk(nueva.id_asistencia_est, { include: MATRICULA_INCLUDES });
-    broadcastAsistenciaEstudianteEvent({ tipo: 'create', data: completa || nueva });
     res.status(201).json(completa || nueva);
   }),
 
@@ -173,7 +171,6 @@ export const AsistenciaEstudianteController = {
       result.map((r: any) => AsistenciaEstudiante.findByPk(r.id_asistencia_est, { include: MATRICULA_INCLUDES }))
     );
     const data = completos.map((r, i) => r || result[i]);
-    broadcastAsistenciaEstudianteEvent({ tipo: 'batch', data });
     res.status(201).json({ data, meta: { total: data.length } });
   }),
 
@@ -370,7 +367,6 @@ export const AsistenciaEstudianteController = {
     payload.id_usuario_modifica = req.user!.idUsuario;
     await record.update(payload);
     const completa = await AsistenciaEstudiante.findByPk(record.id_asistencia_est, { include: MATRICULA_INCLUDES });
-    broadcastAsistenciaEstudianteEvent({ tipo: 'update', data: completa || record });
     res.json(completa || record);
   })
 };
