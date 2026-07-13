@@ -246,10 +246,10 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
           </div>
           <div>
             <h1 className="text-white font-black text-base md:text-lg tracking-widest uppercase block leading-tight">
-              L. N. F. C. A. ESTILITA OROZCO
+              L. N. E. O.
             </h1>
             <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
-              Liceo Bolivariano • MPPE Venezuela
+              Liceo Nacional Estilita Orozco
             </span>
           </div>
           <p className="text-xs md:text-sm text-slate-500 leading-normal max-w-xs mx-auto">

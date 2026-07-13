@@ -127,7 +127,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
             Año Escolar Activo: 2025 - 2026
           </span>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            L. N. F. C. A. ESTILITA OROZCO
+            Estilita Orozco
           </h1>
           <p className="text-blue-100 text-sm max-w-2xl leading-relaxed">
             Plataforma homologada de Control de Estudios para Educación Media General. 

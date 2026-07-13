@@ -1382,7 +1382,7 @@ const handleLogout = async () => {
                   Estilita Orozco
                 </span>
                 <span className="block text-[8.5px] text-indigo-300/80 font-bold uppercase tracking-widest leading-tight">
-                  Liceo de Formación<br/>Cultural para las Artes
+                  Liceo Nacional
                 </span>
               </div>
             </div>
