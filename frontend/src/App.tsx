@@ -176,6 +176,17 @@ export default function App() {
       setUsers(prev => prev.filter(u =>
         u.id !== String(payload.data.id_usuario)
       ));
+    } else if (event === 'aula:create') {
+      setClassrooms(prev => [mapAulaToClassroom(payload.data), ...prev]);
+    } else if (event === 'aula:update') {
+      setClassrooms(prev => prev.map(c =>
+        c.id === String(payload.data.id_aula)
+          ? mapAulaToClassroom(payload.data) : c
+      ));
+    } else if (event === 'aula:delete') {
+      setClassrooms(prev => prev.filter(c =>
+        c.id !== String(payload.data.id_aula)
+      ));
     }
   });
 
@@ -1158,15 +1169,13 @@ const handleLogout = async () => {
   };
 
   const handleAddClassroom = async (room: Classroom) => {
-    const resp = await api.post<any>('/api/aulas', {
+    await api.post<any>('/api/aulas', {
       nombre_codigo: room.name,
       capacidad: room.capacity,
       tipo_espacio: room.type,
       ubicacion: room.location,
       estatus: 'Activo'
     });
-    const savedRoom = mapAulaToClassroom(resp);
-    setClassrooms(prev => [...prev, savedRoom]);
   };
 
   const handleEditClassroom = async (roomId: string, data: Partial<Classroom>) => {
@@ -1179,20 +1188,13 @@ const handleLogout = async () => {
       if (data.location !== undefined) payload.ubicacion = data.location;
       
       await api.patch<any>(`/api/aulas/${id}`, payload);
-      setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
     }
   };
 
   const handleRemoveClassroom = async (roomId: string) => {
-    try {
-      const id = Number(roomId.replace(/\D/g, ''));
-      if (id) {
-        await api.delete(`/api/aulas/${id}`);
-      }
-      setClassrooms(p => p.filter(c => c.id !== roomId));
-    } catch (e) {
-      console.error('Error al eliminar aula:', e);
-      setClassrooms(p => p.filter(c => c.id !== roomId));
+    const id = Number(roomId.replace(/\D/g, ''));
+    if (id) {
+      await api.delete(`/api/aulas/${id}`);
     }
   };
 
@@ -1633,6 +1635,7 @@ const handleLogout = async () => {
                   scheduleEvents={scheduleEvents}
                   sections={sections}
                   students={students}
+                  activePeriodId={periods.find(p => p.status === 'Activo')?.id}
                   currentUserRole={currentUserRole}
                   onAddClassroom={handleAddClassroom}
                   onEditClassroom={handleEditClassroom}

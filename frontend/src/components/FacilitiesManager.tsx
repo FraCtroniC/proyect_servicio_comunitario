@@ -14,6 +14,7 @@ interface FacilitiesProps {
   scheduleEvents: ScheduleEvent[];
   sections?: Section[];
   students?: Student[];
+  activePeriodId?: string;
   currentUserRole: UserRole;
   onAddClassroom: (room: Classroom) => Promise<void> | void;
   onEditClassroom: (roomId: string, data: Partial<Classroom>) => Promise<void> | void;
@@ -25,6 +26,7 @@ export default function FacilitiesManager({
   scheduleEvents,
   sections = [],
   students = [],
+  activePeriodId,
   currentUserRole,
   onAddClassroom,
   onEditClassroom,
@@ -41,6 +43,10 @@ export default function FacilitiesManager({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<Classroom | null>(null);
+
+  const isDuplicateName = name.trim() !== '' && classrooms.some(
+    c => c.name.toUpperCase() === name.toUpperCase() && c.id !== editingRoomId
+  );
 
   const openAddModal = () => {
     setName('');
@@ -186,7 +192,7 @@ export default function FacilitiesManager({
                     {getCapacityWarning(room.capacity)}
                     
                     {(() => {
-                       const assignedSection = sections.find(s => s.homeClassroomId === room.id);
+                       const assignedSection = sections.find(s => s.homeClassroomId === room.id && s.periodId === activePeriodId);
                        if (assignedSection) {
                           const enrolled = students.filter(s => s.academicYear === assignedSection.grade && s.section === assignedSection.letter).length;
                           const percent = Math.min(100, Math.round((enrolled / room.capacity) * 100));
@@ -304,11 +310,13 @@ export default function FacilitiesManager({
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Nombre / Identificador del Espacio</label>
               <input 
                 type="text" 
-                placeholder="e.g. Laboratorio de Biología" 
+                placeholder="EJ. LABORATORIO DE BIOLOGÍA" 
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden focus:bg-white font-medium ${fieldErrors.nombre_codigo ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
+                maxLength={30}
+                onChange={(e) => setName(e.target.value.toUpperCase())}
+                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden focus:bg-white font-medium ${isDuplicateName || fieldErrors.nombre_codigo ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`}
               />
+              {isDuplicateName && <p className="text-red-600 text-[11px]">Este nombre ya está registrado</p>}
               {fieldErrors.nombre_codigo && <p className="text-red-600 text-[11px]">{fieldErrors.nombre_codigo}</p>}
             </div>
 
@@ -350,9 +358,10 @@ export default function FacilitiesManager({
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+              disabled={isDuplicateName || !name.trim()}
+              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              Registrar Aula en Inventario
+              {isDuplicateName ? 'Nombre ya existe' : 'Registrar Aula en Inventario'}
             </button>
           </form>
         )}
