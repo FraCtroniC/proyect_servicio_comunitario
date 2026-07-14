@@ -39,6 +39,10 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
     socket.on('aula:update', (d) => onEventRef.current('aula:update', d));
     socket.on('aula:delete', (d) => onEventRef.current('aula:delete', d));
 
+    socket.on('plan-estudio:create', (d) => onEventRef.current('plan-estudio:create', d));
+    socket.on('plan-estudio:update', (d) => onEventRef.current('plan-estudio:update', d));
+    socket.on('plan-estudio:delete', (d) => onEventRef.current('plan-estudio:delete', d));
+
     return () => { socket.disconnect(); };
   }, [isLoggedIn]);
 }

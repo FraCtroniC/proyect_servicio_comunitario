@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PlanEstudio } from '../models/PlanEstudio';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { Op } from 'sequelize';
+import { getIO } from '../socket';
 
 async function validarPlanEstudio(body: any, excludeId?: number): Promise<Record<string, string[]> | null> {
   const errores: Record<string, string[]> = {};
@@ -79,7 +80,11 @@ export const PlanEstudioController = {
       return;
     }
     const result = await PlanEstudio.create(req.body);
-    res.status(201).json({ data: result });
+    const full = await PlanEstudio.findByPk(result.id_plan, {
+      include: [{ association: 'asignatura' }, { association: 'grado' }]
+    });
+    getIO().emit('plan-estudio:create', { data: full });
+    res.status(201).json({ data: full });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
@@ -95,7 +100,11 @@ export const PlanEstudioController = {
       return;
     }
     await record.update(req.body);
-    res.json({ data: record });
+    const full = await PlanEstudio.findByPk(id, {
+      include: [{ association: 'asignatura' }, { association: 'grado' }]
+    });
+    getIO().emit('plan-estudio:update', { data: full });
+    res.json({ data: full });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
@@ -106,6 +115,7 @@ export const PlanEstudioController = {
       return;
     }
     await record.destroy();
+    getIO().emit('plan-estudio:delete', { data: { id_plan: id } });
     res.status(204).send();
   }),
 };

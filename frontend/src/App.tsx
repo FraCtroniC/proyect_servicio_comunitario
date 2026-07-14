@@ -187,6 +187,17 @@ export default function App() {
       setClassrooms(prev => prev.filter(c =>
         c.id !== String(payload.data.id_aula)
       ));
+    } else if (event === 'plan-estudio:create') {
+      setStudyPlans(prev => [...prev, mapPlanToStudyPlanItem(payload.data)]);
+    } else if (event === 'plan-estudio:update') {
+      setStudyPlans(prev => prev.map(p =>
+        p.id === String(payload.data.id_plan)
+          ? mapPlanToStudyPlanItem(payload.data) : p
+      ));
+    } else if (event === 'plan-estudio:delete') {
+      setStudyPlans(prev => prev.filter(p =>
+        p.id !== String(payload.data.id_plan)
+      ));
     }
   });
 
@@ -606,14 +617,14 @@ const handleLogout = async () => {
     }
   };
 
-  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number) => {
+  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
     // 1. Check if subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
     
     if (!subjectId) {
       const subResp = await api.post<any>('/api/asignaturas', {
         nombre: name,
-        tipo_calificacion: 'Cuantitativa'
+        tipo_calificacion: tipoCalificacion
       });
       const newSub = mapAsignaturaToSubject(subResp);
       setSubjects(p => [...p, newSub]);
@@ -621,26 +632,21 @@ const handleLogout = async () => {
     }
 
     // 2. Create the plan_estudio record
-    const planResp = await api.post<any>('/api/plan-estudio', {
+    await api.post<any>('/api/plan-estudio', {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
       posicion: posicion
     });
-    
-    const newItem = mapPlanToStudyPlanItem(planResp);
-    newItem.subjectName = name;
-    newItem.year = year as any;
-    
-    setStudyPlans(p => [...p, newItem]);
+    // State updates via WebSocket
   };
-  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number) => {
+  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
     // 1. Ensure subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
     if (!subjectId) {
       const subResp = await api.post<any>('/api/asignaturas', {
         nombre: name,
-        tipo_calificacion: 'Cuantitativa'
+        tipo_calificacion: tipoCalificacion
       });
       const newSub = mapAsignaturaToSubject(subResp);
       setSubjects(p => [...p, newSub]);
@@ -648,25 +654,19 @@ const handleLogout = async () => {
     }
     
     // 2. Update the plan_estudio record
-    const planResp = await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
+    await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
       posicion: posicion
     });
-
-    const updatedItem = mapPlanToStudyPlanItem(planResp);
-    updatedItem.subjectName = name;
-    updatedItem.year = year as any;
-
-    setStudyPlans(p => p.map(plan => plan.id === id ? updatedItem : plan));
+    // State updates via WebSocket
   };
 
   const handleDeleteStudyPlanItem = async (id: string) => {
     try {
       await api.delete(`/api/plan-estudio/${stripId(id)}`);
-      setStudyPlans(p => p.filter(plan => plan.id !== id));
-      toast.success('Materia eliminada del plan de estudio');
+      // State updates via WebSocket
     } catch (e) {
       console.error(e);
       toast.error('Error al eliminar la materia del plan de estudio');
