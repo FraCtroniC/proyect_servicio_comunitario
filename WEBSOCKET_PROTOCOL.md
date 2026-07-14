@@ -161,11 +161,13 @@ useSocket(isLoggedIn, (event, payload) => {
 });
 ```
 
+**REGLA FUNDAMENTAL:** Los handlers REST (`handleAddEntidad`, `handleUpdateEntidad`, `handleDeleteEntidad`) **SOLO** ejecutan la llamada API. **NUNCA** modifican el state (`setEntidades(...)`). El state se actualiza exclusivamente en este callback de `useSocket` cuando llega el evento del backend.
+
 ---
 
 ## 3. Cómo Conectar un Nuevo Módulo
 
-### Checklist (5 pasos)
+### Checklist (6 pasos)
 
 #### Paso 1: Backend — Emitir eventos en el controller
 
@@ -251,6 +253,30 @@ if (event === 'estudiante:create') {
 2. Abre pestaña B → login → verifica `[WS] Conectado`
 3. En pestaña A: crea/edita/elimina un registro
 4. En pestaña B: debería actualizarse automáticamente
+
+#### Paso 6: Frontend — Eliminar updates optimistas de los handlers REST
+
+**CRÍTICO:** Si no haces este paso, habrá duplicación y inconsistencias.
+
+Abre `App.tsx` y busca los handlers REST del módulo (ej: `handleAddEstudiante`, `handleUpdateEstudiante`, `handleDeleteEstudiante`). Elimina TODAS las líneas que modifican el state (`setEntidades(...)`) después de cada llamada API.
+
+```typescript
+// ANTES (CON optimista — CAUSA DUPLICACIÓN):
+const handleAddEstudiante = async (newStudent) => {
+  const created = await api.post('/api/estudiantes', payload);
+  setStudents(prev => [...prev, mapEstudianteToStudent(created)]);  // ← ELIMINAR
+};
+
+// DESPUÉS (SIN optimista — PATRÓN OFICIAL):
+const handleAddEstudiante = async (newStudent) => {
+  await api.post('/api/estudiantes', payload);
+  // ← El state se actualiza cuando llega el evento WebSocket
+};
+```
+
+**REGLA:** Si el módulo tiene WebSocket, los handlers REST **SOLO** llaman la API. **NUNCA** modifican el state. El state se actualiza exclusivamente vía el callback de `useSocket`.
+
+**¿Por qué?** Porque el WebSocket emite el evento a TODOS los clientes (incluyendo el que hizo la acción). Si el handler REST también modifica el state, el registro aparece DUPLICADO. Además, el optimista puede sobrescribir datos correctos del backend con datos parciales del frontend.
 
 ---
 
@@ -345,15 +371,31 @@ function verifyToken(token: string): any {
 
 **REGLA:** El middleware de auth del socket SIEMPRE debe ser idéntico al de HTTP. Si cambias uno, cambia el otro.
 
-### Bug 4: Doble-add del que crea
+### Bug 4: Doble-add del que crea ✅ RESUELTO
 
 **Problema:** Cuando Usuario A crea un registro:
-1. El REST exitoso hace `setPeriods(...)` → el registro aparece en la UI
-2. El socket emite `periodo:create` → el handler en `App.tsx` hace `setPeriods(...)` → el registro aparece DUPLICADO
+1. El REST exitoso hace `setEntidades(...)` → el registro aparece en la UI
+2. El socket emite `entidad:create` → el handler en `App.tsx` hace `setEntidades(...)` → el registro aparece DUPLICADO
 
-**Solución conocida (pendiente):** Agregar un guard para ignorar eventos que originó el mismo usuario. Opcionalmente, quitar el `setPeriods` optimista del handler REST y confiar solo en el socket.
+**Solución aplicada:** Eliminación total del update optimista. Los handlers REST solo ejecutan la llamada API (`api.post`, `api.patch`, `api.delete`) SIN modificar el state. El state se actualiza exclusivamente cuando llega el evento WebSocket.
 
-**Por ahora:** El usuario que crea verá el registro duplicado hasta recargar la página. Los demás usuarios verán el cambio correctamente.
+```typescript
+// ANTES (con optimista — CAUSA DUPLICACIÓN):
+const handleAddEntidad = async (...) => {
+  const created = await api.post('/api/entidades', dto);
+  setEntidades(p => [...p, mapper(created)]);  // ← DUPLICADO
+};
+
+// DESPUÉS (sin optimista — PATRÓN OFICIAL):
+const handleAddEntidad = async (...) => {
+  await api.post('/api/entidades', dto);
+  // ← el state se actualiza cuando llega el evento WebSocket
+};
+```
+
+**REGLA ESTÁNDAR:** Si un módulo tiene WebSocket, los handlers REST **NUNCA** modifican el state directamente. Solo llaman la API. El state se actualiza vía el callback de `useSocket`.
+
+**Trade-off:** Micro-delay de ~200ms entre la acción y la actualización de la UI (imperceptible para humanos).
 
 ### Bug 5: Sin logging de errores de conexión
 
@@ -460,6 +502,30 @@ useSocket(isLoggedIn, (event, payload) => {
 });
 ```
 
+#### Frontend: `App.tsx` — Handlers REST (SIN optimistas)
+
+```typescript
+// Estos handlers SOLO llaman la API. NO modifican el state.
+// El state se actualiza vía el callback de useSocket arriba.
+
+const handleAddStudent = async (newStudent: Student) => {
+  await api.post('/api/estudiantes', payload);
+  // ← NO hay setStudents() aquí
+};
+
+const handleUpdateStudent = async (id: string, data: Partial<Student>) => {
+  await api.patch(`/api/estudiantes/${id}`, payload);
+  // ← NO hay setStudents() aquí
+};
+
+const handleDeleteStudent = async (id: string) => {
+  await api.delete(`/api/estudiantes/${id}`);
+  // ← NO hay setStudents() aquí
+};
+```
+
+**REGLA:** Si el módulo tiene WebSocket, los handlers REST **NUNCA** modifican el state. Solo llaman la API. El state se actualiza vía `useSocket`.
+
 ---
 
 ## 7. Cómo Depurar
@@ -506,7 +572,7 @@ useSocket(isLoggedIn, (event, payload) => {
 
 2. **Sin verificación de tokenVersion:** El middleware HTTP verifica `tokenVersion` contra la DB (para invalidar sesiones en logout). El socket NO hace esta verificación. Un usuario con token "revocado" podría seguir conectado al socket.
 
-3. **Doble-add en el que crea:** Como se describe en el Bug 4, el usuario que crea un registro lo ve duplicado hasta recargar.
+3. ~~**Doble-add en el que crea:**~~ ✅ RESUELTO — Eliminación total del update optimista (ver Bug 4).
 
 4. **Un solo socket por componente:** `useSocket` se llama una vez en `App.tsx`. Si en el futuro se necesitan eventos para módulos que no están en `App.tsx`, habrá que reestructurar.
 

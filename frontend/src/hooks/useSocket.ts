@@ -31,6 +31,10 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
     socket.on('periodo:update', (d) => onEventRef.current('periodo:update', d));
     socket.on('periodo:delete', (d) => onEventRef.current('periodo:delete', d));
 
+    socket.on('usuario:create', (d) => onEventRef.current('usuario:create', d));
+    socket.on('usuario:update', (d) => onEventRef.current('usuario:update', d));
+    socket.on('usuario:delete', (d) => onEventRef.current('usuario:delete', d));
+
     return () => { socket.disconnect(); };
   }, [isLoggedIn]);
 }

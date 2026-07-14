@@ -152,7 +152,7 @@ export default function App() {
     }
   }, []);
 
-  // WebSocket: escuchar cambios en periodos escolares
+  // WebSocket: escuchar cambios en periodos escolares y usuarios
   useSocket(isLoggedIn, (event, payload) => {
     if (event === 'periodo:create') {
       setPeriods(prev => [...prev, mapPeriodoToSchoolPeriod(payload.data)]);
@@ -164,6 +164,17 @@ export default function App() {
     } else if (event === 'periodo:delete') {
       setPeriods(prev => prev.filter(p =>
         p.id !== String(payload.data.id_periodo)
+      ));
+    } else if (event === 'usuario:create') {
+      setUsers(prev => [mapUsuarioToUser(payload.data), ...prev]);
+    } else if (event === 'usuario:update') {
+      setUsers(prev => prev.map(u =>
+        u.id === String(payload.data.id || payload.data.id_usuario)
+          ? mapUsuarioToUser(payload.data) : u
+      ));
+    } else if (event === 'usuario:delete') {
+      setUsers(prev => prev.filter(u =>
+        u.id !== String(payload.data.id_usuario)
       ));
     }
   });
@@ -419,10 +430,9 @@ const handleLogout = async () => {
         username: newUser.cedula || newUser.email?.split('@')[0] || 'User',
         password: tempPassword,
         correo: newUser.email,
-        idRol: newUser.role === 'super_admin' ? 4 : (newUser.role === 'control_estudios' ? 8 : 5)
+        idRol: newUser.role === 'super_admin' ? 4 : newUser.role === 'control_estudios' ? 8 : newUser.role === 'coordinador' ? 7 : 5
       };
-      const created = await api.post<any>('/api/usuarios', dto);
-      setUsers(p => [mapUsuarioToUser(created), ...p]);
+      await api.post<any>('/api/usuarios', dto);
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al crear usuario en BD');
@@ -436,10 +446,9 @@ const handleLogout = async () => {
       if (data.cedula) dto.username = data.cedula;
       if (data.password) dto.password = data.password;
       if (data.phone) dto.telefono = data.phone;
-      if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : (data.role === 'control_estudios' ? 8 : 5);
+      if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : data.role === 'control_estudios' ? 8 : data.role === 'coordinador' ? 7 : 5;
       
-      const updated = await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
-      setUsers(p => p.map(u => u.id === userId ? { ...u, ...mapUsuarioToUser(updated) } : u));
+      await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
     } catch (e: any) {
       console.error(e);
       const details = e.details;
@@ -455,7 +464,6 @@ const handleLogout = async () => {
   const handleDeleteUser = async (userId: string) => {
     try {
       await api.delete(`/api/usuarios/${stripId(userId)}`);
-      setUsers(p => p.filter(u => u.id !== userId));
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al eliminar usuario');
@@ -469,7 +477,6 @@ const handleLogout = async () => {
       const user = users.find(u => u.id === userId);
       if (user) {
         await api.patch(`/api/usuarios/${stripId(userId)}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
-        setUsers(p => p.map(u => u.id === userId ? { ...u, active: !u.active } : u));
       }
     } catch (e: any) {
       console.error(e);
@@ -671,7 +678,6 @@ const handleLogout = async () => {
         nombre: name,
         estatus: status
       });
-      setPeriods(p => [...p, mapPeriodoToSchoolPeriod(resp)]);
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'Error al crear periodo escolar');
@@ -682,7 +688,6 @@ const handleLogout = async () => {
   const handleUpdatePeriodStatus = async (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => {
     try {
       await api.patch(`/api/periodos/${stripId(id)}`, { estatus: newStatus });
-      setPeriods(p => p.map(per => per.id === id ? { ...per, status: newStatus } : per));
     } catch (e) {
       console.error(e);
       toast.error('Error al actualizar periodo escolar');
@@ -1650,7 +1655,6 @@ const handleLogout = async () => {
                 <UserManager
                   users={users}
                   currentUserRole={currentUserRole}
-                  onSetUserRole={setCurrentUserRole}
                   onAddUser={handleAddUser}
                   onEditUser={handleEditUser}
                   onDeleteUser={handleDeleteUser}

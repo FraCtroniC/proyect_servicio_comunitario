@@ -4,21 +4,20 @@
  */
 
 import React, { useState } from 'react';
-import { Shield, UserPlus, ToggleLeft, ToggleRight, Check, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
+import { UserPlus, ToggleLeft, ToggleRight, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { Modal } from './Modal';
 
 interface UserManagerProps {
   users: User[];
   currentUserRole: UserRole;
-  onSetUserRole: (role: UserRole) => void;
   onAddUser: (user: Partial<User> & { password?: string }) => Promise<void>;
   onEditUser: (userId: string, data: Partial<User> & { password?: string }) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
   onToggleUserActive: (userId: string) => Promise<void>;
 }
 
-export default function UserManager({ users, currentUserRole, onSetUserRole, onAddUser, onEditUser, onDeleteUser, onToggleUserActive }: UserManagerProps) {
+export default function UserManager({ users, currentUserRole, onAddUser, onEditUser, onDeleteUser, onToggleUserActive }: UserManagerProps) {
   // Setup forms
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -42,6 +41,8 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
         return <span className="bg-red-50 text-red-700 border border-red-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Director/Principal</span>;
       case 'control_estudios':
         return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Ctrl de Estudios</span>;
+      case 'coordinador':
+        return <span className="bg-amber-50 text-amber-700 border border-amber-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Coordinador</span>;
       case 'docente':
         return <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Docente</span>;
     }
@@ -127,46 +128,6 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
   return (
     <>
       <div id="user-manager-container" className="space-y-8 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
-      {/* Simulation Persona Selector */}
-      <div id="persona-selector-header" className="bg-indigo-50 border border-indigo-200/60 p-5 rounded-2xl">
-        <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-indigo-700" />
-          Simulador de Perspectiva / Rol de Acceso
-        </h3>
-        <p className="text-xs text-indigo-700/80 mt-1">
-          Cambia tu rol de acceso para probar de manera inmediata cómo el sistema restringe o habilita las diferentes vistas, 
-          módulos de horarios, controles de asistencia y el cargado reglamentario de calificaciones MPPE.
-        </p>
-
-        <div id="role-buttons" className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-          {(['super_admin', 'control_estudios', 'docente'] as UserRole[]).map(r => {
-            const isActive = currentUserRole === r;
-            return (
-              <button
-                id={`role-btn-${r}`}
-                key={r}
-                onClick={() => {
-                  onSetUserRole(r);
-                  setSuccessMsg(`Simulando rol: ${r === 'super_admin' ? 'Director/Super Admin' : r === 'control_estudios' ? 'Funcionario Control de Estudios' : 'Profesor/Docente'}. Las vistas se han actualizado.`);
-                  setErrorMsg('');
-                }}
-                className={`py-3 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-between pointer-events-auto cursor-pointer ${
-                  isActive 
-                    ? 'bg-indigo-700 text-white shadow-md' 
-                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-                }`}
-              >
-                <span>
-                  {r === 'super_admin' && '🔑 Director Principal'}
-                  {r === 'control_estudios' && '📁 Control de Estudios'}
-                  {r === 'docente' && '📝 Docente'}
-                </span>
-                {isActive && <Check id={`check-${r}`} className="h-4 w-4 bg-white text-indigo-700 rounded-full p-0.5 shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {successMsg && (
         <div id="user-success" className="p-3 bg-indigo-50 text-indigo-800 text-xs rounded-lg flex items-center gap-2 border border-indigo-100">
@@ -301,6 +262,7 @@ export default function UserManager({ users, currentUserRole, onSetUserRole, onA
             <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm">
               <option value="docente">Docente</option>
               <option value="control_estudios">Control de Estudios</option>
+              <option value="coordinador">Coordinador</option>
               <option value="super_admin">Administrador</option>
             </select>
           </div>

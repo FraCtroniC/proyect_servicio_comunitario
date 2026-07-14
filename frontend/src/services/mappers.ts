@@ -3,6 +3,7 @@ import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEv
 export function mapRole(idRol: number): UserRole {
   if (idRol === 4) return 'super_admin';
   if (idRol === 5) return 'docente';
+  if (idRol === 7) return 'coordinador';
   if (idRol === 8) return 'control_estudios';
   return 'docente';
 }
