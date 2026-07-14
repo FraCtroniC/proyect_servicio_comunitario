@@ -23,18 +23,27 @@ export const DocenteController = {
     if (result.usuario) {
       getIO().emit('usuario:create', { data: { id: result.usuario.idUsuario, ...result.usuario } });
     }
+    getIO().emit('docente:create', { data: result.docente });
     res.status(201).json({ data: result });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const result = await DocenteService.actualizar(id, req.body);
+    if (result.usuario) {
+      getIO().emit('usuario:update', { data: result.usuario });
+    }
+    getIO().emit('docente:update', { data: result.docente });
     res.json({ data: result });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    await DocenteService.eliminar(id);
+    const usuarioId = await DocenteService.eliminar(id);
+    if (usuarioId) {
+      getIO().emit('usuario:delete', { data: { id_usuario: usuarioId } });
+    }
+    getIO().emit('docente:delete', { data: { id_docente: id } });
     res.status(204).send();
   }),
 

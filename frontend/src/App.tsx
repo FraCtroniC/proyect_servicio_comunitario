@@ -198,6 +198,17 @@ export default function App() {
       setStudyPlans(prev => prev.filter(p =>
         p.id !== String(payload.data.id_plan)
       ));
+    } else if (event === 'docente:create') {
+      setDocentes(prev => [mapDocenteToDocenteType(payload.data), ...prev]);
+    } else if (event === 'docente:update') {
+      setDocentes(prev => prev.map(d =>
+        d.id === String(payload.data.id_docente || payload.data.id)
+          ? mapDocenteToDocenteType(payload.data) : d
+      ));
+    } else if (event === 'docente:delete') {
+      setDocentes(prev => prev.filter(d =>
+        d.id !== String(payload.data.id_docente)
+      ));
     }
   });
 
@@ -356,6 +367,16 @@ const handleLogout = async () => {
     }
   }, [isLoggedIn]);
 
+  // Refrescar usuarios cuando se abre el módulo Roles de Acceso
+  useEffect(() => {
+    if (activeTab === 'users' && isLoggedIn) {
+      api.get<any[]>('/api/usuarios').then(data => {
+        const parsed = Array.isArray(data) ? data : (data as any)?.data || [];
+        setUsers(parsed.map(mapUsuarioToUser));
+      }).catch(() => {});
+    }
+  }, [activeTab, isLoggedIn]);
+
   // --- PERSISTENCE ACTIONS PASSED DOWN ---
   const handleAddDocente = async (newDocente: Omit<Docente, 'id'>) => {
     try {
@@ -371,12 +392,8 @@ const handleLogout = async () => {
         correo: newDocente.email
       };
       const response = await api.post<any>('/api/docentes', payload);
-      const createdDocente = response.docente || response;
       const passwordTemporal = response.password_temporal;
-
-      const parsedDocente = mapDocenteToDocenteType(createdDocente);
-      setDocentes(p => [parsedDocente, ...p]);
-
+      // State updates via WebSocket
       return passwordTemporal;
     } catch (e: any) {
       console.error(e);
@@ -398,17 +415,7 @@ const handleLogout = async () => {
         correo: updatedDocente.email
       };
       await api.patch<any>(`/api/docentes/${stripId(id)}`, payload);
-      
-      setDocentes(p => p.map(d => d.id === id ? { ...d, ...updatedDocente } : d));
-      
-      // Attempt to update associated user email if necessary, silently catch
-      if (updatedDocente.email) {
-        const user = users.find(u => u.teacherId === id || (u.email && u.email === updatedDocente.email));
-        if (user) {
-           await api.patch(`/api/usuarios/${stripId(user.id)}`, { correo: updatedDocente.email }).catch(() => {});
-           setUsers(p => p.map(u => u.id === user.id ? { ...u, email: updatedDocente.email } : u));
-        }
-      }
+      // State updates via WebSocket
 
     } catch (e: any) {
       console.error(e);
@@ -419,13 +426,7 @@ const handleLogout = async () => {
   const handleDeleteDocente = async (id: string) => {
     try {
       await api.delete(`/api/docentes/${stripId(id)}`);
-      setDocentes(p => p.filter(d => d.id !== id));
-      
-      // Remove associated user if exists locally
-      const user = users.find(u => u.teacherId === id);
-      if (user) {
-         setUsers(p => p.filter(u => u.id !== user.id));
-      }
+      // State updates via WebSocket
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al eliminar docente, asegúrese de que no tenga horarios asignados.');
@@ -438,7 +439,7 @@ const handleLogout = async () => {
       if (docente) {
         const newStatus = docente.status === 'Activo' ? 'Inactivo' : 'Activo';
         await api.patch(`/api/docentes/${stripId(docenteId)}`, { estatus: newStatus });
-        setDocentes(p => p.map(d => d.id === docenteId ? { ...d, status: newStatus } : d));
+        // State updates via WebSocket
       }
     } catch (e) {
       console.error(e);
