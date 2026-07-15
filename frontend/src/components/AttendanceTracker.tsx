@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule } from '../types';
+import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
 
@@ -22,6 +22,7 @@ interface AttendanceTrackerProps {
   horariosDisponibles: SubjectSchedule[];
   bloques: any[];
   miHorario: SubjectSchedule[];
+  scheduleEvents: ScheduleEvent[];
   currentUser: User | null;
   currentUserRole: UserRole;
   onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', observacion?: string, horarioId?: string) => void;
@@ -47,6 +48,7 @@ export default function AttendanceTracker({
   horariosDisponibles,
   bloques,
   miHorario,
+  scheduleEvents,
   currentUser,
   currentUserRole,
   onModifyAttendance,
@@ -126,6 +128,74 @@ export default function AttendanceTracker({
 
   // Filtering students and their attendance records for the selected date
   const sectionStudents = students.filter(s => s.academicYear === selectedYear && s.section === selectedSection && s.status === 'Activo');
+
+  // Teacher Access Control Logic
+  const isDocente = currentUserRole === 'docente';
+  const currentDocente = docentes.find(d => 
+    (currentUser?.teacherId && d.id === currentUser.teacherId) ||
+    (currentUser?.cedula && d.cedula === currentUser.cedula) ||
+    (currentUser?.name && `${d.firstName} ${d.lastName}`.toLowerCase().includes(currentUser.name.toLowerCase())) ||
+    (currentUser?.name && currentUser.name.toLowerCase().includes(d.firstName.toLowerCase()))
+  );
+  
+  const myTeacherId = currentUser?.teacherId || currentDocente?.id;
+  
+  const myFullSchedule = isDocente && myTeacherId 
+    ? scheduleEvents.filter(e => String(e.teacherId) === String(myTeacherId))
+    : [];
+  
+  const docenteYears = isDocente 
+    ? Array.from(new Set(myFullSchedule.map(h => h.year))).filter(Boolean) as number[] 
+    : null;
+
+  const docenteSections = isDocente
+    ? Array.from(new Set(myFullSchedule.filter(h => h.year === selectedYear).map(h => h.section))).filter(Boolean) as string[]
+    : null;
+
+  const docenteSubjects = isDocente
+    ? Array.from(new Set(myFullSchedule.filter(h => h.year === selectedYear && h.section === selectedSection).map(h => String(h.subjectId)))).filter(Boolean) as string[]
+    : null;
+
+  useEffect(() => {
+    if (isDocente && docenteYears && docenteYears.length > 0 && !docenteYears.includes(selectedYear)) {
+      setSelectedYear(docenteYears[0] as AcademicYear);
+    }
+  }, [isDocente, selectedYear, docenteYears]);
+
+  useEffect(() => {
+    if (isDocente && docenteSections && docenteSections.length > 0 && !docenteSections.includes(selectedSection)) {
+      setSelectedSection(docenteSections[0]);
+    }
+  }, [isDocente, selectedYear, selectedSection, docenteSections]);
+
+  const allowedBlocksForClass = Array.from(new Set(
+    scheduleEvents
+      .filter(e => 
+        e.year === selectedYear && 
+        e.section === selectedSection && 
+        (selectedSubject ? e.subjectId === selectedSubject : true)
+      )
+      .flatMap(e => [e.blockId, e.timeBlock])
+      .filter(Boolean)
+  )) as string[];
+
+  const validDaysForClass = Array.from(new Set(
+    scheduleEvents
+      .filter(e => 
+        e.year === selectedYear && 
+        e.section === selectedSection && 
+        (selectedSubject ? e.subjectId === selectedSubject : true)
+      )
+      .map(e => e.day)
+  ));
+
+  useEffect(() => {
+    if (allowedBlocksForClass.length > 0 && selectedBlock && !allowedBlocksForClass.includes(selectedBlock)) {
+      setSelectedBlock(allowedBlocksForClass[0]);
+    } else if (allowedBlocksForClass.length === 0 && selectedBlock) {
+      setSelectedBlock('');
+    }
+  }, [selectedYear, selectedSection, selectedSubject, scheduleEvents]); // don't depend directly on allowedBlocksForClass to avoid loop
 
   // Teacher actions
   const activeTeachers = docentes.filter(d => d.status === 'Activo');
@@ -269,11 +339,17 @@ export default function AttendanceTracker({
                 }}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value={1}>1er Año</option>
-                <option value={2}>2do Año</option>
-                <option value={3}>3er Año</option>
-                <option value={4}>4to Año</option>
-                <option value={5}>5to Año</option>
+                {[
+                  { val: 1, label: '1er Año' },
+                  { val: 2, label: '2do Año' },
+                  { val: 3, label: '3er Año' },
+                  { val: 4, label: '4to Año' },
+                  { val: 5, label: '5to Año' }
+                ]
+                  .filter(y => !isDocente || (docenteYears && docenteYears.includes(y.val)))
+                  .map(y => (
+                    <option key={y.val} value={y.val}>{y.label}</option>
+                  ))}
               </select>
             </div>
 
@@ -286,6 +362,7 @@ export default function AttendanceTracker({
               >
                 {sections
                   .filter(s => s.grade === selectedYear)
+                  .filter(s => !isDocente || (docenteSections && docenteSections.includes(s.letter)))
                   .sort((a, b) => a.letter.localeCompare(b.letter))
                   .map(s => (
                     <option key={`${s.grade}-${s.letter}`} value={s.letter}>
@@ -305,6 +382,7 @@ export default function AttendanceTracker({
                 <option value="">Todas las materias</option>
                 {subjects
                   .filter(s => !s.years || s.years.length === 0 || s.years.includes(selectedYear))
+                  .filter(s => !isDocente || (docenteSubjects && docenteSubjects.includes(String(s.id))))
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
@@ -312,22 +390,24 @@ export default function AttendanceTracker({
               </select>
             </div>
 
-            <div id="filter-att-teacher" className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-slate-400 uppercase">Docente</span>
-              <select
-                value={selectedTeacher}
-                onChange={(e) => setSelectedTeacher(e.target.value)}
-                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
-              >
-                <option value="">Todos los docentes</option>
-                {docentes
-                  .filter(d => d.status === 'Activo')
-                  .sort((a, b) => a.lastName.localeCompare(b.lastName))
-                  .map(d => (
-                    <option key={d.id} value={d.id}>{d.lastName}, {d.firstName}</option>
-                  ))}
-              </select>
-            </div>
+            {!isDocente && (
+              <div id="filter-att-teacher" className="flex flex-col gap-1">
+                <span className="text-sm font-bold text-slate-400 uppercase">Docente</span>
+                <select
+                  value={selectedTeacher}
+                  onChange={(e) => setSelectedTeacher(e.target.value)}
+                  className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                >
+                  <option value="">Todos los docentes</option>
+                  {docentes
+                    .filter(d => d.status === 'Activo')
+                    .sort((a, b) => a.lastName.localeCompare(b.lastName))
+                    .map(d => (
+                      <option key={d.id} value={d.id}>{d.lastName}, {d.firstName}</option>
+                    ))}
+                </select>
+              </div>
+            )}
 
             <div id="filter-att-block" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Bloque Horario</span>
@@ -338,6 +418,10 @@ export default function AttendanceTracker({
               >
                 <option value="">Todos los bloques</option>
                 {bloques
+                  .filter((b: any) => {
+                    const timeStr = `${b.hora_inicio?.substring(0,5)} - ${b.hora_fin?.substring(0,5)}`;
+                    return allowedBlocksForClass.includes(String(b.id_bloque)) || allowedBlocksForClass.includes(timeStr);
+                  })
                   .sort((a: any, b: any) => (a.numero_bloque || 0) - (b.numero_bloque || 0))
                   .map((b: any) => (
                     <option key={b.id_bloque} value={b.id_bloque}>
@@ -364,6 +448,17 @@ export default function AttendanceTracker({
                     toast.error(`La fecha no puede ser anterior al ${schoolYearStart}.`);
                     return;
                   }
+                  
+                  if (validDaysForClass.length > 0) {
+                    const dateObj = new Date(val + "T12:00:00");
+                    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    const dayName = days[dateObj.getDay()];
+                    if (!validDaysForClass.includes(dayName as any)) {
+                      toast.error(`Materia no asignada para los ${dayName}s. Días válidos: ${validDaysForClass.join(', ')}.`);
+                      return;
+                    }
+                  }
+
                   setSelectedDate(val);
                 }}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium font-mono"

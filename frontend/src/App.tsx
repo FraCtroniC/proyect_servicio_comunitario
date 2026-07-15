@@ -1737,6 +1737,7 @@ export default function App() {
                   horariosDisponibles={horariosDisponibles}
                   bloques={referenceData.bloques}
                   miHorario={miHorario}
+                  scheduleEvents={scheduleEvents}
                   currentUser={currentUser}
                   currentUserRole={currentUserRole}
                   onModifyAttendance={handleModifyAttendance}

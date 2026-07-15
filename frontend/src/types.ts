@@ -207,6 +207,7 @@ export interface ScheduleEvent {
   subjectId: string;
   teacherId: string;    // Docente
   classroomId: string;  // Classroom
+  blockId?: string;
 }
 
 export interface PendingSubject {

@@ -137,6 +137,7 @@ export function mapHorarioToScheduleEvent(dbHorario: any): ScheduleEvent {
     subjectId: String(dbHorario.id_asignatura),
     teacherId: String(dbHorario.id_docente),
     classroomId: String(dbHorario.id_aula),
+    blockId: String(dbHorario.id_bloque || dbHorario.bloque?.id_bloque || ''),
   };
 }
 
