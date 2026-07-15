@@ -100,6 +100,7 @@ export interface StudyPlanItem {
   year: AcademicYear;
   codigo: string;
   posicion: number;
+  tipoCalificacion: 'Cuantitativa' | 'Cualitativo';
 }
 
 export interface EvaluationItem {

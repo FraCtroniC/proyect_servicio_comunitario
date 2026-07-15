@@ -68,4 +68,3 @@ testCrud('../controllers/momento.controller', '../models/Momento', 'Momento', 'M
 testCrud('../controllers/escala-calificacion.controller', '../models/EscalaCalificacion', 'EscalaCalificacion', 'EscalaCalificacionController');
 testCrud('../controllers/dia-semana.controller', '../models/DiaSemana', 'DiaSemana', 'DiaSemanaController');
 testCrud('../controllers/bloque-horario.controller', '../models/BloqueHorario', 'BloqueHorario', 'BloqueHorarioController');
-testCrud('../controllers/justificacion.controller', '../models/Justificacion', 'Justificacion', 'JustificacionController');

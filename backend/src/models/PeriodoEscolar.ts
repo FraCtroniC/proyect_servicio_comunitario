@@ -11,6 +11,7 @@ export class PeriodoEscolar extends Model {
     PeriodoEscolar.hasMany(models.Matricula, { foreignKey: 'id_periodo', as: 'matriculas' });
     PeriodoEscolar.hasMany(models.Momento, { foreignKey: 'id_periodo', as: 'momentos' });
     PeriodoEscolar.hasMany(models.HistoricoNotaCertificada, { foreignKey: 'id_periodo', as: 'historicos' });
+    PeriodoEscolar.hasMany(models.HorarioDocente, { foreignKey: 'id_periodo', as: 'horarios' });
   }
 }
 

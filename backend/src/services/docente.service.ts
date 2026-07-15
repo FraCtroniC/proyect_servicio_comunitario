@@ -120,45 +120,103 @@ export const DocenteService = {
     }
   },
 
-  async actualizar(id: number, dto: Partial<CrearDocenteDto>): Promise<any> {
-    const docente = await Docente.findByPk(id);
-    if (!docente) {
-      throw new ValidationError({ docente: ['Docente no encontrado'] });
-    }
+  async actualizar(id: number, dto: Partial<CrearDocenteDto>): Promise<{ docente: any; usuario: any }> {
+    const transaction = await sequelize.transaction();
 
-    if (dto.fecha_nac !== undefined && dto.fecha_nac !== null) {
-      const now = new Date();
-      const dob = new Date(dto.fecha_nac);
-      let age = now.getFullYear() - dob.getFullYear();
-      const m = now.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
-        age--;
+    try {
+      const docente = await Docente.findByPk(id, { transaction });
+      if (!docente) {
+        throw new ValidationError({ docente: ['Docente no encontrado'] });
       }
-      if (age < 18 || age > 70) {
-        throw new ValidationError({ fecha_nac: [`La edad del docente debe estar entre 18 y 70 años (actual: ${age} años)`] });
+
+      if (dto.fecha_nac !== undefined && dto.fecha_nac !== null) {
+        const now = new Date();
+        const dob = new Date(dto.fecha_nac);
+        let age = now.getFullYear() - dob.getFullYear();
+        const m = now.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
+          age--;
+        }
+        if (age < 18 || age > 70) {
+          throw new ValidationError({ fecha_nac: [`La edad del docente debe estar entre 18 y 70 años (actual: ${age} años)`] });
+        }
       }
+
+      const updateData: any = {};
+      if (dto.cedula_docente !== undefined) updateData.cedula_docente = dto.cedula_docente;
+      if (dto.nombre1 !== undefined) updateData.nombre1 = dto.nombre1;
+      if (dto.nombre2 !== undefined) updateData.nombre2 = dto.nombre2;
+      if (dto.apellido1 !== undefined) updateData.apellido1 = dto.apellido1;
+      if (dto.apellido2 !== undefined) updateData.apellido2 = dto.apellido2;
+      if (dto.id_especialidad !== undefined) updateData.id_especialidad = dto.id_especialidad;
+      if (dto.fecha_nac !== undefined) updateData.fecha_nac = dto.fecha_nac;
+      if (dto.telefono !== undefined) updateData.telefono = dto.telefono;
+      if (dto.correo !== undefined) updateData.correo = dto.correo;
+
+      await docente.update(updateData, { transaction });
+
+      const usuario = await Usuario.findOne({ where: { id_docente: id }, transaction });
+      if (usuario) {
+        const usuarioUpdate: any = {};
+        if (dto.correo !== undefined) usuarioUpdate.correo = dto.correo;
+        if (dto.cedula_docente !== undefined) usuarioUpdate.username = limpiarCedula(dto.cedula_docente);
+        if (Object.keys(usuarioUpdate).length > 0) {
+          await usuario.update(usuarioUpdate, { transaction });
+        }
+      }
+
+      await transaction.commit();
+
+      const updatedDocente = await Docente.findByPk(id);
+      const updatedUsuario = usuario
+        ? await Usuario.findByPk(usuario.id_usuario, {
+            attributes: { exclude: ['password_hash'] },
+            include: [{ model: Rol, as: 'rol' }],
+          })
+        : null;
+
+      return {
+        docente: mapDocenteToDto(updatedDocente!),
+        usuario: updatedUsuario ? {
+          id: updatedUsuario.id_usuario,
+          idRol: updatedUsuario.id_rol,
+          idDocente: updatedUsuario.id_docente,
+          username: updatedUsuario.username,
+          estatus: updatedUsuario.estatus,
+          correo: updatedUsuario.correo,
+          createdAt: updatedUsuario.created_at,
+          updatedAt: updatedUsuario.updated_at,
+          role: updatedUsuario.rol ? { idRol: updatedUsuario.rol.id_rol, nombre: updatedUsuario.rol.nombre } : undefined,
+        } : null,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-
-    const updateData: any = {};
-    if (dto.cedula_docente !== undefined) updateData.cedula_docente = dto.cedula_docente;
-    if (dto.nombre1 !== undefined) updateData.nombre1 = dto.nombre1;
-    if (dto.nombre2 !== undefined) updateData.nombre2 = dto.nombre2;
-    if (dto.apellido1 !== undefined) updateData.apellido1 = dto.apellido1;
-    if (dto.apellido2 !== undefined) updateData.apellido2 = dto.apellido2;
-    if (dto.id_especialidad !== undefined) updateData.id_especialidad = dto.id_especialidad;
-    if (dto.fecha_nac !== undefined) updateData.fecha_nac = dto.fecha_nac;
-    if (dto.telefono !== undefined) updateData.telefono = dto.telefono;
-    if (dto.correo !== undefined) updateData.correo = dto.correo;
-
-    await docente.update(updateData);
-    return mapDocenteToDto(docente);
   },
 
-  async eliminar(id: number): Promise<void> {
-    const docente = await Docente.findByPk(id);
-    if (!docente) {
-      throw new ValidationError({ docente: ['Docente no encontrado'] });
+  async eliminar(id: number): Promise<number | null> {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const docente = await Docente.findByPk(id, { transaction });
+      if (!docente) {
+        throw new ValidationError({ docente: ['Docente no encontrado'] });
+      }
+
+      const usuario = await Usuario.findOne({ where: { id_docente: id }, transaction });
+      const usuarioId = usuario ? usuario.id_usuario : null;
+
+      if (usuario) {
+        await usuario.destroy({ transaction });
+      }
+      await docente.destroy({ transaction });
+
+      await transaction.commit();
+      return usuarioId;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-    await docente.destroy();
   },
 };

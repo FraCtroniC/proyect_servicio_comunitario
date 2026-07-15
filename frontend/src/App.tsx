@@ -152,7 +152,7 @@ export default function App() {
     }
   }, []);
 
-  // WebSocket: escuchar cambios en periodos escolares
+  // WebSocket: escuchar cambios en periodos escolares y usuarios
   useSocket(isLoggedIn, (event, payload) => {
     if (event === 'periodo:create') {
       setPeriods(prev => [...prev, mapPeriodoToSchoolPeriod(payload.data)]);
@@ -165,6 +165,89 @@ export default function App() {
       setPeriods(prev => prev.filter(p =>
         p.id !== String(payload.data.id_periodo)
       ));
+    } else if (event === 'usuario:create') {
+      setUsers(prev => [mapUsuarioToUser(payload.data), ...prev]);
+    } else if (event === 'usuario:update') {
+      setUsers(prev => prev.map(u =>
+        u.id === String(payload.data.id || payload.data.id_usuario)
+          ? mapUsuarioToUser(payload.data) : u
+      ));
+    } else if (event === 'usuario:delete') {
+      setUsers(prev => prev.filter(u =>
+        u.id !== String(payload.data.id_usuario)
+      ));
+    } else if (event === 'aula:create') {
+      setClassrooms(prev => [mapAulaToClassroom(payload.data), ...prev]);
+    } else if (event === 'aula:update') {
+      setClassrooms(prev => prev.map(c =>
+        c.id === String(payload.data.id_aula)
+          ? mapAulaToClassroom(payload.data) : c
+      ));
+    } else if (event === 'aula:delete') {
+      setClassrooms(prev => prev.filter(c =>
+        c.id !== String(payload.data.id_aula)
+      ));
+    } else if (event === 'plan-estudio:create') {
+      setStudyPlans(prev => [...prev, mapPlanToStudyPlanItem(payload.data)]);
+    } else if (event === 'plan-estudio:update') {
+      setStudyPlans(prev => prev.map(p =>
+        p.id === String(payload.data.id_plan)
+          ? mapPlanToStudyPlanItem(payload.data) : p
+      ));
+    } else if (event === 'plan-estudio:delete') {
+      setStudyPlans(prev => prev.filter(p =>
+        p.id !== String(payload.data.id_plan)
+      ));
+    } else if (event === 'docente:create') {
+      setDocentes(prev => [mapDocenteToDocenteType(payload.data), ...prev]);
+    } else if (event === 'docente:update') {
+      setDocentes(prev => prev.map(d =>
+        d.id === String(payload.data.id_docente || payload.data.id)
+          ? mapDocenteToDocenteType(payload.data) : d
+      ));
+    } else if (event === 'docente:delete') {
+      setDocentes(prev => prev.filter(d =>
+        d.id !== String(payload.data.id_docente)
+      ));
+    } else if (event === 'horario:create') {
+      setScheduleEvents(prev => [...prev, mapHorarioToScheduleEvent(payload.data)]);
+    } else if (event === 'horario:update') {
+      setScheduleEvents(prev => prev.map(e =>
+        e.id === String(payload.data.id_horario)
+          ? mapHorarioToScheduleEvent(payload.data) : e
+      ));
+    } else if (event === 'horario:delete') {
+      setScheduleEvents(prev => prev.filter(e =>
+        e.id !== String(payload.data.id_horario)
+      ));
+    } else if (event === 'bloque:create') {
+      setReferenceData(prev => ({ ...prev, bloques: [...prev.bloques, payload.data] }));
+    } else if (event === 'bloque:update') {
+      setReferenceData(prev => ({
+        ...prev,
+        bloques: prev.bloques.map(b =>
+          b.id_bloque === payload.data.id_bloque ? payload.data : b
+        )
+      }));
+    } else if (event === 'bloque:delete') {
+      setReferenceData(prev => ({
+        ...prev,
+        bloques: prev.bloques.filter(b => b.id_bloque !== payload.data.id_bloque)
+      }));
+    } else if (event === 'dia:create') {
+      setReferenceData(prev => ({ ...prev, dias: [...prev.dias, payload.data] }));
+    } else if (event === 'dia:update') {
+      setReferenceData(prev => ({
+        ...prev,
+        dias: prev.dias.map(d =>
+          d.id_dia === payload.data.id_dia ? payload.data : d
+        )
+      }));
+    } else if (event === 'dia:delete') {
+      setReferenceData(prev => ({
+        ...prev,
+        dias: prev.dias.filter(d => d.id_dia !== payload.data.id_dia)
+      }));
     }
   });
 
@@ -323,6 +406,16 @@ const handleLogout = async () => {
     }
   }, [isLoggedIn]);
 
+  // Refrescar usuarios cuando se abre el módulo Roles de Acceso
+  useEffect(() => {
+    if (activeTab === 'users' && isLoggedIn) {
+      api.get<any[]>('/api/usuarios').then(data => {
+        const parsed = Array.isArray(data) ? data : (data as any)?.data || [];
+        setUsers(parsed.map(mapUsuarioToUser));
+      }).catch(() => {});
+    }
+  }, [activeTab, isLoggedIn]);
+
   // --- PERSISTENCE ACTIONS PASSED DOWN ---
   const handleAddDocente = async (newDocente: Omit<Docente, 'id'>) => {
     try {
@@ -338,12 +431,8 @@ const handleLogout = async () => {
         correo: newDocente.email
       };
       const response = await api.post<any>('/api/docentes', payload);
-      const createdDocente = response.docente || response;
       const passwordTemporal = response.password_temporal;
-
-      const parsedDocente = mapDocenteToDocenteType(createdDocente);
-      setDocentes(p => [parsedDocente, ...p]);
-
+      // State updates via WebSocket
       return passwordTemporal;
     } catch (e: any) {
       console.error(e);
@@ -365,17 +454,7 @@ const handleLogout = async () => {
         correo: updatedDocente.email
       };
       await api.patch<any>(`/api/docentes/${stripId(id)}`, payload);
-      
-      setDocentes(p => p.map(d => d.id === id ? { ...d, ...updatedDocente } : d));
-      
-      // Attempt to update associated user email if necessary, silently catch
-      if (updatedDocente.email) {
-        const user = users.find(u => u.teacherId === id || (u.email && u.email === updatedDocente.email));
-        if (user) {
-           await api.patch(`/api/usuarios/${stripId(user.id)}`, { correo: updatedDocente.email }).catch(() => {});
-           setUsers(p => p.map(u => u.id === user.id ? { ...u, email: updatedDocente.email } : u));
-        }
-      }
+      // State updates via WebSocket
 
     } catch (e: any) {
       console.error(e);
@@ -386,13 +465,7 @@ const handleLogout = async () => {
   const handleDeleteDocente = async (id: string) => {
     try {
       await api.delete(`/api/docentes/${stripId(id)}`);
-      setDocentes(p => p.filter(d => d.id !== id));
-      
-      // Remove associated user if exists locally
-      const user = users.find(u => u.teacherId === id);
-      if (user) {
-         setUsers(p => p.filter(u => u.id !== user.id));
-      }
+      // State updates via WebSocket
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al eliminar docente, asegúrese de que no tenga horarios asignados.');
@@ -405,7 +478,7 @@ const handleLogout = async () => {
       if (docente) {
         const newStatus = docente.status === 'Activo' ? 'Inactivo' : 'Activo';
         await api.patch(`/api/docentes/${stripId(docenteId)}`, { estatus: newStatus });
-        setDocentes(p => p.map(d => d.id === docenteId ? { ...d, status: newStatus } : d));
+        // State updates via WebSocket
       }
     } catch (e) {
       console.error(e);
@@ -419,10 +492,9 @@ const handleLogout = async () => {
         username: newUser.cedula || newUser.email?.split('@')[0] || 'User',
         password: tempPassword,
         correo: newUser.email,
-        idRol: newUser.role === 'super_admin' ? 4 : (newUser.role === 'control_estudios' ? 8 : 5)
+        idRol: newUser.role === 'super_admin' ? 4 : newUser.role === 'control_estudios' ? 8 : newUser.role === 'coordinador' ? 7 : 5
       };
-      const created = await api.post<any>('/api/usuarios', dto);
-      setUsers(p => [mapUsuarioToUser(created), ...p]);
+      await api.post<any>('/api/usuarios', dto);
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al crear usuario en BD');
@@ -436,10 +508,9 @@ const handleLogout = async () => {
       if (data.cedula) dto.username = data.cedula;
       if (data.password) dto.password = data.password;
       if (data.phone) dto.telefono = data.phone;
-      if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : (data.role === 'control_estudios' ? 8 : 5);
+      if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : data.role === 'control_estudios' ? 8 : data.role === 'coordinador' ? 7 : 5;
       
-      const updated = await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
-      setUsers(p => p.map(u => u.id === userId ? { ...u, ...mapUsuarioToUser(updated) } : u));
+      await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
     } catch (e: any) {
       console.error(e);
       const details = e.details;
@@ -455,7 +526,6 @@ const handleLogout = async () => {
   const handleDeleteUser = async (userId: string) => {
     try {
       await api.delete(`/api/usuarios/${stripId(userId)}`);
-      setUsers(p => p.filter(u => u.id !== userId));
     } catch (e: any) {
       console.error(e);
       throw new Error(e.response?.data?.error?.message || 'Error al eliminar usuario');
@@ -469,7 +539,6 @@ const handleLogout = async () => {
       const user = users.find(u => u.id === userId);
       if (user) {
         await api.patch(`/api/usuarios/${stripId(userId)}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
-        setUsers(p => p.map(u => u.id === userId ? { ...u, active: !u.active } : u));
       }
     } catch (e: any) {
       console.error(e);
@@ -588,14 +657,14 @@ const handleLogout = async () => {
     }
   };
 
-  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number) => {
+  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
     // 1. Check if subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
     
     if (!subjectId) {
       const subResp = await api.post<any>('/api/asignaturas', {
         nombre: name,
-        tipo_calificacion: 'Cuantitativa'
+        tipo_calificacion: tipoCalificacion
       });
       const newSub = mapAsignaturaToSubject(subResp);
       setSubjects(p => [...p, newSub]);
@@ -603,26 +672,21 @@ const handleLogout = async () => {
     }
 
     // 2. Create the plan_estudio record
-    const planResp = await api.post<any>('/api/plan-estudio', {
+    await api.post<any>('/api/plan-estudio', {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
       posicion: posicion
     });
-    
-    const newItem = mapPlanToStudyPlanItem(planResp);
-    newItem.subjectName = name;
-    newItem.year = year as any;
-    
-    setStudyPlans(p => [...p, newItem]);
+    // State updates via WebSocket
   };
-  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number) => {
+  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
     // 1. Ensure subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
     if (!subjectId) {
       const subResp = await api.post<any>('/api/asignaturas', {
         nombre: name,
-        tipo_calificacion: 'Cuantitativa'
+        tipo_calificacion: tipoCalificacion
       });
       const newSub = mapAsignaturaToSubject(subResp);
       setSubjects(p => [...p, newSub]);
@@ -630,25 +694,19 @@ const handleLogout = async () => {
     }
     
     // 2. Update the plan_estudio record
-    const planResp = await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
+    await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
       posicion: posicion
     });
-
-    const updatedItem = mapPlanToStudyPlanItem(planResp);
-    updatedItem.subjectName = name;
-    updatedItem.year = year as any;
-
-    setStudyPlans(p => p.map(plan => plan.id === id ? updatedItem : plan));
+    // State updates via WebSocket
   };
 
   const handleDeleteStudyPlanItem = async (id: string) => {
     try {
       await api.delete(`/api/plan-estudio/${stripId(id)}`);
-      setStudyPlans(p => p.filter(plan => plan.id !== id));
-      toast.success('Materia eliminada del plan de estudio');
+      // State updates via WebSocket
     } catch (e) {
       console.error(e);
       toast.error('Error al eliminar la materia del plan de estudio');
@@ -671,7 +729,6 @@ const handleLogout = async () => {
         nombre: name,
         estatus: status
       });
-      setPeriods(p => [...p, mapPeriodoToSchoolPeriod(resp)]);
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'Error al crear periodo escolar');
@@ -682,7 +739,6 @@ const handleLogout = async () => {
   const handleUpdatePeriodStatus = async (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => {
     try {
       await api.patch(`/api/periodos/${stripId(id)}`, { estatus: newStatus });
-      setPeriods(p => p.map(per => per.id === id ? { ...per, status: newStatus } : per));
     } catch (e) {
       console.error(e);
       toast.error('Error al actualizar periodo escolar');
@@ -1027,6 +1083,18 @@ const handleLogout = async () => {
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
   };
 
+  const handleDeleteAttendance = async (attendanceId: string) => {
+    try {
+      const realId = attendanceId.replace(/^[a-zA-Z]+-/, '');
+      await api.delete(`/api/asistencias-estudiantes/${realId}`);
+      setAttendance(p => p.filter(a => a.id !== attendanceId));
+      toast.success('Registro de asistencia eliminado');
+    } catch (e: any) {
+      console.error('Error al eliminar asistencia:', e);
+      toast.error('Error al eliminar: ' + (e?.response?.data?.error?.message || e.message));
+    }
+  };
+
   const handleJustifyTeacherAbsence = async (logId: string, motivo: string, soporteDigital?: string) => {
     try {
       const idAsistencia = Number(logId.replace(/\D/g, ''));
@@ -1083,7 +1151,6 @@ const handleLogout = async () => {
       };
 
       const created = await api.post<any>('/api/horarios', payload);
-      setScheduleEvents(p => [...p, { ...evt, id: String(created.id_horario || created.id) }]);
     } catch (e: any) {
       console.error('Error al crear horario:', e);
       toast.error('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
@@ -1120,7 +1187,6 @@ const handleLogout = async () => {
       }
 
       await api.patch(`/api/horarios/${id}`, payload);
-      setScheduleEvents(p => p.map(e => e.id === evtId ? { ...e, ...evt } : e));
     } catch (e: any) {
       console.error('Error al actualizar horario:', e);
       toast.error('Error al actualizar horario en BD: ' + (e.message || 'Error desconocido'));
@@ -1133,23 +1199,19 @@ const handleLogout = async () => {
       if (id) {
         await api.delete(`/api/horarios/${id}`);
       }
-      setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
     } catch (e) {
       console.error('Error al eliminar horario:', e);
-      setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
     }
   };
 
   const handleAddClassroom = async (room: Classroom) => {
-    const resp = await api.post<any>('/api/aulas', {
+    await api.post<any>('/api/aulas', {
       nombre_codigo: room.name,
       capacidad: room.capacity,
       tipo_espacio: room.type,
       ubicacion: room.location,
       estatus: 'Activo'
     });
-    const savedRoom = mapAulaToClassroom(resp);
-    setClassrooms(prev => [...prev, savedRoom]);
   };
 
   const handleEditClassroom = async (roomId: string, data: Partial<Classroom>) => {
@@ -1162,20 +1224,13 @@ const handleLogout = async () => {
       if (data.location !== undefined) payload.ubicacion = data.location;
       
       await api.patch<any>(`/api/aulas/${id}`, payload);
-      setClassrooms(p => p.map(c => c.id === roomId ? { ...c, ...data } : c));
     }
   };
 
   const handleRemoveClassroom = async (roomId: string) => {
-    try {
-      const id = Number(roomId.replace(/\D/g, ''));
-      if (id) {
-        await api.delete(`/api/aulas/${id}`);
-      }
-      setClassrooms(p => p.filter(c => c.id !== roomId));
-    } catch (e) {
-      console.error('Error al eliminar aula:', e);
-      setClassrooms(p => p.filter(c => c.id !== roomId));
+    const id = Number(roomId.replace(/\D/g, ''));
+    if (id) {
+      await api.delete(`/api/aulas/${id}`);
     }
   };
 
@@ -1588,6 +1643,7 @@ const handleLogout = async () => {
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
+                    onDeleteAttendance={handleDeleteAttendance}
                   onRefreshData={refreshAttendance}
                 />
               )}
@@ -1601,6 +1657,7 @@ const handleLogout = async () => {
                   classrooms={classrooms}
                   sections={sectionsForSchedule}
                   referenceData={referenceData}
+                  periods={periods}
                   currentUserRole={currentUserRole}
                   onAddScheduleEvent={handleAddScheduleEvent}
                   onUpdateScheduleEvent={handleUpdateScheduleEvent}
@@ -1615,6 +1672,7 @@ const handleLogout = async () => {
                   scheduleEvents={scheduleEvents}
                   sections={sections}
                   students={students}
+                  activePeriodId={periods.find(p => p.status === 'Activo')?.id}
                   currentUserRole={currentUserRole}
                   onAddClassroom={handleAddClassroom}
                   onEditClassroom={handleEditClassroom}
@@ -1637,7 +1695,6 @@ const handleLogout = async () => {
                 <UserManager
                   users={users}
                   currentUserRole={currentUserRole}
-                  onSetUserRole={setCurrentUserRole}
                   onAddUser={handleAddUser}
                   onEditUser={handleEditUser}
                   onDeleteUser={handleDeleteUser}

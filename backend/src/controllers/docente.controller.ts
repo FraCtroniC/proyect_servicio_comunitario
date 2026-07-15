@@ -4,6 +4,7 @@ import { DocenteService } from '../services/docente.service';
 import { Docente } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { NotFoundError } from '../shared/errors';
+import { getIO } from '../socket';
 
 export const DocenteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -19,18 +20,30 @@ export const DocenteController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await DocenteService.crear(req.body);
+    if (result.usuario) {
+      getIO().emit('usuario:create', { data: { id: result.usuario.idUsuario, ...result.usuario } });
+    }
+    getIO().emit('docente:create', { data: result.docente });
     res.status(201).json({ data: result });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const result = await DocenteService.actualizar(id, req.body);
+    if (result.usuario) {
+      getIO().emit('usuario:update', { data: result.usuario });
+    }
+    getIO().emit('docente:update', { data: result.docente });
     res.json({ data: result });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    await DocenteService.eliminar(id);
+    const usuarioId = await DocenteService.eliminar(id);
+    if (usuarioId) {
+      getIO().emit('usuario:delete', { data: { id_usuario: usuarioId } });
+    }
+    getIO().emit('docente:delete', { data: { id_docente: id } });
     res.status(204).send();
   }),
 

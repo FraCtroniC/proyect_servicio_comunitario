@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { DiaSemana } from '../models/DiaSemana';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 export const DiaSemanaController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -20,6 +21,7 @@ export const DiaSemanaController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await DiaSemana.create(req.body);
+    getIO().emit('dia:create', { data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -31,6 +33,7 @@ export const DiaSemanaController = {
       return;
     }
     await record.update(req.body);
+    getIO().emit('dia:update', { data: record });
     res.json({ data: record });
   }),
 
@@ -42,6 +45,7 @@ export const DiaSemanaController = {
       return;
     }
     await record.destroy();
+    getIO().emit('dia:delete', { data: { id_dia: id } });
     res.status(204).send();
   }),
 };

@@ -112,6 +112,7 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
   };
 
   const canEdit = ['super_admin', 'control_estudios'].includes(currentUserRole);
+  const isAdmin = currentUserRole === 'super_admin';
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -180,12 +181,12 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
                     </td>
                     {canEdit && (
                       <td className="p-3 text-center flex items-center justify-center gap-2">
-                        {per.status === 'Planificación' && (
+                        {(per.status === 'Planificación' || (per.status === 'Cerrado' && isAdmin)) && (
                           <button
                             onClick={() => openActivateModal(per)}
                             className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 px-3 py-1.5 rounded text-[10px] font-bold transition-colors pointer-events-auto cursor-pointer"
                           >
-                            Activar
+                            {per.status === 'Cerrado' ? 'Reactivar' : 'Activar'}
                           </button>
                         )}
                         {(per.status === 'Activo' || per.status === 'Planificación') && (

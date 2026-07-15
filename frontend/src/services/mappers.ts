@@ -3,6 +3,7 @@ import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEv
 export function mapRole(idRol: number): UserRole {
   if (idRol === 4) return 'super_admin';
   if (idRol === 5) return 'docente';
+  if (idRol === 7) return 'coordinador';
   if (idRol === 8) return 'control_estudios';
   return 'docente';
 }
@@ -157,7 +158,8 @@ export function mapPlanToStudyPlanItem(dbPlan: any): StudyPlanItem {
     subjectName: dbPlan.asignatura?.nombre || `Materia #${dbPlan.id_asignatura}`,
     year: (dbPlan.grado?.numero || dbPlan.id_grado || 1) as any,
     codigo: dbPlan.codigo_asignatura || '',
-    posicion: dbPlan.posicion || 0
+    posicion: dbPlan.posicion || 0,
+    tipoCalificacion: dbPlan.asignatura?.tipo_calificacion || 'Cuantitativo'
   };
 }
 

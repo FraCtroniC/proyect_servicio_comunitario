@@ -15,6 +15,7 @@ export class AsistenciaEstudiante extends Model {
     AsistenciaEstudiante.belongsTo(models.Matricula, { foreignKey: 'id_matricula', as: 'matricula' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_crea', as: 'usuarioCrea' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_modifica', as: 'usuarioModifica' });
+    AsistenciaEstudiante.hasMany(models.JustificacionEstudiante, { foreignKey: 'id_asistencia_est', as: 'justificaciones' });
   }
 }
 

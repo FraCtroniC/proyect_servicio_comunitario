@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PeriodoEscolar } from '../models/PeriodoEscolar';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 export const PeriodoEscolarController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -40,7 +41,7 @@ export const PeriodoEscolarController = {
     res.status(201).json({ data: result });
   }),
 
-  actualizar: wrapAsync(async (req: Request, res: Response) => {
+  actualizar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const id = Number(req.params.id);
     const { nombre, estatus } = req.body;
     const record = await PeriodoEscolar.findByPk(id);
@@ -52,6 +53,12 @@ export const PeriodoEscolarController = {
       const existing = await PeriodoEscolar.findOne({ where: { nombre } });
       if (existing) {
         res.status(400).json({ error: { message: `Ya existe un período escolar registrado con el nombre ${nombre}` } });
+        return;
+      }
+    }
+    if (estatus === 'Activo' && record.estatus === 'Cerrado') {
+      if (req.user?.idRol !== 1 && req.user?.rol !== 'Administrador') {
+        res.status(403).json({ error: { message: 'Solo el administrador puede reactivar un período cerrado' } });
         return;
       }
     }

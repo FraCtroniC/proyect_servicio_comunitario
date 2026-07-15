@@ -11,3 +11,4 @@ asistenciaEstudianteRoutes.post('/batch', authorize('Administrador', 'Control de
 asistenciaEstudianteRoutes.post('/sync-inasistencias', authorize('Administrador', 'Control de Estudios', 'Docente'), AsistenciaEstudianteController.syncInasistencias);
 asistenciaEstudianteRoutes.post('/sync-inasistencias-batch', authorize('Administrador', 'Control de Estudios', 'Docente'), AsistenciaEstudianteController.syncInasistenciasBatch);
 asistenciaEstudianteRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), AsistenciaEstudianteController.actualizar);
+asistenciaEstudianteRoutes.delete('/:id', authorize('Administrador'), AsistenciaEstudianteController.eliminar);

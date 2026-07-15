@@ -31,6 +31,34 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
     socket.on('periodo:update', (d) => onEventRef.current('periodo:update', d));
     socket.on('periodo:delete', (d) => onEventRef.current('periodo:delete', d));
 
+    socket.on('usuario:create', (d) => onEventRef.current('usuario:create', d));
+    socket.on('usuario:update', (d) => onEventRef.current('usuario:update', d));
+    socket.on('usuario:delete', (d) => onEventRef.current('usuario:delete', d));
+
+    socket.on('aula:create', (d) => onEventRef.current('aula:create', d));
+    socket.on('aula:update', (d) => onEventRef.current('aula:update', d));
+    socket.on('aula:delete', (d) => onEventRef.current('aula:delete', d));
+
+    socket.on('plan-estudio:create', (d) => onEventRef.current('plan-estudio:create', d));
+    socket.on('plan-estudio:update', (d) => onEventRef.current('plan-estudio:update', d));
+    socket.on('plan-estudio:delete', (d) => onEventRef.current('plan-estudio:delete', d));
+
+    socket.on('docente:create', (d) => onEventRef.current('docente:create', d));
+    socket.on('docente:update', (d) => onEventRef.current('docente:update', d));
+    socket.on('docente:delete', (d) => onEventRef.current('docente:delete', d));
+
+    socket.on('horario:create', (d) => onEventRef.current('horario:create', d));
+    socket.on('horario:update', (d) => onEventRef.current('horario:update', d));
+    socket.on('horario:delete', (d) => onEventRef.current('horario:delete', d));
+
+    socket.on('bloque:create', (d) => onEventRef.current('bloque:create', d));
+    socket.on('bloque:update', (d) => onEventRef.current('bloque:update', d));
+    socket.on('bloque:delete', (d) => onEventRef.current('bloque:delete', d));
+
+    socket.on('dia:create', (d) => onEventRef.current('dia:create', d));
+    socket.on('dia:update', (d) => onEventRef.current('dia:update', d));
+    socket.on('dia:delete', (d) => onEventRef.current('dia:delete', d));
+
     return () => { socket.disconnect(); };
   }, [isLoggedIn]);
 }

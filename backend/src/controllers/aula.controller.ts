@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Aula } from '../models/Aula';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { Op } from 'sequelize';
+import { getIO } from '../socket';
 
 export const AulaController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -35,6 +36,7 @@ export const AulaController = {
       }
     }
     const result = await Aula.create(req.body);
+    getIO().emit('aula:create', { data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -63,6 +65,7 @@ export const AulaController = {
       }
     }
     await record.update(req.body);
+    getIO().emit('aula:update', { data: record });
     res.json({ data: record });
   }),
 
@@ -74,6 +77,7 @@ export const AulaController = {
       return;
     }
     await record.destroy();
+    getIO().emit('aula:delete', { data: { id_aula: id } });
     res.status(204).send();
   }),
 };

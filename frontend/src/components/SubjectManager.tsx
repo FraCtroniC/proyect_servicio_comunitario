@@ -7,8 +7,8 @@ import { Modal } from './Modal';
 interface SubjectManagerProps {
   studyPlans: StudyPlanItem[];
   currentUserRole: UserRole;
-  onAddStudyPlanItem: (name: string, year: number, codigo: string, posicion: number) => void;
-  onUpdateStudyPlanItem?: (id: string, name: string, year: number, codigo: string, posicion: number) => void;
+  onAddStudyPlanItem: (name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => void;
+  onUpdateStudyPlanItem?: (id: string, name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => void;
   onDeleteStudyPlanItem?: (id: string) => void;
 }
 
@@ -28,6 +28,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
   const [year, setYear] = useState<number>(1);
   const [codigo, setCodigo] = useState('');
   const [posicion, setPosicion] = useState<number>(1);
+  const [tipoCalificacion, setTipoCalificacion] = useState<string>('Cuantitativo');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const validateName = (val: string): boolean => /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/.test(val.trim());
@@ -79,6 +80,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
     setYear(filterYear === 'Todos' ? 1 : filterYear);
     setCodigo('');
     setPosicion(1);
+    setTipoCalificacion('Cuantitativo');
     setFieldErrors({});
     setIsModalOpen(true);
   };
@@ -89,6 +91,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
     setYear(plan.year as number);
     setCodigo(plan.codigo || '');
     setPosicion(plan.posicion);
+    setTipoCalificacion(plan.tipoCalificacion || 'Cuantitativo');
     setFieldErrors({});
     setIsModalOpen(true);
   };
@@ -103,9 +106,9 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
 
     try {
       if (editingPlan && onUpdateStudyPlanItem) {
-        await onUpdateStudyPlanItem(editingPlan.id, nombre, year, codigo, posicion);
+        await onUpdateStudyPlanItem(editingPlan.id, nombre, year, codigo, posicion, tipoCalificacion);
       } else {
-        await onAddStudyPlanItem(nombre, year, codigo, posicion);
+        await onAddStudyPlanItem(nombre, year, codigo, posicion, tipoCalificacion);
       }
       setIsModalOpen(false);
       setEditingPlan(null);
@@ -184,6 +187,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-200">
                   <th className="p-3 font-bold w-24 text-center">CÓDIGO</th>
+                  <th className="p-3 font-bold text-center w-28">TIPO</th>
                   <th className="p-3 font-bold">MATERIA</th>
                   <th className="p-3 font-bold text-center w-24">POSICIÓN</th>
                   <th className="p-3 font-bold text-center w-24">AÑO</th>
@@ -196,6 +200,15 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                     <td className="p-3 text-center">
                       <span className="bg-slate-100 text-slate-600 font-mono font-bold px-2 py-1 rounded text-[10px]">
                         {item.codigo || '-'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded ${
+                        item.tipoCalificacion === 'Cualitativo' 
+                          ? 'bg-violet-100 text-violet-700' 
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {item.tipoCalificacion === 'Cualitativo' ? 'CUALI' : 'CUANTI'}
                       </span>
                     </td>
                     <td className="p-3 font-bold text-slate-700">{item.subjectName}</td>
@@ -251,7 +264,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
             {fieldErrors.nombre && <p className="text-red-600 text-[11px]">{fieldErrors.nombre}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Código Asignatura</label>
               <input 
@@ -264,6 +277,18 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                 required
               />
               {fieldErrors.codigo && <p className="text-red-600 text-[11px]">{fieldErrors.codigo}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Tipo de Calificación</label>
+              <select
+                value={tipoCalificacion}
+                onChange={(e) => setTipoCalificacion(e.target.value)}
+                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
+              >
+                <option value="Cuantitativo">Cuantitativo (Numérico 1-20)</option>
+                <option value="Cualitativo">Cualitativo (Letras A-D)</option>
+              </select>
             </div>
 
             <div className="space-y-1">
