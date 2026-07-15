@@ -4,7 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter, Edit2, XCircle, User as UserIcon, MapPin, BookOpen, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter, Edit2, XCircle, User as UserIcon, MapPin, BookOpen, Trash2, Download } from 'lucide-react';
 import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente, SchoolPeriod } from '../types';
 import { SearchableSelect } from './SearchableSelect';
 import { Modal } from './Modal';
@@ -226,6 +229,136 @@ export default function ScheduleCoordinator({
     }
   });
 
+
+  //funcion para importar horario en pdf
+  const exportScheduleToPDF = async () => {
+    if (visibleEvents.length === 0) {
+      toast.error("No hay eventos en el horario para exportar.");
+      return;
+    }
+
+    const doc = new jsPDF('p', 'pt', 'letter');
+    let title = "HORARIO DE CLASES";
+    let subtitle = "";
+
+    if (filterType === 'section') {
+      subtitle = `${filterYear}° Año "${filterSection}"`;
+    } else if (filterType === 'teacher') {
+      subtitle = `Docente: ${getTeacherName(filterTeacherId)}`;
+    } else if (filterType === 'classroom') {
+      subtitle = `Aula: ${getClassroomName(filterClassroomId)}`;
+    }
+
+    // Try to load logo
+    let logoData = null;
+    try {
+      const resp = await fetch('/logo_leo.jpg');
+      const blob = await resp.blob();
+      logoData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    } catch(e) {
+      console.warn("Logo could not be loaded", e);
+    }
+
+    if (logoData) {
+      doc.addImage(logoData as string, 'JPEG', 40, 30, 50, 50);
+    }
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("L. N. E. O.", 100, 45);
+    doc.setFontSize(12);
+    doc.text("LICEO NACIONAL ESTILITA OROZCO", 100, 60);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(title, 40, 110);
+    doc.text(subtitle, 40, 125);
+    if (activePeriod) {
+       doc.text(`Período Académico: ${activePeriod.name}`, 40, 140);
+    }
+
+    // --- Subject List Table ---
+    const uniqueSubjectEvents = [];
+    const seenSubjects = new Set();
+    for (const evt of visibleEvents) {
+      const key = `${evt.subjectId}-${evt.teacherId}-${evt.year}-${evt.section}`;
+      if (!seenSubjects.has(key)) {
+        seenSubjects.add(key);
+        uniqueSubjectEvents.push(evt);
+      }
+    }
+
+    const subjectBody = uniqueSubjectEvents.map((evt, idx) => [
+      idx + 1,
+      getSubjectName(evt.subjectId),
+      `${evt.year}° "${evt.section}"`,
+      getTeacherName(evt.teacherId),
+      getClassroomName(evt.classroomId)
+    ]);
+
+    autoTable(doc, {
+      startY: 160,
+      head: [['N°', 'ASIGNATURA', 'SECCIÓN', 'DOCENTE', 'AULA']],
+      body: subjectBody,
+      theme: 'grid',
+      headStyles: { fillColor: [40, 40, 40], fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 40, right: 40 }
+    });
+
+    // --- Schedule Grid Table ---
+    const finalY = (doc as any).lastAutoTable.finalY + 30;
+
+    const gridHead = [['ENT / SAL', ...days]];
+    const gridBody: any[] = [];
+
+    timeBlocks.forEach(block => {
+      if (block.isRecess) {
+        gridBody.push([{ content: `${block.time}`, styles: { fontStyle: 'bold' } }, { content: block.label + ' (Receso)', colSpan: days.length, styles: { halign: 'center', fontStyle: 'italic', fillColor: [240, 240, 240] } }]);
+        return;
+      }
+      
+      const row = [block.time];
+      days.forEach(day => {
+        const activeEvent = visibleEvents.find(e => e.day === day && e.timeBlock === block.time);
+        if (activeEvent) {
+           let cellText = getSubjectName(activeEvent.subjectId);
+           if (filterType !== 'teacher') cellText += `\n${getTeacherName(activeEvent.teacherId)}`;
+           if (filterType !== 'section') cellText += `\n${activeEvent.year}° "${activeEvent.section}"`;
+           row.push(cellText);
+        } else {
+           row.push('');
+        }
+      });
+      gridBody.push(row);
+    });
+
+    autoTable(doc, {
+      startY: finalY,
+      head: gridHead,
+      body: gridBody,
+      theme: 'grid',
+      headStyles: { fillColor: [60, 60, 60], fontSize: 9, halign: 'center' },
+      bodyStyles: { fontSize: 8, halign: 'center', minCellHeight: 30 },
+      margin: { left: 40, right: 40 },
+      styles: { cellPadding: 3, valign: 'middle' }
+    });
+
+    // Footer
+    const pageCount = (doc.internal as any).getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(`Fecha de emisión: ${new Date().toLocaleString()}`, 40, doc.internal.pageSize.getHeight() - 30);
+      doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 30);
+    }
+
+    doc.save(`Horario_${subtitle.replace(/[\/\\]/g, '-')}.pdf`);
+  };
+
   return (
     <div id="schedule-coordinator-root" className="space-y-6 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
       
@@ -442,6 +575,14 @@ export default function ScheduleCoordinator({
                 Por Salón
               </button>
             </div>
+            
+            <button
+              onClick={exportScheduleToPDF}
+              className="ml-auto hidden md:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              Exportar PDF
+            </button>
           </div>
 
           {/* Sub filter based on choice */}
