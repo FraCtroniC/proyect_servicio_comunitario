@@ -481,7 +481,7 @@ export default function StudentManager({ students, sections, classrooms, current
         <div id="student-explorer-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-xs">
           
           {/* Controls Bar */}
-          <div id="explorer-filters-bar" className="flex flex-col md:flex-row md:items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
+          <div id="explorer-filters-bar" className="flex flex-wrap items-center gap-2 bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-150">
             <div id="explorer-filter-icon" className="flex items-center gap-1 text-sm font-semibold text-slate-500 shrink-0">
               <Filter className="h-4 w-4" />
               <span>Filtros:</span>
@@ -491,21 +491,21 @@ export default function StudentManager({ students, sections, classrooms, current
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear | 0)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-0"
             >
-              <option value={0}>Todos los Años (1°-5to)</option>
-              <option value={1}>1er Año (General)</option>
-              <option value={2}>2do Año (General)</option>
-              <option value={3}>3er Año (General)</option>
-              <option value={4}>4to Año (Soberanía)</option>
-              <option value={5}>5to Año (Soberanía)</option>
+              <option value={0}>Todos los Años</option>
+              <option value={1}>1er Año</option>
+              <option value={2}>2do Año</option>
+              <option value={3}>3er Año</option>
+              <option value={4}>4to Año</option>
+              <option value={5}>5to Año</option>
             </select>
 
             {/* Section filter */}
             <select
               value={selectedSection}
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-0"
             >
               <option value="Todos">Todas las Secciones</option>
               {sections
@@ -513,7 +513,7 @@ export default function StudentManager({ students, sections, classrooms, current
                 .sort((a, b) => a.letter.localeCompare(b.letter))
                 .map(s => (
                   <option key={`${s.grade}-${s.letter}`} value={s.letter}>
-                    Sección "{s.letter}"
+                    Secc. "{s.letter}"
                   </option>
                 ))}
             </select>
@@ -521,29 +521,32 @@ export default function StudentManager({ students, sections, classrooms, current
             {/* Text Search input */}
             <input
               type="text"
-              placeholder="Buscar por Nombre, Cédula, Representante..."
+              placeholder="Buscar por Nombre, Cédula..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-[200px]"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-0 flex-1 md:flex-none md:w-auto"
             />
-            
-            <button
-              onClick={() => exportStudentsToExcel(filteredStudents)}
-              className="hidden md:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              Exportar Nómina
-            </button>
 
-{['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
+            <div className="flex items-center gap-2 w-full md:w-auto md:ml-auto">
               <button
-                onClick={handleOpenCreate}
-                className="md:ml-auto flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                onClick={() => exportStudentsToExcel(filteredStudents)}
+                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
               >
-                <UserPlus className="w-4 h-4" />
-                Matricular Alumno
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Exportar</span>
+                <span className="sm:hidden">Nómina</span>
               </button>
-            )}
+
+              {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
+                <button
+                  onClick={handleOpenCreate}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Matricular</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Student list layout */}

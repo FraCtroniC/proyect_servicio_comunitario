@@ -71,6 +71,13 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
     socket.on('representante:update', (d) => onEventRef.current('representante:update', d));
     socket.on('representante:delete', (d) => onEventRef.current('representante:delete', d));
 
+    socket.on('calificacion:create', (d) => onEventRef.current('calificacion:create', d));
+    socket.on('calificacion:update', (d) => onEventRef.current('calificacion:update', d));
+    socket.on('calificacion:delete', (d) => onEventRef.current('calificacion:delete', d));
+    socket.on('calificacion:bulk', (d) => onEventRef.current('calificacion:bulk', d));
+    socket.on('evaluacion:plan-update', (d) => onEventRef.current('evaluacion:plan-update', d));
+    socket.on('evaluacion:notas-update', (d) => onEventRef.current('evaluacion:notas-update', d));
+
     return () => { socket.disconnect(); };
   }, [isLoggedIn]);
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Evaluacion, NotaParcial, Matricula, Calificacion, PlanEstudio, PeriodoEscolar, Momento } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 export const EvaluacionController = {
   // Obtener planes de evaluación
@@ -91,14 +92,26 @@ export const EvaluacionController = {
       }
     }
 
+    getIO().emit('evaluacion:plan-update', { data: saved });
     res.json({ data: saved });
   }),
 
   // Obtener notas parciales
   listarNotas: wrapAsync(async (req: Request, res: Response) => {
     const Momento = require('../models').Momento;
+    const Estudiante = require('../models').Estudiante;
     const result = await NotaParcial.findAll({
       include: [
+        {
+          model: Matricula,
+          as: 'matricula',
+          include: [
+            {
+              model: Estudiante,
+              as: 'estudiante'
+            }
+          ]
+        },
         {
           model: Evaluacion,
           as: 'evaluacion',
@@ -187,6 +200,7 @@ export const EvaluacionController = {
       }
     }
 
+    getIO().emit('evaluacion:notas-update', { data: savedRecords });
     res.json({ data: savedRecords });
   }),
 };
