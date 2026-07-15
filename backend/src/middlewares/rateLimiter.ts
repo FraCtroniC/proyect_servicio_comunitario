@@ -39,7 +39,7 @@ function makeRedisStore(prefix: string) {
 
 export const authLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: 10,
+  max: 100,
   keyGenerator: (req) => ipKeyGenerator(req.ip || req.socket.remoteAddress || 'unknown'),
   store: makeRedisStore('rl:auth') as any,
   message: {
