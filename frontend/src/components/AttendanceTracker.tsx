@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
+import { SearchableSelect } from './SearchableSelect';
 
 interface AttendanceTrackerProps {
   students: Student[];
@@ -205,7 +206,7 @@ export default function AttendanceTracker({
   ));
 
   useEffect(() => {
-    if (allowedBlocksForClass.length > 0 && selectedBlock && !allowedBlocksForClass.includes(selectedBlock)) {
+    if (allowedBlocksForClass.length > 0 && (!selectedBlock || !allowedBlocksForClass.includes(selectedBlock))) {
       setSelectedBlock(allowedBlocksForClass[0]);
     } else if (allowedBlocksForClass.length === 0 && selectedBlock) {
       setSelectedBlock('');
@@ -389,33 +390,29 @@ export default function AttendanceTracker({
 
             <div id="filter-att-subject" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Materia</span>
-              <select
+              <SearchableSelect
+                options={availableSubjects.map(s => ({ value: s.id, label: s.name }))}
                 value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
-              >
-                {availableSubjects.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedSubject(String(val))}
+                placeholder="Todas las materias"
+              />
             </div>
 
             {!isDocente && (
               <div id="filter-att-teacher" className="flex flex-col gap-1">
                 <span className="text-sm font-bold text-slate-400 uppercase">Docente</span>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: '', label: 'Todos los docentes' },
+                    ...docentes
+                      .filter(d => d.status === 'Activo')
+                      .sort((a, b) => a.lastName.localeCompare(b.lastName))
+                      .map(d => ({ value: d.id, label: `${d.lastName}, ${d.firstName}` }))
+                  ]}
                   value={selectedTeacher}
-                  onChange={(e) => setSelectedTeacher(e.target.value)}
-                  className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
-                >
-                  <option value="">Todos los docentes</option>
-                  {docentes
-                    .filter(d => d.status === 'Activo')
-                    .sort((a, b) => a.lastName.localeCompare(b.lastName))
-                    .map(d => (
-                      <option key={d.id} value={d.id}>{d.lastName}, {d.firstName}</option>
-                    ))}
-                </select>
+                  onChange={(val) => setSelectedTeacher(String(val))}
+                  placeholder="Seleccionar docente..."
+                />
               </div>
             )}
 
@@ -426,7 +423,6 @@ export default function AttendanceTracker({
                 onChange={(e) => setSelectedBlock(e.target.value)}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value="">Todos los bloques</option>
                 {bloques
                   .filter((b: any) => {
                     const timeStr = `${b.hora_inicio?.substring(0,5)} - ${b.hora_fin?.substring(0,5)}`;

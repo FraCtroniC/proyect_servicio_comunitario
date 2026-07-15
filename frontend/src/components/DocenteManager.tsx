@@ -42,6 +42,10 @@ export default function DocenteManager({ docentes, users, currentUserRole, onAdd
   const [docenteToDelete, setDocenteToDelete] = useState<Docente | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  // Filters
+  const [filterName, setFilterName] = useState('');
+  const [filterEspecialidad, setFilterEspecialidad] = useState<string>('');
+
   const [isEspecialidadModalOpen, setIsEspecialidadModalOpen] = useState(false);
   const [newEspecialidadName, setNewEspecialidadName] = useState('');
   const [isSubmittingEspecialidad, setIsSubmittingEspecialidad] = useState(false);
@@ -339,9 +343,42 @@ export default function DocenteManager({ docentes, users, currentUserRole, onAdd
           </div>
         )}
 
+        {/* Filters Bar */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-center mb-6">
+          <div className="w-full md:w-1/3 flex flex-col gap-1">
+            <span className="text-sm font-bold text-slate-400 uppercase">Buscar por Nombre o Cédula</span>
+            <input
+              type="text"
+              placeholder="Ej. Perez, Juan..."
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium w-full"
+            />
+          </div>
+          <div className="w-full md:w-1/3 flex flex-col gap-1">
+            <span className="text-sm font-bold text-slate-400 uppercase">Filtrar por Especialidad</span>
+            <SearchableSelect
+              options={[{ value: '', label: 'Todas las especialidades' }, ...especialidades.map(e => ({ value: e.id_especialidad, label: e.nombre }))]}
+              value={filterEspecialidad}
+              onChange={(val) => setFilterEspecialidad(String(val))}
+              placeholder="Seleccionar especialidad..."
+            />
+          </div>
+        </div>
+
         {/* List of Teachers */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {docentes.slice(0, visibleCount).map(d => (
+          {(() => {
+            const filteredDocentes = docentes
+              .filter(d => {
+                const searchLower = filterName.toLowerCase();
+                const nameMatch = `${d.firstName} ${d.lastName} ${d.cedula}`.toLowerCase().includes(searchLower);
+                const specMatch = filterEspecialidad ? String(d.id_especialidad) === filterEspecialidad : true;
+                return nameMatch && specMatch;
+              })
+              .sort((a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName));
+
+            return filteredDocentes.slice(0, visibleCount).map(d => (
             <div key={d.id} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-start mb-4">
@@ -410,10 +447,17 @@ export default function DocenteManager({ docentes, users, currentUserRole, onAdd
                 </div>
               </div>
             </div>
-          ))}
+          ))})()}
         </div>
 
-        {visibleCount < docentes.length && (
+        {(() => {
+          const filteredDocentes = docentes.filter(d => {
+            const searchLower = filterName.toLowerCase();
+            const nameMatch = `${d.firstName} ${d.lastName} ${d.cedula}`.toLowerCase().includes(searchLower);
+            const specMatch = filterEspecialidad ? String(d.id_especialidad) === filterEspecialidad : true;
+            return nameMatch && specMatch;
+          });
+          return visibleCount < filteredDocentes.length && (
           <div className="flex justify-center pt-2">
             <button
               onClick={() => setVisibleCount(p => p + 6)}
@@ -423,7 +467,7 @@ export default function DocenteManager({ docentes, users, currentUserRole, onAdd
               Cargar más docentes
             </button>
           </div>
-        )}
+        )})()}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => {

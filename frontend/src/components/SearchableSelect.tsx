@@ -21,6 +21,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
   const [searchTerm, setSearchTerm] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   const selectedOption = options.find(o => o.value === value);
@@ -68,12 +69,14 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
           if (disabled) return;
           if (wrapperRef.current) setRect(wrapperRef.current.getBoundingClientRect());
           setIsOpen(true);
+          inputRef.current?.focus();
         }}
         className={`w-full text-base p-2 bg-slate-50 border border-slate-200 rounded flex items-center justify-between font-medium transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-text focus-within:border-indigo-500 focus-within:bg-white'}`}
       >
         <input
+          ref={inputRef}
           type="text"
-          className="w-full bg-transparent focus:outline-hidden text-slate-800 placeholder-slate-500"
+          className="w-full bg-transparent focus:outline-none text-slate-800 placeholder-slate-500"
           placeholder={selectedOption ? selectedOption.label : placeholder}
           value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : '')}
           onChange={(e) => {
