@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { BloqueHorario } from '../models/BloqueHorario';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 export const BloqueHorarioController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -20,6 +21,7 @@ export const BloqueHorarioController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await BloqueHorario.create(req.body);
+    getIO().emit('bloque:create', { data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -31,6 +33,7 @@ export const BloqueHorarioController = {
       return;
     }
     await record.update(req.body);
+    getIO().emit('bloque:update', { data: record });
     res.json({ data: record });
   }),
 
@@ -42,6 +45,7 @@ export const BloqueHorarioController = {
       return;
     }
     await record.destroy();
+    getIO().emit('bloque:delete', { data: { id_bloque: id } });
     res.status(204).send();
   }),
 };

@@ -8,6 +8,7 @@ export class HorarioDocente extends Model {
   declare id_dia: number;
   declare id_bloque: number;
   declare id_aula: number;
+  declare id_periodo: number;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
 
@@ -18,6 +19,7 @@ export class HorarioDocente extends Model {
     HorarioDocente.belongsTo(models.DiaSemana, { foreignKey: 'id_dia', as: 'dia' });
     HorarioDocente.belongsTo(models.BloqueHorario, { foreignKey: 'id_bloque', as: 'bloque' });
     HorarioDocente.belongsTo(models.Aula, { foreignKey: 'id_aula', as: 'aula' });
+    HorarioDocente.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });
   }
 }
 
@@ -75,6 +77,14 @@ export function initHorarioDocente(sequelize: Sequelize): typeof HorarioDocente 
         references: {
           model: 'aulas',
           key: 'id_aula',
+        },
+      },
+      id_periodo: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'periodos_escolares',
+          key: 'id_periodo',
         },
       },
     },

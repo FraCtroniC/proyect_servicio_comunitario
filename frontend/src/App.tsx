@@ -209,6 +209,45 @@ export default function App() {
       setDocentes(prev => prev.filter(d =>
         d.id !== String(payload.data.id_docente)
       ));
+    } else if (event === 'horario:create') {
+      setScheduleEvents(prev => [...prev, mapHorarioToScheduleEvent(payload.data)]);
+    } else if (event === 'horario:update') {
+      setScheduleEvents(prev => prev.map(e =>
+        e.id === String(payload.data.id_horario)
+          ? mapHorarioToScheduleEvent(payload.data) : e
+      ));
+    } else if (event === 'horario:delete') {
+      setScheduleEvents(prev => prev.filter(e =>
+        e.id !== String(payload.data.id_horario)
+      ));
+    } else if (event === 'bloque:create') {
+      setReferenceData(prev => ({ ...prev, bloques: [...prev.bloques, payload.data] }));
+    } else if (event === 'bloque:update') {
+      setReferenceData(prev => ({
+        ...prev,
+        bloques: prev.bloques.map(b =>
+          b.id_bloque === payload.data.id_bloque ? payload.data : b
+        )
+      }));
+    } else if (event === 'bloque:delete') {
+      setReferenceData(prev => ({
+        ...prev,
+        bloques: prev.bloques.filter(b => b.id_bloque !== payload.data.id_bloque)
+      }));
+    } else if (event === 'dia:create') {
+      setReferenceData(prev => ({ ...prev, dias: [...prev.dias, payload.data] }));
+    } else if (event === 'dia:update') {
+      setReferenceData(prev => ({
+        ...prev,
+        dias: prev.dias.map(d =>
+          d.id_dia === payload.data.id_dia ? payload.data : d
+        )
+      }));
+    } else if (event === 'dia:delete') {
+      setReferenceData(prev => ({
+        ...prev,
+        dias: prev.dias.filter(d => d.id_dia !== payload.data.id_dia)
+      }));
     }
   });
 
@@ -1112,7 +1151,6 @@ const handleLogout = async () => {
       };
 
       const created = await api.post<any>('/api/horarios', payload);
-      setScheduleEvents(p => [...p, { ...evt, id: String(created.id_horario || created.id) }]);
     } catch (e: any) {
       console.error('Error al crear horario:', e);
       toast.error('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
@@ -1149,7 +1187,6 @@ const handleLogout = async () => {
       }
 
       await api.patch(`/api/horarios/${id}`, payload);
-      setScheduleEvents(p => p.map(e => e.id === evtId ? { ...e, ...evt } : e));
     } catch (e: any) {
       console.error('Error al actualizar horario:', e);
       toast.error('Error al actualizar horario en BD: ' + (e.message || 'Error desconocido'));
@@ -1162,10 +1199,8 @@ const handleLogout = async () => {
       if (id) {
         await api.delete(`/api/horarios/${id}`);
       }
-      setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
     } catch (e) {
       console.error('Error al eliminar horario:', e);
-      setScheduleEvents(p => p.filter(evt => evt.id !== evtId));
     }
   };
 
@@ -1622,6 +1657,7 @@ const handleLogout = async () => {
                   classrooms={classrooms}
                   sections={sectionsForSchedule}
                   referenceData={referenceData}
+                  periods={periods}
                   currentUserRole={currentUserRole}
                   onAddScheduleEvent={handleAddScheduleEvent}
                   onUpdateScheduleEvent={handleUpdateScheduleEvent}

@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter, Edit2, XCircle, User as UserIcon, MapPin, BookOpen, Trash2 } from 'lucide-react';
-import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente } from '../types';
+import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente, SchoolPeriod } from '../types';
 import { SearchableSelect } from './SearchableSelect';
 import { Modal } from './Modal';
 
@@ -17,6 +17,7 @@ interface ScheduleCoordinatorProps {
   classrooms: Classroom[];
   sections: Section[];
   referenceData: { dias: any[]; bloques: any[]; grados: any[] };
+  periods: SchoolPeriod[];
   currentUserRole: UserRole;
   onAddScheduleEvent: (evt: ScheduleEvent) => void;
   onUpdateScheduleEvent?: (evtId: string, evt: Partial<ScheduleEvent>) => void;
@@ -32,6 +33,7 @@ export default function ScheduleCoordinator({
   classrooms,
   sections,
   referenceData,
+  periods,
   currentUserRole,
   onAddScheduleEvent,
   onUpdateScheduleEvent,
@@ -63,6 +65,8 @@ export default function ScheduleCoordinator({
 
   // const days: ('Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes')[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
   const days: string[] = (referenceData.dias || []).map((d: any) => d.nombre);
+
+  const activePeriod = periods?.find(p => p.status === 'Activo');
 
   // Filters to display current schedules
   const [filterType, setFilterType] = useState<'section' | 'teacher' | 'classroom'>('section');
@@ -230,6 +234,11 @@ export default function ScheduleCoordinator({
         <h1 id="schedule-title" className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <Calendar className="h-6 w-6 text-indigo-600" />
           Planificación y Distribución Horaria Escolar
+          {activePeriod && (
+            <span className="ml-auto text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+              {activePeriod.name}
+            </span>
+          )}
         </h1>
         <p className="text-xs text-slate-500 mt-1">Definición de asignaturas, auditorías de solapamientos para docentes, y designación de planta física.</p>
       </div>
