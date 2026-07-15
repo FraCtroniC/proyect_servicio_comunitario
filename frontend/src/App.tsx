@@ -41,7 +41,8 @@ import {
   StudyPlanItem,
   SchoolPeriod,
   Section,
-  Docente
+  Docente,
+  SubjectSchedule
 } from './types';
 
 import { api } from './services/api';
@@ -121,6 +122,10 @@ export default function App() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [teacherLogs, setTeacherLogs] = useState<TeacherScheduleLog[]>([]);
   const [matriculasCache, setMatriculasCache] = useState<any[]>([]);
+
+  // Schedule/Horario states for attendance-by-class
+  const [horariosDisponibles, setHorariosDisponibles] = useState<SubjectSchedule[]>([]);
+  const [miHorario, setMiHorario] = useState<SubjectSchedule[]>([]);
 
   // Simulated login/role permission state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -258,6 +263,28 @@ export default function App() {
     } else if (event === 'seccion:delete') {
       setSections(prev => prev.filter(s =>
         s.id !== String(payload.data.id_seccion)
+      ));
+    } else if (event === 'estudiante:create') {
+      refreshStudents();
+    } else if (event === 'estudiante:update') {
+      const activePeriodId = periods.find(p => p.status === 'Activo')?.id ? Number(periods.find(p => p.status === 'Activo')?.id) : undefined;
+      setStudents(prev => prev.map(s =>
+        s.id === String(payload.data.id_estudiante)
+          ? mapEstudianteToStudent(payload.data, matriculasCache, sections, activePeriodId) : s
+      ));
+    } else if (event === 'estudiante:delete') {
+      setStudents(prev => prev.filter(s =>
+        s.id !== String(payload.data.id_estudiante)
+      ));
+    } else if (event === 'representante:create') {
+      setRepresentatives(prev => [...prev, payload.data]);
+    } else if (event === 'representante:update') {
+      setRepresentatives(prev => prev.map(r =>
+        r.id_representante === payload.data.id_representante ? payload.data : r
+      ));
+    } else if (event === 'representante:delete') {
+      setRepresentatives(prev => prev.filter(r =>
+        r.id_representante !== payload.data.id_representante
       ));
     }
   });
@@ -593,10 +620,6 @@ const handleLogout = async () => {
       const created = await api.post<any>('/api/estudiantes', estPayload);
       const studentId = created.id_estudiante || created.id;
 
-      setStudents(prev => prev.map(s =>
-        s.id === newStudent.id ? { ...s, id: String(studentId) } : s
-      ));
-
       const activePeriod = periods.find(p => p.status === 'Activo');
       const matchingSection = sections.find(s => s.grade === newStudent.academicYear && s.letter === newStudent.section);
       if (activePeriod && matchingSection) {
@@ -607,6 +630,8 @@ const handleLogout = async () => {
           estatus_matricula: 'Activo'
         }).catch((e: any) => console.warn('Matrícula no creada:', e.message));
       }
+
+      refreshStudents();
     } catch (e) {
       console.error(e);
       toast.error('Error al crear estudiante en BD');
@@ -616,7 +641,6 @@ const handleLogout = async () => {
   const handleUpdateStudentStatus = async (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => {
     try {
       await api.patch(`/api/estudiantes/${stripId(studentId)}`, { estatus_estudiante: status });
-      setStudents(p => p.map(s => s.id === studentId ? { ...s, status } : s));
     } catch (e) {
       console.error(e);
     }
@@ -660,8 +684,6 @@ const handleLogout = async () => {
       };
       
       await api.patch(`/api/estudiantes/${realId}`, estPayload);
-      
-      setStudents(p => p.map(s => s.id === studentId ? { ...s, ...updatedData } : s));
     } catch (e) {
       console.error(e);
       throw e;
@@ -938,6 +960,7 @@ const handleLogout = async () => {
       const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
 
       const matriculasList = Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [];
+      setMatriculasCache(matriculasList);
       setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
       setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
     } catch (e) {
@@ -994,7 +1017,7 @@ const handleLogout = async () => {
     return matricula ? matricula.id_matricula : null;
   };
 
-  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string) => {
+  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string, horarioId?: string) => {
     try {
       const dbStatus = status === 'P' ? 'Presente' : (status === 'A' ? 'Ausente' : 'Justificado');
 
@@ -1016,6 +1039,9 @@ const handleLogout = async () => {
         fecha: date,
         estatus: dbStatus,
       };
+      if (horarioId) {
+        payload.id_horario = Number(horarioId);
+      }
       if (observacion) {
         payload.observacion = observacion;
       }
@@ -1104,6 +1130,35 @@ const handleLogout = async () => {
       toast.error('Error al eliminar: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
+
+  const fetchMiHorario = useCallback(async (fecha?: string) => {
+    try {
+      const date = fecha || new Date().toISOString().split('T')[0];
+      const resp = await api.get<any>(`/api/horarios/mi-horario?fecha=${date}`);
+      const data = Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      setMiHorario(data.map((h: any) => ({
+        ...h,
+        id_horario: h.id_horario,
+        estudiantes: h.estudiantes || [],
+        asignatura: h.asignatura ? { id: String(h.asignatura.id_asignatura), name: h.asignatura.nombre, shortName: h.asignatura.nombre?.substring(0, 3).toUpperCase(), years: [] } : null,
+      })));
+    } catch (e) {
+      console.error('Error al cargar mi horario:', e);
+    }
+  }, []);
+
+  const fetchHorariosDisponibles = useCallback(async (params?: { id_docente?: string; fecha?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.id_docente) query.set('id_docente', params.id_docente);
+      if (params?.fecha) query.set('fecha', params.fecha);
+      const resp = await api.get<any>(`/api/horarios/disponibles?${query.toString()}`);
+      const data = Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      setHorariosDisponibles(data);
+    } catch (e) {
+      console.error('Error al cargar horarios disponibles:', e);
+    }
+  }, []);
 
   const handleJustifyTeacherAbsence = async (logId: string, motivo: string, soporteDigital?: string) => {
     try {
@@ -1656,18 +1711,25 @@ const handleLogout = async () => {
                   students={students}
                   users={users}
                   docentes={docentes}
+                  subjects={subjects}
                   sections={sectionsForSchedule}
                   periods={periods}
                   attendance={attendance}
                   teacherLogs={teacherLogs}
+                  horariosDisponibles={horariosDisponibles}
+                  bloques={referenceData.bloques}
+                  miHorario={miHorario}
+                  currentUser={currentUser}
                   currentUserRole={currentUserRole}
                   onModifyAttendance={handleModifyAttendance}
                   onAddTeacherLog={handleAddTeacherLog}
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
-                    onDeleteAttendance={handleDeleteAttendance}
+                  onDeleteAttendance={handleDeleteAttendance}
                   onRefreshData={refreshAttendance}
+                  onFetchMiHorario={fetchMiHorario}
+                  onFetchHorarios={fetchHorariosDisponibles}
                 />
               )}
 

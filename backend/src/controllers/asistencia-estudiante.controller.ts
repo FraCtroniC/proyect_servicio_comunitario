@@ -1,6 +1,10 @@
 import { Op, fn, col } from 'sequelize';
 import { Request, Response } from 'express';
-import { AsistenciaEstudiante, Matricula, Estudiante, Seccion, Calificacion, PeriodoEscolar, sequelize } from '../models';
+import {
+  AsistenciaEstudiante, Matricula, Estudiante, Seccion,
+  Calificacion, PeriodoEscolar, HorarioDocente, Asignatura,
+  BloqueHorario, Docente, sequelize
+} from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { validateZod } from '../validators/zod.middleware';
@@ -30,6 +34,7 @@ export const AsistenciaEstudianteController = {
     if (req.query.fecha) where.fecha = String(req.query.fecha);
     if (req.query.id_matricula) where.id_matricula = Number(req.query.id_matricula);
     if (req.query.estatus) where.estatus = String(req.query.estatus);
+    if (req.query.id_horario) where.id_horario = Number(req.query.id_horario);
 
     if (req.query.fecha_desde || req.query.fecha_hasta) {
       where.fecha = {};
@@ -37,19 +42,48 @@ export const AsistenciaEstudianteController = {
       if (req.query.fecha_hasta) where.fecha[Op.lte] = String(req.query.fecha_hasta);
     }
 
-    const include: any[] = [
-      {
-        model: Matricula,
-        as: 'matricula',
-        include: [
-          { model: Estudiante, as: 'estudiante' },
-          { model: Seccion, as: 'seccion' }
-        ]
-      }
-    ];
+    const matriculaWhere: any = {};
+    if (req.query.id_seccion) matriculaWhere.id_seccion = Number(req.query.id_seccion);
+    if (req.query.id_periodo) matriculaWhere.id_periodo = Number(req.query.id_periodo);
 
-    if (req.query.id_seccion) {
-      include[0].where = { id_seccion: Number(req.query.id_seccion) };
+    const seccionWhere: any = {};
+    if (req.query.id_grado) seccionWhere.id_grado = Number(req.query.id_grado);
+
+    const horarioWhere: any = {};
+    if (req.query.id_asignatura) horarioWhere.id_asignatura = Number(req.query.id_asignatura);
+    if (req.query.id_docente) horarioWhere.id_docente = Number(req.query.id_docente);
+    if (req.query.id_bloque) horarioWhere.id_bloque = Number(req.query.id_bloque);
+    if (req.query.id_dia) horarioWhere.id_dia = Number(req.query.id_dia);
+
+    const includeMatricula: any = {
+      model: Matricula,
+      as: 'matricula',
+      where: Object.keys(matriculaWhere).length > 0 ? matriculaWhere : undefined,
+      include: [
+        { model: Estudiante, as: 'estudiante' },
+        {
+          model: Seccion, as: 'seccion',
+          where: Object.keys(seccionWhere).length > 0 ? seccionWhere : undefined
+        }
+      ]
+    };
+
+    const include: any[] = [includeMatricula];
+
+    const hasHorarioFilter = Object.keys(horarioWhere).length > 0
+      || req.query.id_horario;
+
+    if (hasHorarioFilter) {
+      include.push({
+        model: HorarioDocente,
+        as: 'horario',
+        where: Object.keys(horarioWhere).length > 0 ? horarioWhere : undefined,
+        include: [
+          { model: Asignatura, as: 'asignatura' },
+          { model: BloqueHorario, as: 'bloque' },
+          { model: Docente, as: 'docente' }
+        ]
+      });
     }
 
     const { count, rows } = await AsistenciaEstudiante.findAndCountAll({
@@ -74,16 +108,26 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
-    const existing = await AsistenciaEstudiante.findOne({
-      where: { id_matricula: parsed.data.id_matricula, fecha: parsed.data.fecha }
-    });
+    const whereClause: any = { id_matricula: parsed.data.id_matricula, fecha: parsed.data.fecha };
+    if (parsed.data.id_horario != null) {
+      whereClause.id_horario = parsed.data.id_horario;
+    }
+
+    const existing = await AsistenciaEstudiante.findOne({ where: whereClause });
     if (existing) {
-      res.status(409).json({ error: { message: 'Ya existe un registro de asistencia para este estudiante en esta fecha' } });
+      const msg = parsed.data.id_horario
+        ? 'Ya existe un registro de asistencia para este estudiante, fecha y horario'
+        : 'Ya existe un registro de asistencia para este estudiante en esta fecha';
+      res.status(409).json({ error: { message: msg } });
       return;
     }
 
+    const payload: any = { ...parsed.data };
+    if (parsed.data.id_horario != null) payload.id_horario = parsed.data.id_horario;
+    if (parsed.data.id_docente_toma != null) payload.id_docente_toma = parsed.data.id_docente_toma;
+
     const nueva = await AsistenciaEstudiante.create({
-      ...parsed.data,
+      ...payload,
       id_usuario_crea: req.user!.idUsuario,
     });
     const completa = await AsistenciaEstudiante.findByPk(nueva.id_asistencia_est, { include: MATRICULA_INCLUDES });
@@ -103,19 +147,26 @@ export const AsistenciaEstudianteController = {
     }
 
     const idUsuario = req.user!.idUsuario;
+
     const result = await sequelize.transaction(async (t) => {
       const creados: any[] = [];
       for (const r of parsed.data.registros) {
-        const payload = {
+        const payload: any = {
           id_matricula: r.id_matricula,
           fecha: r.fecha,
           estatus: r.estatus || 'Presente',
           observacion: r.observacion || null,
+          id_horario: r.id_horario || null,
           id_usuario_crea: idUsuario,
         };
 
+        const whereClause: any = { id_matricula: payload.id_matricula, fecha: payload.fecha };
+        if (payload.id_horario != null) {
+          whereClause.id_horario = payload.id_horario;
+        }
+
         const [registro, created] = await AsistenciaEstudiante.findOrCreate({
-          where: { id_matricula: payload.id_matricula, fecha: payload.fecha },
+          where: whereClause,
           defaults: payload,
           transaction: t,
         });
@@ -135,8 +186,65 @@ export const AsistenciaEstudianteController = {
     res.status(201).json({ data, meta: { total: data.length } });
   }),
 
+  porHorario: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
+    const { id_horario, fecha, registros } = req.body;
+
+    if (!id_horario || !fecha || !Array.isArray(registros)) {
+      res.status(400).json({ error: { message: 'Se requieren id_horario, fecha y registros' } });
+      return;
+    }
+
+    const horario = await HorarioDocente.findByPk(Number(id_horario));
+    if (!horario) {
+      res.status(404).json({ error: { message: 'Horario no encontrado' } });
+      return;
+    }
+
+    const idUsuario = req.user!.idUsuario;
+
+    const result = await sequelize.transaction(async (t) => {
+      const creados: any[] = [];
+      for (const r of registros) {
+        const payload = {
+          id_matricula: r.id_matricula,
+          fecha,
+          id_horario: Number(id_horario),
+          estatus: r.estatus || 'Presente',
+          observacion: r.observacion || null,
+          id_usuario_crea: idUsuario,
+        };
+
+        const [registro, created] = await AsistenciaEstudiante.findOrCreate({
+          where: { id_matricula: payload.id_matricula, fecha, id_horario: Number(id_horario) },
+          defaults: payload,
+          transaction: t,
+        });
+
+        if (!created) {
+          await registro.update({ estatus: payload.estatus, observacion: payload.observacion }, { transaction: t });
+        }
+        creados.push(registro);
+      }
+      return creados;
+    });
+
+    const completos = await Promise.all(
+      result.map((r: any) => AsistenciaEstudiante.findByPk(r.id_asistencia_est, {
+        include: [...MATRICULA_INCLUDES, {
+          model: HorarioDocente, as: 'horario',
+          include: [
+            { model: Asignatura, as: 'asignatura' },
+            { model: BloqueHorario, as: 'bloque' }
+          ]
+        }]
+      }))
+    );
+    const data = completos.map((r, i) => r || result[i]);
+    res.status(201).json({ data, meta: { total: data.length } });
+  }),
+
   estadisticas: wrapAsync(async (req: Request, res: Response) => {
-    const { id_matricula, id_seccion, fecha_desde, fecha_hasta } = req.query;
+    const { id_matricula, id_seccion, id_grado, id_periodo, id_asignatura, fecha_desde, fecha_hasta } = req.query;
 
     const whereConditions: string[] = [];
     const replacements: any[] = [];
@@ -149,6 +257,18 @@ export const AsistenciaEstudianteController = {
       whereConditions.push('m.id_seccion = ?');
       replacements.push(Number(id_seccion));
     }
+    if (id_periodo) {
+      whereConditions.push('m.id_periodo = ?');
+      replacements.push(Number(id_periodo));
+    }
+    if (id_grado) {
+      whereConditions.push('s.id_grado = ?');
+      replacements.push(Number(id_grado));
+    }
+    if (id_asignatura) {
+      whereConditions.push('hd.id_asignatura = ?');
+      replacements.push(Number(id_asignatura));
+    }
     if (fecha_desde) {
       whereConditions.push('ae.fecha >= ?');
       replacements.push(String(fecha_desde));
@@ -158,7 +278,23 @@ export const AsistenciaEstudianteController = {
       replacements.push(String(fecha_hasta));
     }
 
+    const joinHorario = id_asignatura
+      ? 'LEFT JOIN horario_docente hd ON hd.id_horario = ae.id_horario'
+      : '';
+
     const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+
+    const groupFields = id_asignatura
+      ? 'm.id_estudiante, e.apellido, e.nombre, e.cedula, s.id_grado, s.letra, hd.id_asignatura'
+      : 'm.id_estudiante, e.apellido, e.nombre, e.cedula, s.id_grado, s.letra';
+
+    const selectAsignatura = id_asignatura
+      ? ', a.nombre AS asignatura_nombre'
+      : '';
+
+    const joinAsignatura = id_asignatura
+      ? 'LEFT JOIN asignaturas a ON a.id_asignatura = hd.id_asignatura'
+      : '';
 
     const query = `
       SELECT
@@ -170,12 +306,15 @@ export const AsistenciaEstudianteController = {
         SUM(CASE WHEN ae.estatus = 'Ausente' THEN 1 ELSE 0 END) AS ausente,
         SUM(CASE WHEN ae.estatus = 'Justificado' THEN 1 ELSE 0 END) AS justificado,
         COUNT(*) AS total
+        ${selectAsignatura}
       FROM asistencia_estudiante ae
       INNER JOIN matricula m ON m.id_matricula = ae.id_matricula
       INNER JOIN estudiantes e ON e.id_estudiante = m.id_estudiante
       INNER JOIN secciones s ON s.id_seccion = m.id_seccion
+      ${joinHorario}
+      ${joinAsignatura}
       ${whereClause}
-      GROUP BY m.id_estudiante, e.apellido, e.nombre, e.cedula, s.id_grado, s.letra
+      GROUP BY ${groupFields}
       ORDER BY e.apellido, e.nombre
     `;
 
@@ -186,6 +325,7 @@ export const AsistenciaEstudianteController = {
       nombre: s.nombre,
       cedula: s.cedula,
       seccion: s.seccion,
+      ...(s.asignatura_nombre ? { asignatura: s.asignatura_nombre } : {}),
       presente: Number(s.presente),
       ausente: Number(s.ausente),
       justificado: Number(s.justificado),

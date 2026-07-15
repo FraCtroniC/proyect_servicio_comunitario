@@ -7,6 +7,8 @@ export class AsistenciaDocente extends Model {
   declare hora_entrada: string | null;
   declare hora_salida: string | null;
   declare estatus: string | null;
+  declare id_horario: number | null;
+  declare id_asignatura: number | null;
   declare id_usuario_crea: number | null;
   declare id_usuario_modifica: number | null;
   declare fecha_anulacion: Date | null;
@@ -15,6 +17,8 @@ export class AsistenciaDocente extends Model {
 
   static associate(models: any) {
     AsistenciaDocente.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });
+    AsistenciaDocente.belongsTo(models.HorarioDocente, { foreignKey: 'id_horario', as: 'horario' });
+    AsistenciaDocente.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura', as: 'asignatura' });
     AsistenciaDocente.hasMany(models.Justificacion, { foreignKey: 'id_asistencia', as: 'justificaciones' });
     AsistenciaDocente.belongsTo(models.Usuario, { foreignKey: 'id_usuario_crea', as: 'usuarioCrea' });
     AsistenciaDocente.belongsTo(models.Usuario, { foreignKey: 'id_usuario_modifica', as: 'usuarioModifica' });
@@ -53,6 +57,22 @@ export function initAsistenciaDocente(sequelize: Sequelize): typeof AsistenciaDo
         type: DataTypes.STRING(20),
         allowNull: true,
       },
+      id_horario: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'horario_docente',
+          key: 'id_horario',
+        },
+      },
+      id_asignatura: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'asignaturas',
+          key: 'id_asignatura',
+        },
+      },
       id_usuario_crea: {
         type: DataTypes.INTEGER,
         allowNull: true,
@@ -83,7 +103,7 @@ export function initAsistenciaDocente(sequelize: Sequelize): typeof AsistenciaDo
       indexes: [
         {
           unique: true,
-          fields: ['id_docente', 'fecha']
+          fields: ['id_docente', 'fecha', 'id_horario']
         }
       ]
     }

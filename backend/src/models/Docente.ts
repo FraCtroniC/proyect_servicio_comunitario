@@ -19,6 +19,7 @@ export class Docente extends Model {
   static associate(models: any) {
     Docente.hasMany(models.Usuario, { foreignKey: 'id_docente', as: 'usuarios' });
     Docente.belongsTo(models.Especialidad, { foreignKey: 'id_especialidad', as: 'especialidad_rel' });
+    Docente.hasMany(models.AsistenciaEstudiante, { foreignKey: 'id_docente_toma', as: 'asistenciasTomadas' });
   }
 }
 

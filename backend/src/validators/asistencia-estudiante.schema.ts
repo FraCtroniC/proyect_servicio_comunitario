@@ -15,6 +15,16 @@ export const crearAsistenciaEstudianteSchema = z.object({
   fecha: z.string({ message: 'fecha es requerida' })
     .refine(isValidDateStr, 'fecha no es una fecha válida')
     .refine(isNotFuture, 'No se puede registrar asistencia en una fecha futura'),
+  id_horario: z.number()
+    .int('id_horario debe ser un entero')
+    .positive('id_horario debe ser positivo')
+    .nullable()
+    .optional(),
+  id_docente_toma: z.number()
+    .int('id_docente_toma debe ser un entero')
+    .positive('id_docente_toma debe ser positivo')
+    .nullable()
+    .optional(),
   estatus: z.enum(ASISTENCIA_ESTUDIANTE_STATUS as unknown as [string, ...string[]], {
     message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}`,
   }).optional(),
@@ -32,6 +42,10 @@ export const crearBatchAsistenciaEstudianteSchema = z.object({
     fecha: z.string({ message: 'fecha es requerida' })
       .refine(isValidDateStr, 'fecha no es una fecha válida')
       .refine(isNotFuture, 'No se puede registrar asistencia en una fecha futura'),
+    id_horario: z.number()
+      .int().positive()
+      .nullable()
+      .optional(),
     estatus: z.enum(ASISTENCIA_ESTUDIANTE_STATUS as unknown as [string, ...string[]])
       .optional(),
     observacion: z.string()

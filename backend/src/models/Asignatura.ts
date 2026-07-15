@@ -11,6 +11,7 @@ export class Asignatura extends Model {
     Asignatura.hasMany(models.PlanEstudio, { foreignKey: 'id_asignatura', as: 'planes' });
     Asignatura.hasMany(models.HistoricoNotaCertificada, { foreignKey: 'id_asignatura', as: 'historicos' });
     Asignatura.hasMany(models.HorarioDocente, { foreignKey: 'id_asignatura', as: 'horarios' });
+    Asignatura.hasMany(models.AsistenciaDocente, { foreignKey: 'id_asignatura', as: 'asistenciasDocentes' });
   }
 }
 

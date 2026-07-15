@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2 } from 'lucide-react';
+import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod } from '../types';
+import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
 
@@ -14,28 +14,40 @@ interface AttendanceTrackerProps {
   students: Student[];
   users: User[];
   docentes: Docente[];
+  subjects: Subject[];
   sections: Section[];
   periods: SchoolPeriod[];
   attendance: Attendance[];
   teacherLogs: TeacherScheduleLog[];
+  horariosDisponibles: SubjectSchedule[];
+  bloques: any[];
+  miHorario: SubjectSchedule[];
+  currentUser: User | null;
   currentUserRole: UserRole;
-  onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', observacion?: string) => void;
+  onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', observacion?: string, horarioId?: string) => void;
   onAddTeacherLog: (log: TeacherScheduleLog) => void;
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
   onSyncInasistencias?: (ids_matricula: string[]) => void;
   onJustifyTeacherAbsence?: (logId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
   onDeleteAttendance?: (attendanceId: string) => void;
   onRefreshData?: () => Promise<void>;
+  onFetchMiHorario?: (fecha?: string) => Promise<void>;
+  onFetchHorarios?: (params?: { id_docente?: string; fecha?: string }) => Promise<void>;
 }
 
 export default function AttendanceTracker({
   students,
   users,
   docentes,
+  subjects,
   sections,
   periods,
   attendance,
   teacherLogs,
+  horariosDisponibles,
+  bloques,
+  miHorario,
+  currentUser,
   currentUserRole,
   onModifyAttendance,
   onAddTeacherLog,
@@ -43,15 +55,25 @@ export default function AttendanceTracker({
   onSyncInasistencias,
   onJustifyTeacherAbsence,
   onDeleteAttendance,
-  onRefreshData
+  onRefreshData,
+  onFetchMiHorario,
+  onFetchHorarios
 }: AttendanceTrackerProps) {
   // Navigation
-  const [trackerTab, setTrackerTab] = useState<'students' | 'teachers'>('students');
+  const [trackerTab, setTrackerTab] = useState<'students' | 'teachers' | 'miclase'>('students');
 
   // Student Attendance Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
   const [selectedSection, setSelectedSection] = useState<string>('A');
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+
+  // New filters for subject-aware attendance
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('');
+  const [selectedBlock, setSelectedBlock] = useState<string>('');
+
+  // Mi Clase state
+  const [selectedHorario, setSelectedHorario] = useState<SubjectSchedule | null>(null);
 
   // Observación state per student
   const [observaciones, setObservaciones] = useState<Record<string, string>>({});
@@ -168,6 +190,21 @@ export default function AttendanceTracker({
           <span>Asistencia Estudiantil</span>
         </button>
         <button
+          id="btn-att-miclase"
+          onClick={() => {
+            setTrackerTab('miclase');
+            onFetchMiHorario?.(selectedDate);
+          }}
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+            trackerTab === 'miclase' 
+              ? 'border-indigo-600 text-indigo-700' 
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <BookOpen className="h-4 w-4" />
+          <span>Mi Clase</span>
+        </button>
+        <button
           id="btn-att-teachers"
           onClick={() => setTrackerTab('teachers')}
           className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
@@ -197,13 +234,17 @@ export default function AttendanceTracker({
                 const desde = new Date();
                 desde.setDate(desde.getDate() - 30);
                 const hasta = new Date();
+                const subjectName = selectedSubject ? subjects.find(s => s.id === selectedSubject)?.name : undefined;
+                const blockName = selectedBlock ? bloques.find((b: any) => String(b.id_bloque) === selectedBlock) : undefined;
                 generateReporteAsistencia(
                   sectionStudents,
                   attendance,
                   selectedYear,
                   selectedSection,
                   desde.toISOString().split('T')[0],
-                  hasta.toISOString().split('T')[0]
+                  hasta.toISOString().split('T')[0],
+                  subjectName,
+                  blockName ? `${blockName.numero_bloque || ''}° ${blockName.hora_inicio?.substring(0,5)}-${blockName.hora_fin?.substring(0,5)}` : undefined
                 );
               }}
               className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer flex items-center gap-1"
@@ -220,13 +261,16 @@ export default function AttendanceTracker({
           </div>
 
           {/* Filters Bar */}
-          <div id="stud-att-filters" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
+          <div id="stud-att-filters" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-end">
             
             <div id="filter-att-year" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Año Escolar</span>
               <select
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear)}
+                onChange={(e) => {
+                  setSelectedYear(Number(e.target.value) as AcademicYear);
+                  setSelectedSubject('');
+                }}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 <option value={1}>1er Año</option>
@@ -255,6 +299,58 @@ export default function AttendanceTracker({
               </select>
             </div>
 
+            <div id="filter-att-subject" className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-slate-400 uppercase">Materia</span>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+              >
+                <option value="">Todas las materias</option>
+                {subjects
+                  .filter(s => !s.years || s.years.length === 0 || s.years.includes(selectedYear))
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+              </select>
+            </div>
+
+            <div id="filter-att-teacher" className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-slate-400 uppercase">Docente</span>
+              <select
+                value={selectedTeacher}
+                onChange={(e) => setSelectedTeacher(e.target.value)}
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+              >
+                <option value="">Todos los docentes</option>
+                {docentes
+                  .filter(d => d.status === 'Activo')
+                  .sort((a, b) => a.lastName.localeCompare(b.lastName))
+                  .map(d => (
+                    <option key={d.id} value={d.id}>{d.lastName}, {d.firstName}</option>
+                  ))}
+              </select>
+            </div>
+
+            <div id="filter-att-block" className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-slate-400 uppercase">Bloque Horario</span>
+              <select
+                value={selectedBlock}
+                onChange={(e) => setSelectedBlock(e.target.value)}
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+              >
+                <option value="">Todos los bloques</option>
+                {bloques
+                  .sort((a: any, b: any) => (a.numero_bloque || 0) - (b.numero_bloque || 0))
+                  .map((b: any) => (
+                    <option key={b.id_bloque} value={b.id_bloque}>
+                      {b.numero_bloque ? `${b.numero_bloque}°` : ''} {b.hora_inicio?.substring(0,5)} - {b.hora_fin?.substring(0,5)}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
             <div id="filter-att-date" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Fecha de Diario</span>
               <input
@@ -278,16 +374,19 @@ export default function AttendanceTracker({
               />
             </div>
 
-            <p className="text-sm text-slate-400 italic max-w-sm mt-3 ml-2">
-              Lleve el control diario de permanencia escolar. Marcaje estándar venezolano: 
-              <strong> P</strong> (Presente), <strong> A</strong> (Ausente) y <strong> J</strong> (Justificado).
-            </p>
           </div>
 
           {/* Table list */}
           <div id="stud-att-list" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
             <div id="stud-att-header" className="flex items-center justify-between border-b pb-2 border-slate-100">
-              <h3 className="text-base font-bold text-slate-800">Planilla de Control Asistencia Diaria</h3>
+              <h3 className="text-base font-bold text-slate-800">
+                Planilla de Control Asistencia Diaria
+                {selectedSubject && (
+                  <span className="text-sm font-medium text-indigo-600 ml-2">
+                    · {subjects.find(s => s.id === selectedSubject)?.name || ''}
+                  </span>
+                )}
+              </h3>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                   Presentes: {attendanceSummary.presentes}
@@ -317,7 +416,9 @@ export default function AttendanceTracker({
                 <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-705">
                   {sectionStudents.length > 0 ? (
                     sectionStudents.map(student => {
-                      const todayAtt = attendance.find(a => a.studentId === student.id && a.date === selectedDate);
+                      const todayAtt = selectedSubject
+                        ? attendance.find(a => a.studentId === student.id && a.date === selectedDate && a.horarioId === selectedSubject)
+                        : attendance.find(a => a.studentId === student.id && a.date === selectedDate && !a.horarioId);
                       const currentStatus = todayAtt ? todayAtt.status : null;
 
                       // Student monthly attendance rates calculation
@@ -365,7 +466,7 @@ export default function AttendanceTracker({
                                       if (isLoading) return;
                                       setLoadingStudentId(student.id);
                                       try {
-                                        await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '');
+                                        await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '', selectedSubject || undefined);
                                       } finally {
                                         setLoadingStudentId(null);
                                       }
@@ -427,6 +528,157 @@ export default function AttendanceTracker({
 
           </div>
 
+        </div>
+      )}
+
+      {/*************** MI CLASE (Docente View) ***************/}
+      {trackerTab === 'miclase' && (
+        <div id="miclase-container" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-indigo-600" />
+              Mi Horario del Día
+            </h2>
+            <span className="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-mono">
+              {selectedDate}
+            </span>
+          </div>
+
+          {miHorario.length === 0 ? (
+            <div className="bg-white p-8 rounded-xl border border-slate-200/80 text-center">
+              <BookOpen className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500 font-bold">
+                No tienes clases programadas para hoy o el docente no está vinculado a tu usuario.
+              </p>
+              <p className="text-slate-400 text-sm mt-2">
+                Ve a "Asistencia Estudiantil" para usar la vista general con filtros.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {miHorario.map((h) => (
+                <div
+                  key={h.id_horario}
+                  className={`bg-white rounded-xl border-2 p-4 transition-all cursor-pointer ${
+                    selectedHorario?.id_horario === h.id_horario
+                      ? 'border-indigo-500 shadow-md'
+                      : 'border-slate-200 hover:border-indigo-300'
+                  }`}
+                  onClick={() => {
+                    setSelectedHorario(selectedHorario?.id_horario === h.id_horario ? null : h);
+                    if (selectedHorario?.id_horario !== h.id_horario) {
+                      setSelectedSection(h.seccion?.letter || 'A');
+                      setSelectedYear((h.seccion?.grade || (h.seccion as any)?.id_grado || 5) as AcademicYear);
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      {h.bloque?.numero_bloque ? `${h.bloque.numero_bloque}° Bloque` : ''}
+                    </span>
+                    <span className="text-xs font-mono text-slate-500">
+                      {h.bloque?.hora_inicio?.substring(0,5)} - {h.bloque?.hora_fin?.substring(0,5)}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-base">
+                    {h.asignatura?.name || 'Materia'}
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    {(h.seccion as any)?.grade || (h.seccion as any)?.id_grado}° "{h.seccion?.letter}" 
+                    {h.aula?.name ? ` · ${h.aula.name}` : ''}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {h.estudiantes?.length || 0} estudiante(s)
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {selectedHorario && selectedHorario.estudiantes && selectedHorario.estudiantes.length > 0 && (
+            <div id="miclase-attendance-grid" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
+              <div className="flex items-center justify-between border-b pb-2 border-slate-100">
+                <h3 className="text-base font-bold text-slate-800">
+                  Asistencia: {selectedHorario.asignatura?.name} - {selectedHorario.seccion?.grade || ''}° "{selectedHorario.seccion?.letter}" 
+                </h3>
+                <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-mono">
+                  {selectedHorario.bloque?.hora_inicio?.substring(0,5)} - {selectedHorario.bloque?.hora_fin?.substring(0,5)}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-150 text-slate-400 uppercase font-bold text-sm tracking-wider">
+                      <th className="py-2.5">Estudiante</th>
+                      <th className="py-2.5">Cédula</th>
+                      <th className="py-2.5 text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100/60 font-semibold">
+                    {selectedHorario.estudiantes.map((est: any) => {
+                      const attRecord = attendance.find(
+                        a => a.studentId === String(est.id_estudiante) && a.date === selectedDate && a.horarioId === String(selectedHorario.id_horario)
+                      );
+                      const currentStatus = attRecord?.status || null;
+
+                      return (
+                        <tr key={est.id_matricula} className="hover:bg-slate-50/40">
+                          <td className="py-3">
+                            <span className="font-bold text-slate-800 text-sm">{est.nombre}</span>
+                          </td>
+                          <td className="py-3 font-mono text-xs text-slate-500">{est.cedula}</td>
+                          <td className="py-3">
+                            <div className="flex items-center justify-center gap-1.5 max-w-[170px] mx-auto">
+                              {(['P', 'A', 'J'] as const).map(flag => {
+                                const isSelected = currentStatus === flag;
+                                const getFlagTheme = (f: 'P' | 'A' | 'J') => {
+                                  if (f === 'P') return isSelected ? 'bg-green-600 text-white' : 'bg-slate-50 hover:bg-green-50 text-slate-500';
+                                  if (f === 'A') return isSelected ? 'bg-rose-600 text-white' : 'bg-slate-50 hover:bg-rose-50 text-slate-500';
+                                  return isSelected ? 'bg-amber-600 text-white' : 'bg-slate-50 hover:bg-amber-50 text-slate-500';
+                                };
+
+                                return (
+                                  <button
+                                    key={flag}
+                                    disabled={loadingStudentId === String(est.id_estudiante)}
+                                    onClick={async () => {
+                                      if (currentUserRole !== 'super_admin' && currentUserRole !== 'docente' && currentUserRole !== 'control_estudios') {
+                                        toast.error("No tienes permisos para pasar asistencia.");
+                                        return;
+                                      }
+                                      setLoadingStudentId(String(est.id_estudiante));
+                                      try {
+                                        await onModifyAttendance(
+                                          String(est.id_estudiante),
+                                          selectedDate,
+                                          ((selectedHorario.seccion as any)?.grade || (selectedHorario.seccion as any)?.id_grado || 5) as AcademicYear,
+                                          selectedHorario.seccion?.letter || 'A',
+                                          flag,
+                                          '',
+                                          String(selectedHorario.id_horario)
+                                        );
+                                      } finally {
+                                        setLoadingStudentId(null);
+                                      }
+                                    }}
+                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-sm font-bold transition-all p-0 focus:outline-hidden pointer-events-auto cursor-pointer ${getFlagTheme(flag)}`}
+                                    title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
+                                  >
+                                    {flag}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
