@@ -294,7 +294,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700">Teléfono</label>
-            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="xxxx-xxxxxxx" className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.telefono ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            <input type="text" value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9-]/g, ''))} placeholder="xxxx-xxxxxxx" className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.telefono ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
             {fieldErrors.telefono && <p className="text-red-600 text-sm mt-1">{fieldErrors.telefono}</p>}
           </div>
           <div>

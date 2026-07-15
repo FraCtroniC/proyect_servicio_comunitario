@@ -235,7 +235,7 @@ export default function StaffManager({ users, currentUserRole, onSetUserRole, on
                 type="text" 
                 placeholder="0414-0000000" 
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9-]/g, ''))}
                 className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:bg-white"
               />
             </div>

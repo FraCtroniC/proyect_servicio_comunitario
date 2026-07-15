@@ -590,7 +590,7 @@ export default function DocenteManager({ docentes, users, currentUserRole, onAdd
               </div>
               <div className="space-y-0.5">
                 <label className="text-sm font-semibold text-slate-500">Teléfono</label>
-                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="0414-1234567" />
+                <input type="text" value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9-]/g, ''))} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="0414-1234567" />
               </div>
             </div>
             
