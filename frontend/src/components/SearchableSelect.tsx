@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface Option {
@@ -14,11 +14,15 @@ interface SearchableSelectProps {
   onChange: (value: string | number | '') => void;
   placeholder?: string;
   disabled?: boolean;
+  pageSize?: number;
 }
 
-export function SearchableSelect({ options, value, onChange, placeholder = 'Seleccionar...', disabled = false }: SearchableSelectProps) {
+const DEFAULT_PAGE_SIZE = 4;
+
+export function SearchableSelect({ options, value, onChange, placeholder = 'Seleccionar...', disabled = false, pageSize = DEFAULT_PAGE_SIZE }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,9 +62,17 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
   const filteredOptions = options.filter(option => 
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredOptions.length / pageSize);
+  const startIndex = currentPage * pageSize;
+  const visibleOptions = filteredOptions.slice(startIndex, startIndex + pageSize);
 
   return (
     <div ref={wrapperRef} className="relative w-full">
@@ -108,13 +120,11 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
             top: `${rect.bottom + 4}px`,
             left: `${rect.left}px`,
             width: `${rect.width}px`,
-            maxHeight: '240px'
           }}
         >
-          <div className="overflow-y-auto p-1 custom-scrollbar">
-
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
+          <div className="overflow-y-auto p-1 custom-scrollbar" style={{ maxHeight: '200px' }}>
+            {visibleOptions.length > 0 ? (
+              visibleOptions.map((option) => (
                 <div
                   key={option.value}
                   className={`p-2 text-base cursor-pointer transition-colors ${
@@ -137,6 +147,36 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
               </div>
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 py-1.5 border-t border-slate-100 bg-slate-50">
+              <button
+                type="button"
+                disabled={currentPage === 0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentPage(p => Math.max(0, p - 1));
+                }}
+                className="p-1 rounded hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-600" />
+              </button>
+              <span className="text-xs text-slate-500 font-medium">
+                {currentPage + 1} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= totalPages - 1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentPage(p => Math.min(totalPages - 1, p + 1));
+                }}
+                className="p-1 rounded hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+          )}
         </div>,
         document.body
       )}

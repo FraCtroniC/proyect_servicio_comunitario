@@ -165,8 +165,10 @@ export const api = {
   materiasPendientes: {
     getAll: () => request('/api/materias-pendientes'),
     getByStudent: (id: string) => request(`/api/materias-pendientes/estudiante/${id}`),
+    getReprobadas: (id: string) => request(`/api/materias-pendientes/reprobadas/${id}`),
     create: (data: any) => request('/api/materias-pendientes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request(`/api/materias-pendientes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/api/materias-pendientes/${id}`, { method: 'DELETE' }),
   },
   notificaciones: {
     alertaAcademica: (data: any) => request('/api/notificaciones/alerta-academica', { method: 'POST', body: JSON.stringify(data) })

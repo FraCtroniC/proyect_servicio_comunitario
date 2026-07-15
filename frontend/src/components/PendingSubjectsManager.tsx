@@ -1,16 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, Search, User, PlusCircle, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { BookOpen, Search, User, PlusCircle, CheckCircle, AlertTriangle, FileText, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { api } from '../services/api';
-import { Student, Subject, SchoolPeriod, User as AppUser, PendingSubject } from '../types';
+import { Student, Subject, SchoolPeriod, User as AppUser, MateriaPendiente, Docente } from '../types';
 import { SearchableSelect } from './SearchableSelect';
 import { generateActaMateriaPendiente } from '../utils/pdfGenerator';
+
+interface Reprobada {
+  id_asignatura: number;
+  nombre: string;
+  nota_final: number;
+}
 
 interface PendingSubjectsManagerProps {
   students: Student[];
   subjects: Subject[];
   periods: SchoolPeriod[];
   users: AppUser[];
+  docentes: Docente[];
   defaultStudentId?: string;
+  refreshTrigger?: number;
 }
 
 export default function PendingSubjectsManager({
@@ -18,30 +27,37 @@ export default function PendingSubjectsManager({
   subjects,
   periods,
   users,
-  defaultStudentId
+  docentes,
+  defaultStudentId,
+  refreshTrigger,
 }: PendingSubjectsManagerProps) {
-  const [pendingList, setPendingList] = useState<PendingSubject[]>([]);
+  const [pendingList, setPendingList] = useState<MateriaPendiente[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Cursando' | 'Aprobada' | 'Aplazada'>('All');
-  
-  // Modals
+
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
-  
-  // Enroll Form State
+
   const [enrollStudentId, setEnrollStudentId] = useState<string>(defaultStudentId || '');
   const [enrollSubjectId, setEnrollSubjectId] = useState<string>('');
   const [enrollPeriodId, setEnrollPeriodId] = useState<string>('');
   const [enrollEvaluatorId, setEnrollEvaluatorId] = useState<string>('');
   const [enrollError, setEnrollError] = useState('');
+  const [enrollSaving, setEnrollSaving] = useState(false);
 
-  // Grade Form State
-  const [selectedPending, setSelectedPending] = useState<PendingSubject | null>(null);
+  const [reprobadas, setReprobadas] = useState<Reprobada[]>([]);
+  const [reprobadasLoading, setReprobadasLoading] = useState(false);
+
+  const [selectedPending, setSelectedPending] = useState<MateriaPendiente | null>(null);
   const [gradeValue, setGradeValue] = useState<string>('');
   const [gradeError, setGradeError] = useState('');
+  const [gradeSaving, setGradeSaving] = useState(false);
 
-  const fetchPendingSubjects = async () => {
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const fetchPendingSubjects = useCallback(async () => {
     setLoading(true);
     try {
       const resp = await api.materiasPendientes.getAll();
@@ -51,57 +67,92 @@ export default function PendingSubjectsManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPendingSubjects();
+  }, [fetchPendingSubjects, refreshTrigger]);
+
+  useEffect(() => {
     if (defaultStudentId) {
       const st = students.find(s => s.id === defaultStudentId);
       if (st) setSearchQuery(st.cedula);
     }
-  }, [defaultStudentId]);
+  }, [defaultStudentId, students]);
+
+  const fetchReprobadas = useCallback(async (studentId: string) => {
+    if (!studentId) {
+      setReprobadas([]);
+      return;
+    }
+    setReprobadasLoading(true);
+    try {
+      const resp = await api.materiasPendientes.getReprobadas(studentId);
+      setReprobadas(Array.isArray(resp) ? resp : []);
+    } catch (e) {
+      console.error('Error fetching reprobadas:', e);
+      setReprobadas([]);
+    } finally {
+      setReprobadasLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isEnrollModalOpen && enrollStudentId) {
+      fetchReprobadas(enrollStudentId);
+    }
+  }, [isEnrollModalOpen, enrollStudentId, fetchReprobadas]);
+
+  useEffect(() => {
+    if (isEnrollModalOpen) {
+      const activePeriod = periods.find(p => p.status === 'Activo');
+      if (activePeriod && !enrollPeriodId) {
+        setEnrollPeriodId(activePeriod.id);
+      }
+    }
+  }, [isEnrollModalOpen, periods, enrollPeriodId]);
 
   const filteredList = useMemo(() => {
     return pendingList.filter(p => {
-      const student = p.estudiante || students.find(s => String(s.id).includes(p.studentId || p.id_estudiante));
-      const matchSearch = student ? (
-        student.nombres?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.apellidos?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.cedula?.includes(searchQuery) ||
-        student.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.lastName?.toLowerCase().includes(searchQuery.toLowerCase())
+      const st = p.estudiante;
+      const matchSearch = st ? (
+        (st.nombre1 || st.firstName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (st.apellido1 || st.lastName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (st.cedula || '').includes(searchQuery)
       ) : true;
-      
-      const pStatus = p.estatus || p.status;
-      const matchStatus = statusFilter === 'All' || pStatus === statusFilter;
-      
+
+      const matchStatus = statusFilter === 'All' || p.estatus === statusFilter;
+
       return matchSearch && matchStatus;
     });
-  }, [pendingList, searchQuery, statusFilter, students]);
+  }, [pendingList, searchQuery, statusFilter]);
 
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnrollError('');
+
     if (!enrollStudentId || !enrollSubjectId || !enrollPeriodId) {
       setEnrollError('Debe llenar los campos obligatorios (Estudiante, Asignatura, Período)');
       return;
     }
 
+    setEnrollSaving(true);
     try {
-      const resp = await api.materiasPendientes.create({
-        id_estudiante: Number(enrollStudentId.replace(/\D/g, '') || enrollStudentId),
+      await api.materiasPendientes.create({
+        id_estudiante: Number(enrollStudentId),
         id_asignatura: Number(enrollSubjectId),
         id_periodo: Number(enrollPeriodId),
-        id_docente_evaluador: enrollEvaluatorId ? Number(enrollEvaluatorId.replace(/\D/g, '') || enrollEvaluatorId) : null
+        id_docente_evaluador: enrollEvaluatorId ? Number(enrollEvaluatorId) : null,
       });
-      setPendingList(prev => [resp, ...prev]);
+      toast.success('Materia pendiente inscrita exitosamente');
       setIsEnrollModalOpen(false);
-      setEnrollStudentId('');
-      setEnrollSubjectId('');
-      setEnrollPeriodId('');
-      setEnrollEvaluatorId('');
+      resetEnrollForm();
+      fetchPendingSubjects();
     } catch (e: any) {
-      setEnrollError(e.response?.data?.message || 'Error al inscribir materia pendiente');
+      const msg = e.message || 'Error al inscribir materia pendiente';
+      setEnrollError(msg);
+    } finally {
+      setEnrollSaving(false);
     }
   };
 
@@ -121,29 +172,49 @@ export default function PendingSubjectsManager({
       return;
     }
 
+    setGradeSaving(true);
     try {
-      const pId = selectedPending.id_materia_pendiente || selectedPending.id;
-      const resp = await api.materiasPendientes.update(String(pId), {
-        nota_definitiva: numGrade
+      await api.materiasPendientes.update(String(selectedPending.id_materia_pendiente), {
+        nota_definitiva: numGrade,
       });
-      
-      setPendingList(prev => prev.map(p => {
-        const id = p.id_materia_pendiente || p.id;
-        return id === pId ? resp : p;
-      }));
-      
+      toast.success('Calificación guardada exitosamente');
       setIsGradeModalOpen(false);
       setSelectedPending(null);
       setGradeValue('');
+      fetchPendingSubjects();
     } catch (e: any) {
-      setGradeError(e.response?.data?.message || 'Error al guardar calificación');
+      setGradeError(e.message || 'Error al guardar calificación');
+    } finally {
+      setGradeSaving(false);
     }
   };
 
-  const openGradeModal = (p: PendingSubject) => {
+  const handleDelete = async (id: number) => {
+    setDeleteLoading(true);
+    try {
+      await api.materiasPendientes.delete(String(id));
+      toast.success('Materia pendiente eliminada');
+      setDeleteConfirmId(null);
+      fetchPendingSubjects();
+    } catch (e: any) {
+      toast.error(e.message || 'Error al eliminar');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const resetEnrollForm = () => {
+    setEnrollStudentId('');
+    setEnrollSubjectId('');
+    setEnrollPeriodId('');
+    setEnrollEvaluatorId('');
+    setEnrollError('');
+    setReprobadas([]);
+  };
+
+  const openGradeModal = (p: MateriaPendiente) => {
     setSelectedPending(p);
-    const nota = (p as any).nota_definitiva || p.finalGrade;
-    setGradeValue(nota ? String(nota) : '');
+    setGradeValue(p.nota_definitiva != null ? String(p.nota_definitiva) : '');
     setIsGradeModalOpen(true);
   };
 
@@ -159,9 +230,9 @@ export default function PendingSubjectsManager({
             <p className="text-sm text-slate-500 font-medium">Gestión de asignaturas de arrastre y revisión</p>
           </div>
         </div>
-        
+
         <button
-          onClick={() => setIsEnrollModalOpen(true)}
+          onClick={() => { setIsEnrollModalOpen(true); }}
           className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-base font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
         >
           <PlusCircle className="w-4 h-4" />
@@ -170,7 +241,6 @@ export default function PendingSubjectsManager({
       </div>
 
       <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-xs flex flex-col h-[calc(100vh-280px)]">
-        {/* Filters */}
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-4 items-center">
           <div className="relative flex-1 min-w-[250px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -194,7 +264,6 @@ export default function PendingSubjectsManager({
           </select>
         </div>
 
-        {/* Table */}
         <div className="flex-1 overflow-auto">
           {loading ? (
             <div className="flex justify-center items-center h-full">
@@ -213,34 +282,33 @@ export default function PendingSubjectsManager({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredList.map((p, idx) => {
-                  const student = p.estudiante || students.find(s => String(s.id).includes(p.studentId || p.id_estudiante));
-                  const asig = p.asignatura || subjects.find(s => String(s.id) === String(p.subjectId || p.id_asignatura));
-                  const per = p.periodo || periods.find(per => String(per.id) === String(p.periodId || p.id_periodo));
-                  const evaluator = p.docente || users.find(u => String(u.id).includes(p.evaluatorTeacherId || p.id_docente_evaluador));
-                  const status = p.estatus || p.status;
-                  const nota = p.nota_definitiva || p.finalGrade;
+                {filteredList.map((p) => {
+                  const st = p.estudiante;
+                  const asig = p.asignatura;
+                  const per = p.periodo;
+                  const evaluator = p.docente_evaluador;
+                  const nota = p.nota_definitiva;
 
                   return (
-                    <tr key={idx} className="hover:bg-indigo-50/30 transition-colors">
+                    <tr key={p.id_materia_pendiente} className="hover:bg-indigo-50/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-800">
-                          {student ? `${student.nombres || student.firstName} ${student.apellidos || student.lastName}` : 'Desconocido'}
+                          {st ? `${st.nombre1 || ''} ${st.apellido1 || ''}` : 'Desconocido'}
                         </div>
                         <div className="text-sm text-slate-500 font-mono">
-                          {student?.cedula}
+                          {st?.cedula}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-700">{asig?.nombre || asig?.name || 'Desconocida'}</span>
+                        <span className="font-semibold text-slate-700">{asig?.nombre || 'Desconocida'}</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-slate-600 font-medium bg-slate-100 inline-block px-2 py-0.5 rounded mb-1">
-                          {per?.nombre || per?.name || 'N/A'}
+                          {per?.nombre || 'N/A'}
                         </div>
                         <div className="text-sm text-slate-500 flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          {evaluator ? `${evaluator.nombres || evaluator.firstName} ${evaluator.apellidos || evaluator.lastName}` : 'Sin asignar'}
+                          {evaluator ? `${evaluator.nombre1 || ''} ${evaluator.apellido1 || ''}` : 'Sin asignar'}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -251,31 +319,40 @@ export default function PendingSubjectsManager({
                               ? 'bg-emerald-100 text-emerald-700'
                               : 'bg-rose-100 text-rose-700'
                         }`}>
-                          {nota !== null && nota !== undefined ? nota : '--'}
+                          {nota != null ? nota : '--'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`text-xs uppercase font-bold px-2 py-1 rounded-full border ${
-                          status === 'Aprobada' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                          status === 'Aplazada' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                          p.estatus === 'Aprobada' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                          p.estatus === 'Aplazada' ? 'bg-rose-50 text-rose-600 border-rose-200' :
                           'bg-amber-50 text-amber-600 border-amber-200'
                         }`}>
-                          {status}
+                          {p.estatus}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          {status === 'Cursando' && (
-                            <button
-                              onClick={() => openGradeModal(p)}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                              title="Evaluar (Cargar Nota)"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
+                          {p.estatus === 'Cursando' && (
+                            <>
+                              <button
+                                onClick={() => openGradeModal(p)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                title="Evaluar (Cargar Nota)"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmId(p.id_materia_pendiente)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                           <button
-                            onClick={() => generateActaMateriaPendiente(p)}
+                            onClick={() => generateActaMateriaPendiente(p as any)}
                             className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
                             title="Generar Acta PDF"
                           >
@@ -301,7 +378,6 @@ export default function PendingSubjectsManager({
         </div>
       </div>
 
-      {/* Enroll Modal */}
       {isEnrollModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full animate-in fade-in zoom-in duration-200 overflow-hidden">
@@ -310,9 +386,9 @@ export default function PendingSubjectsManager({
                 <PlusCircle className="w-5 h-5 text-indigo-600" />
                 Inscribir Materia Pendiente
               </h3>
-              <button onClick={() => setIsEnrollModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => { setIsEnrollModalOpen(false); resetEnrollForm(); }} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
-            
+
             <form onSubmit={handleEnroll} className="p-6 space-y-4">
               {enrollError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold rounded-lg flex gap-2 items-start">
@@ -320,29 +396,49 @@ export default function PendingSubjectsManager({
                   <span>{enrollError}</span>
                 </div>
               )}
-              
+
               <div className="space-y-1">
                 <label className="text-sm font-bold text-slate-500 uppercase">Estudiante <span className="text-rose-500">*</span></label>
                 <SearchableSelect
                   options={students.map(s => ({ value: s.id, label: `${s.lastName}, ${s.firstName} - ${s.cedula}` }))}
                   value={enrollStudentId}
-                  onChange={(val) => setEnrollStudentId(String(val))}
+                  onChange={(val) => {
+                    setEnrollStudentId(String(val));
+                    setEnrollSubjectId('');
+                  }}
                   placeholder="Seleccione un estudiante"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-slate-500 uppercase">Asignatura (Arrastre) <span className="text-rose-500">*</span></label>
-                <SearchableSelect
-                  options={subjects.map(s => ({ value: s.id, label: s.name }))}
-                  value={enrollSubjectId}
-                  onChange={(val) => setEnrollSubjectId(String(val))}
-                  placeholder="Seleccione la materia"
-                />
+                <label className="text-sm font-bold text-slate-500 uppercase">Asignatura Reprobada <span className="text-rose-500">*</span></label>
+                {reprobadasLoading ? (
+                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
+                    <div className="h-4 w-4 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
+                    Cargando materias reprobadas...
+                  </div>
+                ) : enrollStudentId ? (
+                  reprobadas.length > 0 ? (
+                    <SearchableSelect
+                      options={reprobadas.map(r => ({ value: String(r.id_asignatura), label: `${r.nombre} (Nota: ${r.nota_final})` }))}
+                      value={enrollSubjectId}
+                      onChange={(val) => setEnrollSubjectId(String(val))}
+                      placeholder="Seleccione materia reprobada"
+                    />
+                  ) : (
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 font-medium">
+                      Este estudiante no tiene materias reprobadas pendientes de inscribir.
+                    </div>
+                  )
+                ) : (
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-400">
+                    Seleccione un estudiante primero
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-bold text-slate-500 uppercase">Período Escolar (Actual) <span className="text-rose-500">*</span></label>
+                <label className="text-sm font-bold text-slate-500 uppercase">Período Escolar <span className="text-rose-500">*</span></label>
                 <select
                   value={enrollPeriodId}
                   onChange={(e) => setEnrollPeriodId(e.target.value)}
@@ -350,7 +446,7 @@ export default function PendingSubjectsManager({
                 >
                   <option value="">Seleccione el período</option>
                   {periods.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
                   ))}
                 </select>
               </div>
@@ -358,9 +454,9 @@ export default function PendingSubjectsManager({
               <div className="space-y-1">
                 <label className="text-sm font-bold text-slate-500 uppercase">Docente Evaluador</label>
                 <SearchableSelect
-                  options={users.filter(u => u.role === 'docente').map(u => ({ 
-                    value: u.id, 
-                    label: `${(u as any).apellidos || (u as any).lastName || ''}, ${(u as any).nombres || (u as any).firstName || u.name}` 
+                  options={docentes.filter(d => d.status === 'Activo').map(d => ({
+                    value: d.id,
+                    label: `${d.lastName}, ${d.firstName}`
                   }))}
                   value={enrollEvaluatorId}
                   onChange={(val) => setEnrollEvaluatorId(String(val))}
@@ -369,11 +465,15 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="pt-2 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsEnrollModalOpen(false)} className="px-4 py-2 text-base font-semibold text-slate-500 hover:text-slate-700">
+                <button type="button" onClick={() => { setIsEnrollModalOpen(false); resetEnrollForm(); }} className="px-4 py-2 text-base font-semibold text-slate-500 hover:text-slate-700">
                   Cancelar
                 </button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold rounded-lg shadow-sm">
-                  Inscribir Materia
+                <button
+                  type="submit"
+                  disabled={enrollSaving || !enrollStudentId || !enrollSubjectId || !enrollPeriodId}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-base font-bold rounded-lg shadow-sm"
+                >
+                  {enrollSaving ? 'Inscribiendo...' : 'Inscribir Materia'}
                 </button>
               </div>
             </form>
@@ -381,7 +481,6 @@ export default function PendingSubjectsManager({
         </div>
       )}
 
-      {/* Grade Modal */}
       {isGradeModalOpen && selectedPending && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-sm w-full animate-in fade-in zoom-in duration-200 overflow-hidden">
@@ -392,7 +491,7 @@ export default function PendingSubjectsManager({
               </h3>
               <button onClick={() => setIsGradeModalOpen(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
-            
+
             <form onSubmit={handleSaveGrade} className="p-6 space-y-4">
               {gradeError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold rounded-lg flex gap-2 items-start">
@@ -400,11 +499,11 @@ export default function PendingSubjectsManager({
                   <span>{gradeError}</span>
                 </div>
               )}
-              
+
               <div className="text-center bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
                 <p className="text-sm text-slate-500 font-bold uppercase">Materia Pendiente</p>
                 <p className="font-bold text-indigo-700">
-                  {selectedPending.asignatura?.nombre || subjects.find(s => String(s.id) === String(selectedPending.subjectId || selectedPending.id_asignatura))?.name}
+                  {selectedPending.asignatura?.nombre || 'Asignatura'}
                 </p>
               </div>
 
@@ -423,14 +522,49 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="pt-4 flex flex-col gap-2">
-                <button type="submit" className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold rounded-lg shadow-sm transition-colors">
-                  Guardar Calificación
+                <button
+                  type="submit"
+                  disabled={gradeSaving}
+                  className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-base font-bold rounded-lg shadow-sm transition-colors"
+                >
+                  {gradeSaving ? 'Guardando...' : 'Guardar Calificación'}
                 </button>
                 <button type="button" onClick={() => setIsGradeModalOpen(false)} className="w-full px-4 py-2 text-base font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
                   Cancelar
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmId !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-rose-100 p-2.5 rounded-full">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <h3 className="font-bold text-slate-800">Eliminar Materia Pendiente</h3>
+            </div>
+            <p className="text-slate-600 mb-6">
+              ¿Está seguro de eliminar esta materia pendiente? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg"
+              >
+                {deleteLoading ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}

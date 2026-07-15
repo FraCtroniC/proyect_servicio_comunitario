@@ -78,6 +78,10 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
     socket.on('evaluacion:plan-update', (d) => onEventRef.current('evaluacion:plan-update', d));
     socket.on('evaluacion:notas-update', (d) => onEventRef.current('evaluacion:notas-update', d));
 
+    socket.on('materia-pendiente:create', (d) => onEventRef.current('materia-pendiente:create', d));
+    socket.on('materia-pendiente:update', (d) => onEventRef.current('materia-pendiente:update', d));
+    socket.on('materia-pendiente:delete', (d) => onEventRef.current('materia-pendiente:delete', d));
+
     return () => { socket.disconnect(); };
   }, [isLoggedIn]);
 }

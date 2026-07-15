@@ -989,7 +989,7 @@ export default function StudentManager({ students, sections, classrooms, current
                   {pendingSubjects.map(mp => (
                     <li key={mp.id_materia_pendiente} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
                       <div>
-                        <span className="font-bold text-slate-800 text-sm block">{mp.asignatura?.name || 'Asignatura'}</span>
+                        <span className="font-bold text-slate-800 text-sm block">{mp.asignatura?.nombre || mp.asignatura?.name || 'Asignatura'}</span>
                         <span className="text-xs text-slate-500">Periodo de Arrastre: {mp.id_periodo}</span>
                       </div>
                       <div className="text-right">
@@ -1011,21 +1011,10 @@ export default function StudentManager({ students, sections, classrooms, current
             </div>
 
             {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
-              <button 
-                onClick={async () => {
-                  const asigId = window.prompt('Ingrese el ID de la asignatura a matricular (Pendiente):');
-                  if (asigId) {
-                    try {
-                      await api.materiasPendientes.create({
-                        id_estudiante: selectedStudent.id,
-                        id_asignatura: asigId,
-                        id_periodo: 1 // Por defecto periodo activo
-                      });
-                      toast.success('Materia pendiente matriculada con éxito.');
-                      handleOpenProfile(selectedStudent);
-                    } catch (e) {
-                      toast.error('Error matriculando materia pendiente.');
-                    }
+              <button
+                onClick={() => {
+                  if (onNavigateToPending && selectedStudent) {
+                    onNavigateToPending(selectedStudent.id);
                   }
                 }}
                 className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-lg shadow-sm transition-colors"

@@ -46,6 +46,9 @@ export interface MateriaPendiente {
   nota_definitiva: number | null;
   estatus: 'Cursando' | 'Aprobada' | 'Aplazada';
   asignatura?: Subject;
+  estudiante?: any;
+  periodo?: any;
+  docente_evaluador?: any;
 }
 
 export type AcademicYear = 1 | 2 | 3 | 4 | 5; // 1er a 5to Año de Educación Media General
@@ -208,21 +211,4 @@ export interface ScheduleEvent {
   teacherId: string;    // Docente
   classroomId: string;  // Classroom
   blockId?: string;
-}
-
-export interface PendingSubject {
-  id: string;
-  studentId: string;
-  subjectId: string;
-  periodId: string;
-  evaluatorTeacherId?: string;
-  finalGrade?: number;
-  status: 'Cursando' | 'Aprobada' | 'Aplazada';
-  createdAt?: string;
-  
-  // Relations mapped from DB
-  student?: any;
-  subject?: any;
-  period?: any;
-  evaluator?: any;
 }

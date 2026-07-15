@@ -133,6 +133,7 @@ export default function App() {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>('super_admin'); // SuperAdmin by default so everything is unlocked
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
+  const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -299,6 +300,8 @@ export default function App() {
       refreshGrades();
     } else if (event === 'evaluacion:plan-update' || event === 'evaluacion:notas-update') {
       refreshGrades();
+    } else if (event === 'materia-pendiente:create' || event === 'materia-pendiente:update' || event === 'materia-pendiente:delete') {
+      setPendingRefreshKey(k => k + 1);
     }
   });
 
@@ -1745,7 +1748,9 @@ export default function App() {
                   subjects={subjects}
                   periods={periods}
                   users={users}
+                  docentes={docentes}
                   defaultStudentId={viewPendingStudentId}
+                  refreshTrigger={pendingRefreshKey}
                 />
               )}
 
