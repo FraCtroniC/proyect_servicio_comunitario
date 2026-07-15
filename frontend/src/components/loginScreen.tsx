@@ -453,7 +453,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
 
             <div className="space-y-1 2xl:space-y-2">
               <label className="text-sm 2xl:text-base text-slate-400 font-bold uppercase tracking-wider block">
-                Correo Electrónico o Cédula
+                Usuario o correo electrónico 
               </label>
               <div className="relative">
                 <UserIcon className="absolute left-3.5 2xl:left-4 top-3 2xl:top-3.5 h-4 w-4 2xl:h-5 2xl:w-5 text-slate-500" />
@@ -462,7 +462,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Ej: V-10.456.812 o director@liceo..."
+                  placeholder="Ej: Usuario o usuario@dominio.com"
                   className="w-full text-base 2xl:text-lg pl-10 2xl:pl-12 pr-3.5 py-2.5 2xl:py-3.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
                 />
               </div>

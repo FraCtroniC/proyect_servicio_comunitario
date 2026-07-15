@@ -43,14 +43,19 @@ const changePasswordSchema = z.object({
 
 async function checkLoginLockDB(username: string): Promise<number | null> {
   const usuario = await UsuarioModel.findOne({
-    where: { username },
-    attributes: ['locked_until'],
+    where: {
+      [Op.or]: [
+        { username },
+        { correo: username }
+      ]
+    },
+    attributes: ['id_usuario', 'locked_until'],
   });
   if (!usuario || !usuario.locked_until) return null;
   if (usuario.locked_until <= new Date()) {
     await UsuarioModel.update(
       { failed_attempts: 0, locked_until: null },
-      { where: { username } }
+      { where: { id_usuario: usuario.id_usuario } }
     );
     return null;
   }
@@ -59,32 +64,58 @@ async function checkLoginLockDB(username: string): Promise<number | null> {
 }
 
 async function recordFailedAttemptDB(username: string, ip: string, userAgent: string) {
+  const usuario = await UsuarioModel.findOne({
+    where: {
+      [Op.or]: [
+        { username },
+        { correo: username }
+      ]
+    },
+    attributes: ['id_usuario', 'username', 'failed_attempts'],
+  });
+
+  const realUsername = usuario ? usuario.username : username;
+
   await LoginAudit.create({
-    username,
+    username: realUsername,
     ip_address: ip,
     user_agent: userAgent,
     success: false,
   });
-  await UsuarioModel.increment('failed_attempts', { where: { username } });
-  const usuario = await UsuarioModel.findOne({
-    where: { username },
-    attributes: ['failed_attempts'],
-  });
-  if (usuario && usuario.failed_attempts >= MAX_ATTEMPTS) {
-    await UsuarioModel.update(
-      { locked_until: new Date(Date.now() + LOCK_DURATION) },
-      { where: { username } }
-    );
+
+  if (usuario) {
+    await UsuarioModel.increment('failed_attempts', { where: { id_usuario: usuario.id_usuario } });
+    if (usuario.failed_attempts + 1 >= MAX_ATTEMPTS) {
+      await UsuarioModel.update(
+        { locked_until: new Date(Date.now() + LOCK_DURATION) },
+        { where: { id_usuario: usuario.id_usuario } }
+      );
+    }
   }
 }
 
 async function clearLoginAttemptsDB(username: string, ip: string, userAgent: string) {
-  await UsuarioModel.update(
-    { failed_attempts: 0, locked_until: null },
-    { where: { username } }
-  );
+  const usuario = await UsuarioModel.findOne({
+    where: {
+      [Op.or]: [
+        { username },
+        { correo: username }
+      ]
+    },
+    attributes: ['id_usuario', 'username']
+  });
+
+  const realUsername = usuario ? usuario.username : username;
+
+  if (usuario) {
+    await UsuarioModel.update(
+      { failed_attempts: 0, locked_until: null },
+      { where: { id_usuario: usuario.id_usuario } }
+    );
+  }
+
   await LoginAudit.create({
-    username,
+    username: realUsername,
     ip_address: ip,
     user_agent: userAgent,
     success: true,
@@ -211,7 +242,12 @@ export const AuthController = {
     }
 
     const usuario = await UsuarioModel.findOne({
-      where: { username: usernameKey },
+      where: {
+        [Op.or]: [
+          { username: usernameKey },
+          { correo: usernameKey }
+        ]
+      },
       include: [
         { model: Rol, as: 'rol' },
         { model: Docente, as: 'docente' }
