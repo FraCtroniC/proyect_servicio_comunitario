@@ -835,12 +835,11 @@ export default function StudentManager({ students, sections, classrooms, current
                   onChange={(e) => setEnrollSection(e.target.value)}
                   className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
-                  {sections
-                    .filter(s => s.grade === enrollYear)
-                    .sort((a, b) => a.letter.localeCompare(b.letter))
-                    .map(s => (
-                      <option key={`${s.grade}-${s.letter}`} value={s.letter}>
-                        Sección "{s.letter}"
+                  {Array.from(new Set(sections.filter(s => s.grade === enrollYear).map(s => s.letter)))
+                    .sort((a, b) => a.localeCompare(b))
+                    .map(letter => (
+                      <option key={`${enrollYear}-${letter}`} value={letter}>
+                        Sección "{letter}"
                       </option>
                     ))}
                 </select>
