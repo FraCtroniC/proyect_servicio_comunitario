@@ -235,12 +235,12 @@ export default function ScheduleCoordinator({
           <Calendar className="h-6 w-6 text-indigo-600" />
           Planificación y Distribución Horaria Escolar
           {activePeriod && (
-            <span className="ml-auto text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+            <span className="ml-auto text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
               {activePeriod.name}
             </span>
           )}
         </h1>
-        <p className="text-xs text-slate-500 mt-1">Definición de asignaturas, auditorías de solapamientos para docentes, y designación de planta física.</p>
+        <p className="text-sm text-slate-500 mt-1">Definición de asignaturas, auditorías de solapamientos para docentes, y designación de planta física.</p>
       </div>
 
       {/* Main interactive area: Grid + Side assign form */}
@@ -249,7 +249,7 @@ export default function ScheduleCoordinator({
         {/* Left Side: Drag & Drop emulator entry form */}
         <div id="assignment-form-card" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs h-fit space-y-4">
           <div id="form-header" className="border-b border-slate-100 pb-2 flex justify-between items-center">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
               {editingEvent ? (
                 <>
                   <Edit2 className="h-4.5 w-4.5 text-indigo-600" />
@@ -270,7 +270,7 @@ export default function ScheduleCoordinator({
           </div>
 
           {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
-            <div id="schedule-form-locked" className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-2">
+            <div id="schedule-form-locked" className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 space-y-2">
               <ShieldAlert className="h-5 w-5 text-amber-600" />
               <p className="font-bold">Acceso Académico Restringido</p>
               <p className="leading-relaxed">
@@ -281,13 +281,13 @@ export default function ScheduleCoordinator({
           ) : (
             <form id="schedule-block-form" onSubmit={handleAssignBlock} className="space-y-3">
               {scheduleError && (
-                <div id="schedule-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-[11px] leading-relaxed flex items-start gap-1">
+                <div id="schedule-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-sm leading-relaxed flex items-start gap-1">
                   <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>{scheduleError}</span>
                 </div>
               )}
               {scheduleSuccess && (
-                <div id="schedule-success" className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-[11px] leading-relaxed flex items-start gap-1">
+                <div id="schedule-success" className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-sm leading-relaxed flex items-start gap-1">
                   <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span>{scheduleSuccess}</span>
                 </div>
@@ -296,11 +296,11 @@ export default function ScheduleCoordinator({
               {/* Day / Time Select */}
               <div id="block-form-day-time" className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Día</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Día</label>
                   <select
                     value={formDay}
                     onChange={(e) => setFormDay(e.target.value)}
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
+                    className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
                     {days.map(d => (
                       <option key={d} value={d}>{d}</option>
@@ -308,11 +308,11 @@ export default function ScheduleCoordinator({
                   </select>
                 </div>
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Bloque Horario</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Bloque Horario</label>
                   <select
                     value={formBlock}
                     onChange={(e) => setFormBlock(e.target.value)}
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
+                    className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
                     <option value="">Seleccionar...</option>
                     {timeBlocks.filter(b => !b.isRecess).map(b => (
@@ -325,11 +325,11 @@ export default function ScheduleCoordinator({
               {/* School Year Section Select */}
               <div id="block-form-cohort" className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Año EMG</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Año EMG</label>
                   <select
                     value={formYear}
                     onChange={(e) => setFormYear(Number(e.target.value) as AcademicYear)}
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
+                    className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
                     <option value="">Seleccionar...</option>
                     {referenceData.grados.map((g: any) => (
@@ -338,11 +338,11 @@ export default function ScheduleCoordinator({
                   </select>
                 </div>
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Sección</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Sección</label>
                   <select
                     value={formSection}
                     onChange={(e) => setFormSection(e.target.value)}
-                    className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded font-medium"
+                    className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
                     <option value="">Seleccionar...</option>
                     {sections
@@ -359,7 +359,7 @@ export default function ScheduleCoordinator({
 
               {/* Subject */}
               <div id="block-form-sub" className="space-y-0.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Asignatura</label>
+                <label className="text-xs font-bold text-slate-400 uppercase">Asignatura</label>
                 <SearchableSelect
                   options={subjects.filter(s => s.years.includes(formYear)).map(s => ({ value: s.id, label: s.name }))}
                   value={formSubjectId}
@@ -370,7 +370,7 @@ export default function ScheduleCoordinator({
 
               {/* Teacher */}
               <div id="block-form-teach" className="space-y-0.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Docente Responsable</label>
+                <label className="text-xs font-bold text-slate-400 uppercase">Docente Responsable</label>
                 <SearchableSelect
                   options={docentes.filter(d => d.status === 'Activo').map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName}` }))}
                   value={formTeacherId}
@@ -381,7 +381,7 @@ export default function ScheduleCoordinator({
 
               {/* Classroom */}
               <div id="block-form-room" className="space-y-0.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Salón / Aula Física</label>
+                <label className="text-xs font-bold text-slate-400 uppercase">Salón / Aula Física</label>
                 <SearchableSelect
                   options={classrooms.map(c => ({ value: c.id, label: `${c.name} (Cap. ${c.capacity})` }))}
                   value={formClassroomId}
@@ -392,7 +392,7 @@ export default function ScheduleCoordinator({
 
               <button
                 type="submit"
-                className={`w-full py-2.5 ${editingEvent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-700 hover:bg-indigo-800'} text-white font-bold text-xs rounded-lg transition-colors pointer-events-auto cursor-pointer flex items-center justify-center gap-1`}
+                className={`w-full py-2.5 ${editingEvent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-700 hover:bg-indigo-800'} text-white font-bold text-sm rounded-lg transition-colors pointer-events-auto cursor-pointer flex items-center justify-center gap-1`}
               >
                 <span>{editingEvent ? 'Guardar Cambios y Verificar Overlaps' : 'Asignar y Verificar Overlaps'}</span>
               </button>
@@ -407,7 +407,7 @@ export default function ScheduleCoordinator({
           {/* Calendar Display filter selectors */}
           <div id="calendar-header-filter" className="flex flex-col md:flex-row md:items-center justify-between border-b pb-3 border-slate-100 gap-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <Filter className="h-4 w-4 text-slate-400" />
                 Filtrar Vista del Calendario
               </h3>
@@ -417,7 +417,7 @@ export default function ScheduleCoordinator({
               <button
                 id="view-flt-sec"
                 onClick={() => setFilterType('section')}
-                className={`text-[11px] font-bold leading-none py-1.5 px-3 rounded-full transition-all pointer-events-auto cursor-pointer ${
+                className={`text-sm font-bold leading-none py-1.5 px-3 rounded-full transition-all pointer-events-auto cursor-pointer ${
                   filterType === 'section' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                 }`}
               >
@@ -426,7 +426,7 @@ export default function ScheduleCoordinator({
               <button
                 id="view-flt-teach"
                 onClick={() => setFilterType('teacher')}
-                className={`text-[11px] font-bold leading-none py-1.5 px-3 rounded-full transition-all pointer-events-auto cursor-pointer ${
+                className={`text-sm font-bold leading-none py-1.5 px-3 rounded-full transition-all pointer-events-auto cursor-pointer ${
                   filterType === 'teacher' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                 }`}
               >
@@ -435,7 +435,7 @@ export default function ScheduleCoordinator({
               <button
                 id="view-flt-room"
                 onClick={() => setFilterType('classroom')}
-                className={`text-[11px] font-bold leading-none py-1.5 px-3 rounded-full transition-all pointer-events-auto cursor-pointer ${
+                className={`text-sm font-bold leading-none py-1.5 px-3 rounded-full transition-all pointer-events-auto cursor-pointer ${
                   filterType === 'classroom' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                 }`}
               >
@@ -445,7 +445,7 @@ export default function ScheduleCoordinator({
           </div>
 
           {/* Sub filter based on choice */}
-          <div id="calendar-subfilters" className="flex gap-2 bg-slate-50 p-2.5 rounded-lg text-xs font-semibold">
+          <div id="calendar-subfilters" className="flex gap-2 bg-slate-50 p-2.5 rounded-lg text-sm font-semibold">
             {filterType === 'section' && (
               <div id="subflt-box-sec" className="flex items-center gap-2">
                 <span className="text-slate-400">Ver Calendario de:</span>
@@ -501,9 +501,9 @@ export default function ScheduleCoordinator({
 
           {/* Timetable Grid View */}
           <div id="calendar-grid-wrapper" className="overflow-x-auto">
-            <table className="w-full text-center text-xs border border-slate-200 border-collapse">
+            <table className="w-full text-center text-sm border border-slate-200 border-collapse">
               <thead>
-                <tr className="bg-slate-50 font-bold border-b border-slate-200 text-slate-800 text-[10px] uppercase">
+                <tr className="bg-slate-50 font-bold border-b border-slate-200 text-slate-800 text-xs uppercase">
                   <th className="p-3 border text-left min-w-[120px]">Periodo / Hora</th>
                   {days.map(d => (
                     <th key={d} className="p-3 border text-center">{d}</th>
@@ -514,9 +514,9 @@ export default function ScheduleCoordinator({
                 {timeBlocks.map((block, idx) => {
                   if (block.isRecess) {
                     return (
-                      <tr id={`cal-recess-row-${idx}`} key={idx} className="bg-slate-50/50 text-[10px] text-slate-450 italic">
+                      <tr id={`cal-recess-row-${idx}`} key={idx} className="bg-slate-50/50 text-xs text-slate-450 italic">
                         <td className="p-1 border text-left font-bold pl-3">{block.time}</td>
-                        <td colSpan={5} className="p-1 border text-center font-bold uppercase tracking-widest bg-slate-100/40 text-slate-400 text-[9px]">
+                        <td colSpan={5} className="p-1 border text-center font-bold uppercase tracking-widest bg-slate-100/40 text-slate-400 text-sm">
                           {block.label} (Receso de Guardia)
                         </td>
                       </tr>
@@ -526,9 +526,9 @@ export default function ScheduleCoordinator({
                   return (
                     <tr id={`cal-block-row-${idx}`} key={idx} className="hover:bg-slate-50/20">
                       {/* Left time heading */}
-                      <td className="p-2 border font-extrabold text-left text-[11px] text-slate-800 bg-slate-50/25">
+                      <td className="p-2 border font-extrabold text-left text-sm text-slate-800 bg-slate-50/25">
                         <span className="block">{block.label}</span>
-                        <span className="block text-[10px] text-slate-400 font-mono leading-none">{block.time}</span>
+                        <span className="block text-xs text-slate-400 font-mono leading-none">{block.time}</span>
                       </td>
 
                       {/* Render days columns cells */}
@@ -543,21 +543,21 @@ export default function ScheduleCoordinator({
                             {activeEvent ? (
                               <div className="relative group h-full flex flex-col justify-center">
                                 
-                                <span className="block text-[11px] font-bold text-slate-800 leading-snug mb-0.5" title={getSubjectName(activeEvent.subjectId)}>
+                                <span className="block text-sm font-bold text-slate-800 leading-snug mb-0.5" title={getSubjectName(activeEvent.subjectId)}>
                                   {getSubjectName(activeEvent.subjectId)}
                                 </span>
                                 
-                                <span className="block text-[10px] text-slate-500 truncate font-medium mb-0.5" title={getTeacherName(activeEvent.teacherId)}>
+                                <span className="block text-xs text-slate-500 truncate font-medium mb-0.5" title={getTeacherName(activeEvent.teacherId)}>
                                   {getTeacherName(activeEvent.teacherId)}
                                 </span>
 
-                                <span className="block text-[10px] font-bold text-slate-600 truncate">
+                                <span className="block text-xs font-bold text-slate-600 truncate">
                                   {getClassroomName(activeEvent.classroomId)}
                                 </span>
 
                                 {/* Section Tag */}
                                 {filterType !== 'section' && (
-                                  <span className="block text-[10px] font-bold text-indigo-600 mt-0.5">
+                                  <span className="block text-xs font-bold text-indigo-600 mt-0.5">
                                     {activeEvent.year}° "{activeEvent.section}"
                                   </span>
                                 )}
@@ -585,7 +585,7 @@ export default function ScheduleCoordinator({
                                 )}
                               </div>
                             ) : (
-                              <span className="text-slate-300 italic text-[10px]">Libre</span>
+                              <span className="text-slate-300 italic text-xs">Libre</span>
                             )}
                           </td>
                         );
@@ -604,11 +604,11 @@ export default function ScheduleCoordinator({
       {/* Modal de Eliminación */}
       <Modal isOpen={!!eventToDelete} onClose={() => setEventToDelete(null)} title="Confirmar Eliminación">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-base text-slate-600 leading-relaxed">
             ¿Está seguro de que desea eliminar la asignación de <strong>{eventToDelete ? getSubjectName(eventToDelete.subjectId) : ''}</strong> correspondiente al bloque <strong>{eventToDelete?.day} {eventToDelete?.timeBlock}</strong>?
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <button onClick={() => setEventToDelete(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button onClick={() => setEventToDelete(null)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
             <button 
               onClick={() => {
                 if (eventToDelete) {
@@ -616,7 +616,7 @@ export default function ScheduleCoordinator({
                   setEventToDelete(null);
                 }
               }}
-              className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-base font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
             >
               Eliminar Asignación
             </button>

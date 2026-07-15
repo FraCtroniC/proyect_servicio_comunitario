@@ -257,20 +257,20 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
               <BookOpen className="h-7 w-7 text-indigo-600" />
               Gestión de Docentes
             </h2>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Administre el personal docente, sus asignaciones y accesos.</p>
+            <p className="text-slate-500 text-base mt-1 font-medium">Administre el personal docente, sus asignaciones y accesos.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 flex items-center gap-3 shadow-sm">
               <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
                 {docentes.length}
               </div>
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Total Docentes</span>
+              <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">Total Docentes</span>
             </div>
             
             {['super_admin', 'control_estudios'].includes(currentUserRole) && (
               <button
                 onClick={openAddModal}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-indigo-600/20 pointer-events-auto cursor-pointer"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-base font-bold transition-all shadow-sm shadow-indigo-600/20 pointer-events-auto cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 Registrar Docente
@@ -282,11 +282,11 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         {/* Delete Confirmation Modal */}
         <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación">
           <div className="space-y-4">
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-base text-slate-600 leading-relaxed">
               ¿Está seguro de eliminar al docente <span className="font-bold text-slate-800">{docenteToDelete?.firstName} {docenteToDelete?.lastName}</span>? Esta acción no se puede deshacer.
             </p>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
               <button 
                 onClick={async () => {
                   if (docenteToDelete && onDeleteDocente) {
@@ -299,7 +299,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                     }
                   }
                 }}
-                className="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-base font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
               >
                 Eliminar
               </button>
@@ -308,7 +308,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         </Modal>
 
         {successMsg && (
-          <div className="p-4 bg-emerald-50 text-emerald-800 text-sm rounded-xl flex items-center gap-3 border border-emerald-100 shadow-sm">
+          <div className="p-4 bg-emerald-50 text-emerald-800 text-base rounded-xl flex items-center gap-3 border border-emerald-100 shadow-sm">
             <CheckCircle2 className="h-5 w-5 bg-transparent text-emerald-600 shrink-0" />
             <span className="font-medium">{successMsg}</span>
           </div>
@@ -328,7 +328,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                       <h3 className="font-bold text-slate-800 leading-tight">
                         {d.firstName} {d.lastName}
                       </h3>
-                      <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-semibold tracking-wide">
+                      <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-semibold tracking-wide">
                         {d.cedula}
                       </span>
                     </div>
@@ -338,14 +338,14 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                     <div className="flex flex-col items-end gap-2">
                       <button 
                         onClick={() => onToggleDocenteActive(d.id)}
-                        className={`text-[10px] px-2 py-1 rounded-full font-bold transition-colors pointer-events-auto cursor-pointer ${d.status === 'Activo' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
+                        className={`text-xs px-2 py-1 rounded-full font-bold transition-colors pointer-events-auto cursor-pointer ${d.status === 'Activo' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
                       >
                         {d.status}
                       </button>
                       <div className="flex gap-2">
                         <button
                           onClick={() => openEditModal(d)}
-                          className="text-[10px] text-slate-500 hover:text-indigo-600 font-bold pointer-events-auto cursor-pointer"
+                          className="text-xs text-slate-500 hover:text-indigo-600 font-bold pointer-events-auto cursor-pointer"
                         >
                           Editar
                         </button>
@@ -354,7 +354,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                             setDocenteToDelete(d);
                             setIsDeleteModalOpen(true);
                           }}
-                          className="text-[10px] text-rose-500 hover:text-rose-700 font-bold pointer-events-auto cursor-pointer"
+                          className="text-xs text-rose-500 hover:text-rose-700 font-bold pointer-events-auto cursor-pointer"
                         >
                           Eliminar
                         </button>
@@ -363,7 +363,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                   )}
                 </div>
 
-                <div className="space-y-1.5 text-xs text-slate-500">
+                <div className="space-y-1.5 text-sm text-slate-500">
                   {d.id_especialidad && especialidades.find(e => e.id_especialidad === d.id_especialidad) && (
                     <div className="flex items-center gap-2">
                       <BookOpen className="w-3.5 h-3.5 text-slate-400" />
@@ -392,7 +392,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
           <div className="flex justify-center pt-2">
             <button
               onClick={() => setVisibleCount(p => p + 6)}
-              className="text-sm font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-6 py-2.5 rounded-xl transition-colors flex items-center gap-2 pointer-events-auto cursor-pointer"
+              className="text-base font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-6 py-2.5 rounded-xl transition-colors flex items-center gap-2 pointer-events-auto cursor-pointer"
             >
               <PlusCircle className="h-4 w-4" />
               Cargar más docentes
@@ -406,7 +406,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         setEditingDocente(null);
       }} title={editingDocente ? "Editar Perfil del Docente" : "Registrar Nuevo Docente"}>
         {!['super_admin', 'control_estudios'].includes(currentUserRole) ? (
-          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-2">
+          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 space-y-2">
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
             <p className="font-bold">Acceso Denegado</p>
             <p>Tu rol no tiene permisos para registrar docentes.</p>
@@ -414,17 +414,17 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {errorMsg && (
-              <div className="p-3 bg-rose-50 text-rose-800 text-xs rounded-xl border border-rose-200 font-medium">
+              <div className="p-3 bg-rose-50 text-rose-800 text-sm rounded-xl border border-rose-200 font-medium">
                 {errorMsg}
               </div>
             )}
 
             <div id="section-form-docente" className="space-y-3 pt-2">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Docente</span>
+              <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Docente</span>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Cédula de Identidad <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Cédula de Identidad <span className="text-red-500 font-bold text-base">*</span></label>
                 <div className="flex">
                   <select
                     value={cedulaType}
@@ -432,7 +432,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                       setCedulaType(e.target.value);
                       if (cedula) checkCedula(cedula, e.target.value);
                     }}
-                    className={`text-sm p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0 transition-colors`}
+                    className={`text-base p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0 transition-colors`}
                   >
                     <option value="V">V</option>
                     <option value="E">E</option>
@@ -446,14 +446,14 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                       setCedulaError('');
                     }} 
                     onBlur={(e) => checkCedula(e.target.value, cedulaType)}
-                    className={`w-full text-sm p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:outline-hidden focus:bg-white transition-colors font-mono`} 
+                    className={`w-full text-base p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:outline-hidden focus:bg-white transition-colors font-mono`} 
                     placeholder="Ej. 12345678" 
                   />
                 </div>
-                {cedulaError && <p className="text-rose-500 text-xs mt-1 font-semibold">{cedulaError}</p>}
+                {cedulaError && <p className="text-rose-500 text-sm mt-1 font-semibold">{cedulaError}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Fecha de Nacimiento <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Fecha de Nacimiento <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="date" 
                   value={dateOfBirth} 
@@ -462,37 +462,37 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                     setDobError('');
                   }} 
                   onBlur={(e) => checkDateOfBirth(e.target.value)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${dobError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`} 
+                  className={`w-full text-base p-2 bg-slate-50 border ${dobError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`} 
                   required 
                 />
-                {dobError && <p className="text-rose-500 text-xs mt-1 font-semibold">{dobError}</p>}
+                {dobError && <p className="text-rose-500 text-sm mt-1 font-semibold">{dobError}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-sm">*</span></label>
-                <input required type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Juan" />
+                <label className="text-sm font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-base">*</span></label>
+                <input required type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Juan" />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Segundo Nombre</label>
-                <input type="text" value={secondName} onChange={e => setSecondName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Carlos" />
+                <label className="text-sm font-semibold text-slate-500">Segundo Nombre</label>
+                <input type="text" value={secondName} onChange={e => setSecondName(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Carlos" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-sm">*</span></label>
-                <input required type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Pérez" />
+                <label className="text-sm font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-base">*</span></label>
+                <input required type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Pérez" />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Segundo Apellido</label>
-                <input type="text" value={secondLastName} onChange={e => setSecondLastName(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Gómez" />
+                <label className="text-sm font-semibold text-slate-500">Segundo Apellido</label>
+                <input type="text" value={secondLastName} onChange={e => setSecondLastName(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="Ej. Gómez" />
               </div>
             </div>
 
             <div className="space-y-0.5">
-              <label className="text-xs font-semibold text-slate-500">Especialidad</label>
+              <label className="text-sm font-semibold text-slate-500">Especialidad</label>
               <div className="flex gap-2">
                 <SearchableSelect
                   options={especialidades.map(esp => ({ value: esp.id_especialidad, label: esp.nombre }))}
@@ -515,22 +515,22 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Correo Electrónico</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="docente@ejemplo.com" />
+                <label className="text-sm font-semibold text-slate-500">Correo Electrónico</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="docente@ejemplo.com" />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Teléfono</label>
-                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="0414-1234567" />
+                <label className="text-sm font-semibold text-slate-500">Teléfono</label>
+                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" placeholder="0414-1234567" />
               </div>
             </div>
             
             </div>
 
             <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-slate-100">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-base font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                 Cancelar
               </button>
-              <button disabled={isSubmitting} type="submit" className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70 disabled:cursor-not-allowed">
+              <button disabled={isSubmitting} type="submit" className="px-6 py-2.5 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70 disabled:cursor-not-allowed">
                 {isSubmitting ? 'Guardando...' : 'Registrar Docente'}
               </button>
             </div>
@@ -547,13 +547,13 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
       >
         <form onSubmit={handleCreateEspecialidadSubmit} className="flex flex-col gap-4">
           {especialidadErrorMsg && (
-            <div className="p-3 bg-rose-50 text-rose-700 text-sm rounded-lg flex items-center gap-2 font-medium border border-rose-100">
+            <div className="p-3 bg-rose-50 text-rose-700 text-base rounded-lg flex items-center gap-2 font-medium border border-rose-100">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {especialidadErrorMsg}
             </div>
           )}
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-slate-700">Nombre de la Especialidad <span className="text-rose-500">*</span></label>
+            <label className="text-base font-semibold text-slate-700">Nombre de la Especialidad <span className="text-rose-500">*</span></label>
             <input
               autoFocus
               type="text"
@@ -568,14 +568,14 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
             <button
               type="button"
               onClick={() => setIsEspecialidadModalOpen(false)}
-              className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              className="px-4 py-2 text-base font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
             >
               Cancelar
             </button>
             <button
               disabled={isSubmittingEspecialidad}
               type="submit"
-              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70"
+              className="px-4 py-2 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70"
             >
               {isSubmittingEspecialidad ? 'Guardando...' : 'Aceptar'}
             </button>

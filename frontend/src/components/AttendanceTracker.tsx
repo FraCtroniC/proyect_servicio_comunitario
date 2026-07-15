@@ -158,7 +158,7 @@ export default function AttendanceTracker({
         <button
           id="btn-att-students"
           onClick={() => setTrackerTab('students')}
-          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             trackerTab === 'students' 
               ? 'border-indigo-600 text-indigo-700' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -170,7 +170,7 @@ export default function AttendanceTracker({
         <button
           id="btn-att-teachers"
           onClick={() => setTrackerTab('teachers')}
-          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             trackerTab === 'teachers' 
               ? 'border-indigo-600 text-indigo-700' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -188,7 +188,7 @@ export default function AttendanceTracker({
           {/* Action buttons */}
           <div className="flex justify-end gap-2 items-center">
             {activePeriod && (
-              <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold">
+              <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold">
                 Período: {activePeriod.name}
               </span>
             )}
@@ -206,14 +206,14 @@ export default function AttendanceTracker({
                   hasta.toISOString().split('T')[0]
                 );
               }}
-              className="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer flex items-center gap-1"
+              className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer flex items-center gap-1"
             >
               <FileText className="h-3.5 w-3.5" />
               Reporte PDF
             </button>
             <button
               onClick={() => setIsSyncModalOpen(true)}
-              className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer"
+              className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold pointer-events-auto cursor-pointer"
             >
               Sincronizar Inasistencias con Calificaciones
             </button>
@@ -223,11 +223,11 @@ export default function AttendanceTracker({
           <div id="stud-att-filters" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             
             <div id="filter-att-year" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Año Escolar</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Año Escolar</span>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 <option value={1}>1er Año</option>
                 <option value={2}>2do Año</option>
@@ -238,11 +238,11 @@ export default function AttendanceTracker({
             </div>
 
             <div id="filter-att-section" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Sección</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Sección</span>
               <select
                 value={selectedSection}
                 onChange={(e) => setSelectedSection(e.target.value)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 {sections
                   .filter(s => s.grade === selectedYear)
@@ -256,7 +256,7 @@ export default function AttendanceTracker({
             </div>
 
             <div id="filter-att-date" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Fecha de Diario</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Fecha de Diario</span>
               <input
                 type="date"
                 value={selectedDate}
@@ -274,11 +274,11 @@ export default function AttendanceTracker({
                   }
                   setSelectedDate(val);
                 }}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium font-mono"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium font-mono"
               />
             </div>
 
-            <p className="text-[11px] text-slate-400 italic max-w-sm mt-3 ml-2">
+            <p className="text-sm text-slate-400 italic max-w-sm mt-3 ml-2">
               Lleve el control diario de permanencia escolar. Marcaje estándar venezolano: 
               <strong> P</strong> (Presente), <strong> A</strong> (Ausente) y <strong> J</strong> (Justificado).
             </p>
@@ -287,25 +287,25 @@ export default function AttendanceTracker({
           {/* Table list */}
           <div id="stud-att-list" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
             <div id="stud-att-header" className="flex items-center justify-between border-b pb-2 border-slate-100">
-              <h3 className="text-sm font-bold text-slate-800">Planilla de Control Asistencia Diaria</h3>
+              <h3 className="text-base font-bold text-slate-800">Planilla de Control Asistencia Diaria</h3>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                   Presentes: {attendanceSummary.presentes}
                 </span>
-                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
                   Ausentes: {attendanceSummary.ausentes}
                 </span>
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                   Justificados: {attendanceSummary.justificados}
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono">Simulado para: <strong>{selectedDate}</strong></span>
+                <span className="text-xs text-slate-500 font-mono">Simulado para: <strong>{selectedDate}</strong></span>
               </div>
             </div>
 
             <div id="stud-att-scroller" className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-150 text-slate-400 uppercase font-bold text-[9px] tracking-wider">
+                  <tr className="border-b border-slate-150 text-slate-400 uppercase font-bold text-sm tracking-wider">
                     <th className="py-2.5">Estudiante</th>
                     <th className="py-2.5">Cédula</th>
                     <th className="py-2.5 text-center">Estado de Asistencia</th>
@@ -328,7 +328,7 @@ export default function AttendanceTracker({
                       return (
                         <tr id={`att-std-row-${student.id}`} key={student.id} className={`hover:bg-slate-50/40 transition-colors ${loadingStudentId === student.id ? 'bg-indigo-50/50' : ''}`}>
                           <td className="py-3 pr-2">
-                            <span className="font-bold text-slate-800 text-[11px] block flex items-center gap-1.5">
+                            <span className="font-bold text-slate-800 text-sm block flex items-center gap-1.5">
                               {loadingStudentId === student.id && (
                                 <svg className="animate-spin h-3 w-3 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -338,7 +338,7 @@ export default function AttendanceTracker({
                               {student.lastName}, {student.firstName}
                             </span>
                           </td>
-                          <td className="py-3 font-mono font-bold text-slate-500 text-[11px]">{student.cedula}</td>
+                          <td className="py-3 font-mono font-bold text-slate-500 text-sm">{student.cedula}</td>
                           <td className="py-3">
                             <div className="flex items-center justify-center gap-1.5 max-w-[170px] mx-auto">
                               {(['P', 'A', 'J'] as const).map(flag => {
@@ -370,7 +370,7 @@ export default function AttendanceTracker({
                                         setLoadingStudentId(null);
                                       }
                                     }}
-                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-xs font-bold transition-all p-0 focus:outline-hidden ${isLoading ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'} ${getFlagTheme(flag)}`}
+                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-sm font-bold transition-all p-0 focus:outline-hidden ${isLoading ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'} ${getFlagTheme(flag)}`}
                                     title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
                                   >
                                     {flag}
@@ -385,12 +385,12 @@ export default function AttendanceTracker({
                               value={observaciones[student.id] || ''}
                               onChange={(e) => setObservaciones(prev => ({ ...prev, [student.id]: e.target.value }))}
                               placeholder="Observación"
-                              className="w-24 text-[10px] p-1 bg-slate-50 border border-slate-200 rounded font-mono"
+                              className="w-24 text-xs p-1 bg-slate-50 border border-slate-200 rounded font-mono"
                               maxLength={255}
                             />
                           </td>
                           <td className="py-3 text-right">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${getAttendanceRateColor(rate)}`}>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getAttendanceRateColor(rate)}`}>
                               {rate}%
                             </span>
                           </td>
@@ -403,7 +403,7 @@ export default function AttendanceTracker({
                                       onDeleteAttendance?.(todayAtt.id);
                                     }
                                   }}
-                                  className="text-[9px] text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                                  className="text-sm text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                                   title="Eliminar registro"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -436,21 +436,21 @@ export default function AttendanceTracker({
 
           {/* Left: Punch Clock Simulator Card */}
           <div id="teach-clock-panel" className="bg-white p-5 rounded-xl border border-slate-200/80 space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Fingerprint className="h-5 w-5 text-indigo-600 animate-pulse" />
               Reloj Biométrico de Entrada / Salida
             </h3>
-            <p className="text-[11px] text-slate-400 leading-normal">
+            <p className="text-sm text-slate-400 leading-normal">
               Simulador del dispositivo de firma digital ubicado en la entrada administrativa del Liceo. Permite comprobar la puntualidad del personal docente de guardia.
             </p>
 
             <div id="punch-controls" className="space-y-3 pt-2">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase block">Seleccionar Docente de Guardia</label>
+                <label className="text-xs font-bold text-slate-400 uppercase block">Seleccionar Docente de Guardia</label>
                 <select
                   value={selectedTeacherId}
                   onChange={(e) => setSelectedTeacherId(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
+                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
                 >
                   {activeTeachers.map(d => (
                     <option key={d.id} value={d.id}>{d.firstName} {d.lastName} ({d.cedula})</option>
@@ -462,7 +462,7 @@ export default function AttendanceTracker({
                 <button
                   id="btn-clock-in"
                   onClick={handleTeacherClockIn}
-                  className="py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors pointer-events-auto cursor-pointer flex flex-col items-center justify-center gap-1"
+                  className="py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm rounded-xl shadow-xs transition-colors pointer-events-auto cursor-pointer flex flex-col items-center justify-center gap-1"
                 >
                   <Clock className="h-4.5 w-4.5" />
                   <span>Marcar Entrada</span>
@@ -478,7 +478,7 @@ export default function AttendanceTracker({
                     }
                     handleTeacherClockOut(activeLog.id);
                   }}
-                  className="py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors pointer-events-auto cursor-pointer flex flex-col items-center justify-center gap-1"
+                  className="py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-xl shadow-xs transition-colors pointer-events-auto cursor-pointer flex flex-col items-center justify-center gap-1"
                 >
                   <Clock className="h-4.5 w-4.5" />
                   <span>Marcar Salida</span>
@@ -487,7 +487,7 @@ export default function AttendanceTracker({
             </div>
 
             {clockSuccessMsg && (
-              <div id="punch-notification" className="p-3 bg-indigo-50 border border-indigo-150 text-indigo-900 text-xs rounded-lg flex items-start gap-2">
+              <div id="punch-notification" className="p-3 bg-indigo-50 border border-indigo-150 text-indigo-900 text-sm rounded-lg flex items-start gap-2">
                 <CheckCircle className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
                 <span className="font-semibold leading-relaxed">{clockSuccessMsg}</span>
               </div>
@@ -497,14 +497,14 @@ export default function AttendanceTracker({
           {/* Right: Punch Logs and lists (col span 2) */}
           <div id="punch-history-panel" className="bg-white p-5 rounded-xl border border-slate-200/80 lg:col-span-2 space-y-4">
             <div id="punch-history-header" className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-sm font-bold text-slate-850">Registro del Reloj de Control</h3>
-              <span className="text-[10px] bg-slate-100 text-slate-500 font-mono font-black rounded px-2 py-0.5">Fecha: {selectedDate}</span>
+              <h3 className="text-base font-bold text-slate-850">Registro del Reloj de Control</h3>
+              <span className="text-xs bg-slate-100 text-slate-500 font-mono font-black rounded px-2 py-0.5">Fecha: {selectedDate}</span>
             </div>
 
             <div id="punch-table-scroller" className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-150 text-slate-400 uppercase font-black text-[9px] tracking-wider">
+                  <tr className="border-b border-slate-150 text-slate-400 uppercase font-black text-sm tracking-wider">
                     <th className="py-2.5">Profesor</th>
                     <th className="py-2.5">Cédula</th>
                     <th className="py-2.5 text-center">Entrada</th>
@@ -521,20 +521,20 @@ export default function AttendanceTracker({
                       return (
                         <tr id={`punch-row-${log.id}`} key={log.id} className="hover:bg-slate-50/40">
                           <td className="py-3">
-                            <span className="font-bold text-slate-800 text-[11px] block">{teacher?.firstName}</span>
+                            <span className="font-bold text-slate-800 text-sm block">{teacher?.firstName}</span>
                           </td>
-                          <td className="py-3 font-mono text-[10px] text-slate-500">{teacher?.cedula?.replace(/^[A-Z]-/, '')}</td>
+                          <td className="py-3 font-mono text-xs text-slate-500">{teacher?.cedula?.replace(/^[A-Z]-/, '')}</td>
                           <td className="py-3 text-center text-slate-800 font-mono font-bold">{log.clockInTime}</td>
                           <td className="py-3 text-center text-slate-800 font-mono font-bold">{log.clockOutTime || '--:--'}</td>
                           <td className="py-3 text-center">
                             {log.status === 'OnTime' ? (
-                              <span className="text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full text-[9px]">Puntual</span>
+                              <span className="text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full text-sm">Puntual</span>
                             ) : log.status === 'Late' ? (
-                              <span className="text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full text-[9px]">Retardo</span>
+                              <span className="text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full text-sm">Retardo</span>
                             ) : log.status === 'Absent' ? (
-                              <span className="text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-full text-[9px]">Ausente</span>
+                              <span className="text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-full text-sm">Ausente</span>
                             ) : (
-                              <span className="text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full text-[9px] cursor-help" title={log.justificaciones?.[0]?.motivo || 'Falta justificada'}>Justificado</span>
+                              <span className="text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full text-sm cursor-help" title={log.justificaciones?.[0]?.motivo || 'Falta justificada'}>Justificado</span>
                             )}
                           </td>
                           <td className="py-3 text-right">
@@ -542,7 +542,7 @@ export default function AttendanceTracker({
                               <button
                                 id={`row-clockout-${log.id}`}
                                 onClick={() => handleTeacherClockOut(log.id)}
-                                className="text-[10px] text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                                className="text-xs text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                               >
                                 Marcar Salida
                               </button>
@@ -551,12 +551,12 @@ export default function AttendanceTracker({
                                 onClick={() => {
                                   setTeacherJustifyLog(log);
                                 }}
-                                className="text-[10px] text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                                className="text-xs text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                               >
                                 Justificar
                               </button>
                             ) : (
-                              <span className="text-[10px] text-slate-300 font-bold">Completado</span>
+                              <span className="text-xs text-slate-300 font-bold">Completado</span>
                             )}
                           </td>
                         </tr>
@@ -580,11 +580,11 @@ export default function AttendanceTracker({
       {/* Modals */}
       <Modal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} title="Confirmar Sincronización">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-base text-slate-600 leading-relaxed">
             ¿Está seguro de sincronizar las inasistencias de todos los estudiantes visibles con sus calificaciones? Esta acción podría afectar los promedios finales según el reglamento.
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <button onClick={() => setIsSyncModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button onClick={() => setIsSyncModalOpen(false)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
             <button 
               onClick={() => {
                 const ids_matricula = sectionStudents
@@ -601,7 +601,7 @@ export default function AttendanceTracker({
                 }
                 setIsSyncModalOpen(false);
               }}
-              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
             >
               Sincronizar
             </button>
@@ -616,23 +616,23 @@ export default function AttendanceTracker({
       }} title="Justificar Inasistencia Docente">
         <div className="space-y-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Motivo de la Inasistencia *</label>
+            <label className="text-xs font-bold text-slate-400 uppercase">Motivo de la Inasistencia *</label>
             <textarea
               value={justifyMotivo}
               onChange={e => setJustifyMotivo(e.target.value)}
-              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
               placeholder="Ej. Reposo médico por 3 días..."
               required
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
+            <label className="text-xs font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
             <input
               type="text"
               value={justifySoporte}
               onChange={e => setJustifySoporte(e.target.value)}
-              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
               placeholder="Referencia al documento físico o link"
             />
           </div>
@@ -644,7 +644,7 @@ export default function AttendanceTracker({
                 setJustifyMotivo('');
                 setJustifySoporte('');
               }}
-              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -667,7 +667,7 @@ export default function AttendanceTracker({
                   }
                 }
               }}
-              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
             >
               Guardar Justificación
             </button>

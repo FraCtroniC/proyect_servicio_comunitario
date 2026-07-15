@@ -156,13 +156,13 @@ export default function PendingSubjectsManager({
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-800 leading-tight">Materias Pendientes</h2>
-            <p className="text-xs text-slate-500 font-medium">Gestión de asignaturas de arrastre y revisión</p>
+            <p className="text-sm text-slate-500 font-medium">Gestión de asignaturas de arrastre y revisión</p>
           </div>
         </div>
         
         <button
           onClick={() => setIsEnrollModalOpen(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-base font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
         >
           <PlusCircle className="w-4 h-4" />
           Inscribir Materia
@@ -179,13 +179,13 @@ export default function PendingSubjectsManager({
               placeholder="Buscar por cédula o nombre del estudiante..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-sm pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+              className="w-full text-base pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-sm px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium focus:outline-hidden focus:border-indigo-500 cursor-pointer"
+            className="text-base px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium focus:outline-hidden focus:border-indigo-500 cursor-pointer"
           >
             <option value="All">Todos los Estatus</option>
             <option value="Cursando">Solo Cursando</option>
@@ -201,9 +201,9 @@ export default function PendingSubjectsManager({
               <div className="h-8 w-8 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
             </div>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-base">
               <thead className="bg-slate-50 sticky top-0 z-10 shadow-xs">
-                <tr className="border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider font-bold">
+                <tr className="border-b border-slate-200 text-sm text-slate-500 uppercase tracking-wider font-bold">
                   <th className="px-6 py-4">Estudiante</th>
                   <th className="px-6 py-4">Asignatura</th>
                   <th className="px-6 py-4">Período / Evaluador</th>
@@ -227,7 +227,7 @@ export default function PendingSubjectsManager({
                         <div className="font-bold text-slate-800">
                           {student ? `${student.nombres || student.firstName} ${student.apellidos || student.lastName}` : 'Desconocido'}
                         </div>
-                        <div className="text-xs text-slate-500 font-mono">
+                        <div className="text-sm text-slate-500 font-mono">
                           {student?.cedula}
                         </div>
                       </td>
@@ -235,16 +235,16 @@ export default function PendingSubjectsManager({
                         <span className="font-semibold text-slate-700">{asig?.nombre || asig?.name || 'Desconocida'}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-xs text-slate-600 font-medium bg-slate-100 inline-block px-2 py-0.5 rounded mb-1">
+                        <div className="text-sm text-slate-600 font-medium bg-slate-100 inline-block px-2 py-0.5 rounded mb-1">
                           {per?.nombre || per?.name || 'N/A'}
                         </div>
-                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                        <div className="text-sm text-slate-500 flex items-center gap-1">
                           <User className="w-3 h-3" />
                           {evaluator ? `${evaluator.nombres || evaluator.firstName} ${evaluator.apellidos || evaluator.lastName}` : 'Sin asignar'}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-block px-3 py-1 rounded-lg text-sm font-black font-mono ${
+                        <span className={`inline-block px-3 py-1 rounded-lg text-base font-black font-mono ${
                           nota === null || nota === undefined
                             ? 'bg-slate-100 text-slate-400'
                             : nota >= 10
@@ -255,7 +255,7 @@ export default function PendingSubjectsManager({
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full border ${
+                        <span className={`text-xs uppercase font-bold px-2 py-1 rounded-full border ${
                           status === 'Aprobada' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                           status === 'Aplazada' ? 'bg-rose-50 text-rose-600 border-rose-200' :
                           'bg-amber-50 text-amber-600 border-amber-200'
@@ -291,7 +291,7 @@ export default function PendingSubjectsManager({
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                       <BookOpen className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                       <p className="font-semibold text-slate-500">No hay materias pendientes registradas</p>
-                      <p className="text-xs mt-1">Verifique los filtros o inscriba una nueva materia.</p>
+                      <p className="text-sm mt-1">Verifique los filtros o inscriba una nueva materia.</p>
                     </td>
                   </tr>
                 )}
@@ -315,14 +315,14 @@ export default function PendingSubjectsManager({
             
             <form onSubmit={handleEnroll} className="p-6 space-y-4">
               {enrollError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-lg flex gap-2 items-start">
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold rounded-lg flex gap-2 items-start">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{enrollError}</span>
                 </div>
               )}
               
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Estudiante <span className="text-rose-500">*</span></label>
+                <label className="text-sm font-bold text-slate-500 uppercase">Estudiante <span className="text-rose-500">*</span></label>
                 <SearchableSelect
                   options={students.map(s => ({ value: s.id, label: `${s.lastName}, ${s.firstName} - ${s.cedula}` }))}
                   value={enrollStudentId}
@@ -332,7 +332,7 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Asignatura (Arrastre) <span className="text-rose-500">*</span></label>
+                <label className="text-sm font-bold text-slate-500 uppercase">Asignatura (Arrastre) <span className="text-rose-500">*</span></label>
                 <SearchableSelect
                   options={subjects.map(s => ({ value: s.id, label: s.name }))}
                   value={enrollSubjectId}
@@ -342,11 +342,11 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Período Escolar (Actual) <span className="text-rose-500">*</span></label>
+                <label className="text-sm font-bold text-slate-500 uppercase">Período Escolar (Actual) <span className="text-rose-500">*</span></label>
                 <select
                   value={enrollPeriodId}
                   onChange={(e) => setEnrollPeriodId(e.target.value)}
-                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+                  className="w-full text-base p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
                 >
                   <option value="">Seleccione el período</option>
                   {periods.map(p => (
@@ -356,7 +356,7 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Docente Evaluador</label>
+                <label className="text-sm font-bold text-slate-500 uppercase">Docente Evaluador</label>
                 <SearchableSelect
                   options={users.filter(u => u.role === 'docente').map(u => ({ 
                     value: u.id, 
@@ -369,10 +369,10 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="pt-2 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsEnrollModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700">
+                <button type="button" onClick={() => setIsEnrollModalOpen(false)} className="px-4 py-2 text-base font-semibold text-slate-500 hover:text-slate-700">
                   Cancelar
                 </button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm">
+                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold rounded-lg shadow-sm">
                   Inscribir Materia
                 </button>
               </div>
@@ -395,21 +395,21 @@ export default function PendingSubjectsManager({
             
             <form onSubmit={handleSaveGrade} className="p-6 space-y-4">
               {gradeError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-lg flex gap-2 items-start">
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold rounded-lg flex gap-2 items-start">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{gradeError}</span>
                 </div>
               )}
               
               <div className="text-center bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
-                <p className="text-xs text-slate-500 font-bold uppercase">Materia Pendiente</p>
+                <p className="text-sm text-slate-500 font-bold uppercase">Materia Pendiente</p>
                 <p className="font-bold text-indigo-700">
                   {selectedPending.asignatura?.nombre || subjects.find(s => String(s.id) === String(selectedPending.subjectId || selectedPending.id_asignatura))?.name}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Nota Definitiva (1-20) <span className="text-rose-500">*</span></label>
+                <label className="text-sm font-bold text-slate-500 uppercase">Nota Definitiva (1-20) <span className="text-rose-500">*</span></label>
                 <input
                   type="number"
                   min={1}
@@ -423,10 +423,10 @@ export default function PendingSubjectsManager({
               </div>
 
               <div className="pt-4 flex flex-col gap-2">
-                <button type="submit" className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
+                <button type="submit" className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold rounded-lg shadow-sm transition-colors">
                   Guardar Calificación
                 </button>
-                <button type="button" onClick={() => setIsGradeModalOpen(false)} className="w-full px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
+                <button type="button" onClick={() => setIsGradeModalOpen(false)} className="w-full px-4 py-2 text-base font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
                   Cancelar
                 </button>
               </div>

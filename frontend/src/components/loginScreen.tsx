@@ -232,7 +232,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-slate-800/80 border border-slate-700/60 backdrop-blur-md rounded-2xl shadow-xl p-6 md:p-8 space-y-6 relative z-10"
+        className="w-full max-w-md md:max-w-lg 2xl:max-w-xl bg-slate-800/80 border border-slate-700/60 backdrop-blur-md rounded-2xl shadow-2xl p-6 md:p-10 2xl:p-12 space-y-6 2xl:space-y-8 relative z-10"
       >
         {/* Sovereign Header Band */}
         <div id="sovereign-header-badge" className="flex justify-center items-center gap-1.5 opacity-85">
@@ -242,19 +242,20 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         </div>
 
         {/* Brand & Emblem */}
-        <div id="login-brand" className="text-center space-y-2">
-          <div className="mx-auto h-14 w-14 bg-white rounded-full flex items-center justify-center shadow-lg shadow-blue-900/40 border-2 border-blue-500 overflow-hidden">
-            <img src="/logo_leo.jpg" alt="Logo L.N.E.O." className="h-full w-full object-cover" />
+        <div id="login-brand" className="text-center space-y-2 2xl:space-y-4">
+          <div className="mx-auto h-20 w-20 2xl:h-24 2xl:w-24 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-slate-900/40 border-2 border-slate-400 overflow-hidden p-1.5 relative group">
+            <div className="absolute inset-0 bg-slate-500/10 group-hover:bg-transparent transition-colors z-10 pointer-events-none"></div>
+            <img src="/logo_app.png" alt="Logo Sistema" className="h-full w-full object-contain relative z-0" />
           </div>
           <div>
-            <h1 className="text-white font-black text-base md:text-lg tracking-widest uppercase block leading-tight">
+            <h1 className="text-white font-black text-lg md:text-xl 2xl:text-2xl tracking-widest uppercase block leading-tight">
               L. N. E. O.
             </h1>
-            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
+            <span className="text-sm md:text-base 2xl:text-lg text-slate-400 font-bold uppercase tracking-wider block mt-1">
               Liceo Nacional Estilita Orozco
             </span>
           </div>
-          <p className="text-xs md:text-sm text-slate-500 leading-normal max-w-xs mx-auto">
+          <p className="text-sm md:text-base 2xl:text-lg text-slate-500 leading-normal max-w-xs md:max-w-sm 2xl:max-w-md mx-auto">
             Sistema Integrado de Gestión Academica, Control de notas y Asistencia de Educacion Media General.
           </p>
         </div>
@@ -264,7 +265,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs rounded-xl space-y-3"
+              className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm rounded-xl space-y-3"
             >
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-400" />
@@ -275,7 +276,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               </p>
               <button
                 onClick={() => { setResetToken(null); window.location.href = '/'; }}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <LogIn className="h-4 w-4" />
                 <span>Iniciar Sesión</span>
@@ -285,26 +286,26 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
             <form id="reset-password-form" onSubmit={handleResetPassword} className="space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b border-slate-700/60">
                 <KeyRound className="h-4 w-4 text-blue-400" />
-                <h3 className="text-sm font-bold text-white">Nueva Contraseña</h3>
+                <h3 className="text-base font-bold text-white">Nueva Contraseña</h3>
               </div>
 
               {error && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl flex items-start gap-2"
+                  className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm rounded-xl flex items-start gap-2"
                 >
                   <AlertCircle className="h-4.5 w-4.5 text-rose-400 shrink-0 mt-0.5" />
                   <span className="font-semibold leading-relaxed">{error}</span>
                 </motion.div>
               )}
 
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 Introduzca su nueva contraseña. El enlace es válido por 1 hora.
               </p>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                   Nueva Contraseña
                 </label>
                 <div className="relative">
@@ -314,7 +315,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full text-xs pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
+                    className="w-full text-sm pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
                   />
                   <button
                     type="button"
@@ -327,7 +328,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                   Confirmar Contraseña
                 </label>
                 <div className="relative">
@@ -337,7 +338,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repita la contraseña"
-                    className="w-full text-xs pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
+                    className="w-full text-sm pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
                   />
                 </div>
               </div>
@@ -345,7 +346,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
                 {isLoading ? (
                   <span className="h-4 w-4 border-2 border-white/35 border-t-white rounded-full animate-spin"></span>
@@ -368,14 +369,14 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <h3 className="text-sm font-bold text-white">Recuperar Contraseña</h3>
+              <h3 className="text-base font-bold text-white">Recuperar Contraseña</h3>
             </div>
 
             {error && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl flex items-start gap-2"
+                className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm rounded-xl flex items-start gap-2"
               >
                 <AlertCircle className="h-4.5 w-4.5 text-rose-400 shrink-0 mt-0.5" />
                 <span className="font-semibold leading-relaxed">{error}</span>
@@ -386,7 +387,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs rounded-xl space-y-2"
+                className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm rounded-xl space-y-2"
               >
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-emerald-400" />
@@ -398,12 +399,12 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               </motion.div>
             ) : (
               <>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="text-sm text-slate-400 leading-relaxed">
                   Introduzca su correo electrónico registrado y le enviaremos un enlace para restablecer su contraseña.
                 </p>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                     Correo Electrónico
                   </label>
                   <div className="relative">
@@ -413,7 +414,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="ej: director@liceo.edu.ve"
-                      className="w-full text-xs pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
+                      className="w-full text-sm pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
                     />
                   </div>
                 </div>
@@ -421,7 +422,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
                 >
                   {isLoading ? (
                     <span className="h-4 w-4 border-2 border-white/35 border-t-white rounded-full animate-spin"></span>
@@ -443,60 +444,60 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                 id="login-error-alert"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl flex items-start gap-2"
+                className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm rounded-xl flex items-start gap-2"
               >
                 <AlertCircle className="h-4.5 w-4.5 text-rose-400 shrink-0 mt-0.5" />
                 <span className="font-semibold leading-relaxed">{error}</span>
               </motion.div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
+            <div className="space-y-1 2xl:space-y-2">
+              <label className="text-sm 2xl:text-base text-slate-400 font-bold uppercase tracking-wider block">
                 Correo Electrónico o Cédula
               </label>
               <div className="relative">
-                <UserIcon className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                <UserIcon className="absolute left-3.5 2xl:left-4 top-3 2xl:top-3.5 h-4 w-4 2xl:h-5 2xl:w-5 text-slate-500" />
                 <input
                   id="login-username-input"
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="Ej: V-10.456.812 o director@liceo..."
-                  className="w-full text-sm pl-10 pr-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
+                  className="w-full text-base 2xl:text-lg pl-10 2xl:pl-12 pr-3.5 py-2.5 2xl:py-3.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-semibold"
                 />
               </div>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 2xl:space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
+                <label className="text-sm 2xl:text-base text-slate-400 font-bold uppercase tracking-wider block">
                   Contraseña
                 </label>
                 <button
                   type="button"
                   onClick={() => { setShowForgotPassword(true); setError(null); }}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-bold pointer-events-auto cursor-pointer"
+                  className="text-sm 2xl:text-base text-blue-400 hover:text-blue-300 font-bold pointer-events-auto cursor-pointer"
                 >
                   ¿Olvidó su contraseña?
                 </button>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                <Lock className="absolute left-3.5 2xl:left-4 top-3 2xl:top-3.5 h-4 w-4 2xl:h-5 2xl:w-5 text-slate-500" />
                 <input
                   id="login-password-input"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full text-sm pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
+                  className="w-full text-base 2xl:text-lg pl-10 2xl:pl-12 pr-10 py-2.5 2xl:py-3.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-550 focus:outline-hidden focus:border-blue-500 focus:bg-slate-900 transition-all font-mono"
                 />
                 <button
                   type="button"
                   id="btn-toggle-password"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 pointer-events-auto cursor-pointer"
+                  className="absolute right-3.5 2xl:right-4 top-3 2xl:top-3.5 text-slate-500 hover:text-slate-300 pointer-events-auto cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4 2xl:h-5 2xl:w-5" /> : <Eye className="h-4 w-4 2xl:h-5 2xl:w-5" />}
                 </button>
               </div>
             </div>
@@ -505,13 +506,13 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               type="submit"
               id="btn-submit-login"
               disabled={isLoading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 2xl:py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base 2xl:text-lg rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 2xl:gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 2xl:mt-4"
             >
               {isLoading ? (
-                <span className="h-4 w-4 border-2 border-white/35 border-t-white rounded-full animate-spin"></span>
+                <span className="h-4 w-4 2xl:h-5 2xl:w-5 border-2 border-white/35 border-t-white rounded-full animate-spin"></span>
               ) : (
                 <>
-                  <LogIn className="h-4 w-4" />
+                  <LogIn className="h-4 w-4 2xl:h-5 2xl:w-5" />
                   <span>Iniciar Sesión en el Panel</span>
                 </>
               )}
@@ -521,7 +522,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
 
         {/* Footer info lock indicator */}
         <div id="login-footer-security" className="text-center pt-2 mt-4">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500 tracking-wider uppercase bg-emerald-500/10 border border-emerald-500/10 px-3 py-1.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-500 tracking-wider uppercase bg-emerald-500/10 border border-emerald-500/10 px-3 py-1.5 rounded-full">
             <ShieldCheck className="h-3 w-3" /> Conexión Segura al Servidor Institucional
           </span>
         </div>

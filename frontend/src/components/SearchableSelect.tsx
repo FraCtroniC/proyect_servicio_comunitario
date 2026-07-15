@@ -69,7 +69,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
           if (wrapperRef.current) setRect(wrapperRef.current.getBoundingClientRect());
           setIsOpen(true);
         }}
-        className={`w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded flex items-center justify-between font-medium transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-text focus-within:border-indigo-500 focus-within:bg-white'}`}
+        className={`w-full text-base p-2 bg-slate-50 border border-slate-200 rounded flex items-center justify-between font-medium transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-text focus-within:border-indigo-500 focus-within:bg-white'}`}
       >
         <input
           type="text"
@@ -114,7 +114,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
               filteredOptions.map((option) => (
                 <div
                   key={option.value}
-                  className={`p-2 text-sm cursor-pointer transition-colors ${
+                  className={`p-2 text-base cursor-pointer transition-colors ${
                     option.disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'hover:bg-indigo-50 hover:text-indigo-700'
                   } ${
                     option.value === value ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700'
@@ -129,7 +129,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
                 </div>
               ))
             ) : (
-              <div className="p-3 text-sm text-center text-slate-500">
+              <div className="p-3 text-base text-center text-slate-500">
                 No hay resultados
               </div>
             )}

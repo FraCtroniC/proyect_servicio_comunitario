@@ -106,7 +106,7 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
       {loadingProfile ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 text-indigo-600 animate-spin" />
-          <span className="ml-3 text-sm text-slate-500">Cargando perfil...</span>
+          <span className="ml-3 text-base text-slate-500">Cargando perfil...</span>
         </div>
       ) : (
         <div className="space-y-6">
@@ -117,28 +117,28 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
                 <User className="h-7 w-7 text-indigo-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-bold text-slate-800 truncate">{getFullName()}</h3>
-                <span className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">
+                <h3 className="text-base font-bold text-slate-800 truncate">{getFullName()}</h3>
+                <span className="text-sm font-semibold text-indigo-600 uppercase tracking-wider">
                   {profile?.rol || currentUser?.role || 'Sin rol'}
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Nombre(s)</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Nombre(s)</span>
                 <span className="block text-slate-700 font-semibold">{[profile?.nombre1, profile?.nombre2].filter(Boolean).join(' ') || '—'}</span>
               </div>
               <div>
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Apellido(s)</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Apellido(s)</span>
                 <span className="block text-slate-700 font-semibold">{[profile?.apellido1, profile?.apellido2].filter(Boolean).join(' ') || '—'}</span>
               </div>
               <div>
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Usuario</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Usuario</span>
                 <span className="block text-slate-700 font-semibold">{profile?.username || currentUser?.id || '—'}</span>
               </div>
               <div>
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Rol</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Rol</span>
                 <span className="block text-slate-700 font-semibold">{profile?.rol || '—'}</span>
               </div>
             </div>
@@ -146,14 +146,14 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
 
           {/* Cambio de contraseña */}
           <div>
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Lock className="h-4 w-4 text-slate-500" />
               Cambiar Contraseña
             </h4>
 
             <div className="space-y-3">
               <div className="relative">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Contraseña actual
                 </label>
                 <div className="relative">
@@ -161,7 +161,7 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 pr-10"
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 pr-10"
                     placeholder="Ingrese su contraseña actual"
                   />
                   <button
@@ -175,7 +175,7 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
               </div>
 
               <div className="relative">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Nueva contraseña
                 </label>
                 <div className="relative">
@@ -183,7 +183,7 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 pr-10"
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 pr-10"
                     placeholder="Ingrese la nueva contraseña"
                   />
                   <button
@@ -197,14 +197,14 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   Confirmar nueva contraseña
                 </label>
                 <input
                   type={showNewPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
                   placeholder="Confirme la nueva contraseña"
                 />
               </div>
@@ -212,7 +212,7 @@ export default function UserProfileModal({ isOpen, onClose, currentUser, onLogou
               <button
                 onClick={handleSubmitPassword}
                 disabled={isSubmitting || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 pointer-events-auto cursor-pointer"
+                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 pointer-events-auto cursor-pointer"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

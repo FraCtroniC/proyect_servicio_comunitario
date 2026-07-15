@@ -1366,7 +1366,7 @@ const handleLogout = async () => {
 
       {/* Top Banner Warning context (Simulated) */}
       <div id="simulated-header-badge" className="hidden md:flex bg-slate-900 text-slate-300 py-3 px-6 text-center font-mono tracking-wider items-center justify-between border-b border-slate-800 shadow-md">
-        <span className="flex items-center gap-2 mx-auto md:mx-0 text-sm text-slate-300">
+        <span className="flex items-center gap-2 mx-auto md:mx-0 text-base text-slate-300">
           👋 Bienvenido de nuevo, <strong className="text-white font-black px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">{currentUser?.name || 'Usuario'}</strong>
         </span>
         <span className="hidden md:flex items-center">
@@ -1384,11 +1384,13 @@ const handleLogout = async () => {
             {/* Brand Logo Banner */}
             <div id="mppe-logo-banner" className="px-5 mb-8 flex items-center gap-3 shrink-0 relative mt-2">
               <div className="absolute left-3 top-0 w-10 h-10 bg-blue-500/30 blur-xl rounded-full"></div>
-              <div className="h-11 w-11 bg-white rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-white/10 relative z-10 overflow-hidden">
-                <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-cover" />
+              
+              <div className="h-11 w-11 bg-white rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-white/10 relative z-10 overflow-hidden p-0.5">
+                <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-contain rounded-lg" />
               </div>
-              <div className="relative z-10">
-                <span className="block font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-sm tracking-widest uppercase leading-none mb-1">
+              
+              <div className="relative z-10 min-w-0">
+                <span className="block font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-base tracking-widest uppercase leading-none mb-1">
                   Estilita Orozco
                 </span>
                 <span className="block text-[8.5px] text-indigo-300/80 font-bold uppercase tracking-widest leading-tight">
@@ -1401,7 +1403,7 @@ const handleLogout = async () => {
             <nav id="sidebar-nav" className="px-3 pb-6 flex-1 overflow-y-auto scrollbar-hide">
               {filteredTabGroups.map((group, idx) => (
                 <div key={idx} className="mb-6 last:mb-0">
-                  <h3 className="px-3 mb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <h3 className="px-3 mb-2 text-xs font-black text-slate-500 uppercase tracking-widest">
                     {group.group}
                   </h3>
                   <div className="space-y-1">
@@ -1417,7 +1419,7 @@ const handleLogout = async () => {
                             setActiveTab(tab.id);
                             setIsMobileMenuOpen(false);
                           }}
-                          className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold font-sans transition-all flex items-center justify-between pointer-events-auto cursor-pointer ${isActive
+                          className={`w-full py-2.5 px-3.5 rounded-xl text-sm font-bold font-sans transition-all flex items-center justify-between pointer-events-auto cursor-pointer ${isActive
                               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
                               : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
                             }`}
@@ -1452,22 +1454,22 @@ const handleLogout = async () => {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="block text-white font-bold text-xs leading-none truncate mb-1">
+                  <span className="block text-white font-bold text-sm leading-none truncate mb-1">
                     {currentUser?.name || 'Usuario'}
                   </span>
-                  <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-tight truncate">{currentRoleLabel}</span>
+                  <span className="block text-sm text-slate-400 font-bold uppercase tracking-tight truncate">{currentRoleLabel}</span>
                 </div>
               </button>
               
               <button
                 onClick={handleLogout}
-                className="w-full py-2 px-3 bg-rose-600/90 hover:bg-rose-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg shadow-sm border border-rose-500/50 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
+                className="w-full py-1.5 px-3 bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-bold uppercase tracking-wide rounded-lg shadow-sm border border-rose-500/50 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
               >
                 <LogOut className="h-3.5 w-3.5" /> Cerrar Sesión
               </button>
             </div>
             
-            <div className="text-[9px] text-slate-600 text-center font-mono leading-relaxed px-2">
+            <div className="text-sm text-slate-600 text-center font-mono leading-relaxed px-2">
               Homologación MPPE Venezuela © 2026. LOPNA compilado.
             </div>
           </div>
@@ -1480,7 +1482,7 @@ const handleLogout = async () => {
               <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-cover" />
             </div>
             <div>
-              <span className="block text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-200 uppercase tracking-widest leading-none mb-0.5">Estilita Orozco</span>
+              <span className="block text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-200 uppercase tracking-widest leading-none mb-0.5">Estilita Orozco</span>
               <span className="block text-[8px] text-indigo-300/80 font-bold uppercase tracking-widest">{currentRoleLabel}</span>
             </div>
           </div>
@@ -1518,7 +1520,7 @@ const handleLogout = async () => {
               <nav className="space-y-4 overflow-y-auto scrollbar-hide max-h-[60vh] pr-2">
                 {filteredTabGroups.map((group, idx) => (
                   <div key={idx} className="space-y-1">
-                    <h3 className="px-3 mb-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <h3 className="px-3 mb-1.5 text-xs font-black text-slate-500 uppercase tracking-widest">
                       {group.group}
                     </h3>
                     {group.items.map(tab => {
@@ -1533,7 +1535,7 @@ const handleLogout = async () => {
                             setActiveTab(tab.id);
                             setIsMobileMenuOpen(false);
                           }}
-                          className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-3 pointer-events-auto cursor-pointer ${isActive
+                          className={`w-full py-2.5 px-3.5 rounded-xl text-sm font-bold transition-all flex items-center gap-3 pointer-events-auto cursor-pointer ${isActive
                               ? 'bg-blue-600 text-white'
                               : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
                             }`}
@@ -1552,7 +1554,7 @@ const handleLogout = async () => {
                   handleLogout();
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full py-3 text-center text-xs text-white font-black uppercase bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm border border-rose-500 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
+                className="w-full py-2 text-center text-xs text-white font-bold uppercase bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm border border-rose-500 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
               >
                 <LogOut className="h-4 w-4" /> Cerrar Sesión
               </button>
