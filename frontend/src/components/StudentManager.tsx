@@ -281,22 +281,7 @@ export default function StudentManager({ students, sections, classrooms, current
         delete newErrors['cedula'];
       }
     } else {
-      const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
-      const currentRepCedula = currentStudent?.representativeCedula || '';
-      
-      const exists = representatives.some(r => {
-        const isDuplicate = r.cedula_rep === fullCedula || r.cedula_rep === cleanCedula || r.cedula_rep === `V-${cleanCedula}` || r.cedula_rep === `E-${cleanCedula}`;
-        const isNotCurrent = r.cedula_rep !== currentRepCedula && r.cedula_rep !== currentRepCedula.replace(/^[VvEe]-/, '');
-        return isDuplicate && isNotCurrent;
-      });
-
-      if (exists) {
-        newErrors['repCedula'] = 'Esta cédula de representante ya está registrada.';
-        setErrors(newErrors);
-        return;
-      } else {
-        delete newErrors['repCedula'];
-      }
+      delete newErrors['repCedula'];
     }
 
     if (isBlur && !validateCedula(val)) {
@@ -316,16 +301,14 @@ export default function StudentManager({ students, sections, classrooms, current
       newErrors['repEmail'] = 'Formato de correo inválido.';
       setErrors(newErrors);
       return;
+    } else if (field === 'correo') {
+      delete newErrors['repEmail'];
     }
 
-    const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
-    const currentRepCedula = currentStudent?.representativeCedula || '';
-    const exists = representatives.some(r => r[field] === value && r.cedula_rep !== currentRepCedula);
-    if (exists) {
-      newErrors[field === 'telefono' ? 'repPhone' : 'repEmail'] = `Este ${field === 'telefono' ? 'teléfono' : 'correo'} ya está registrado.`;
-    } else {
-      delete newErrors[field === 'telefono' ? 'repPhone' : 'repEmail'];
+    if (field === 'telefono') {
+      delete newErrors['repPhone'];
     }
+    
     setErrors(newErrors);
   };
 

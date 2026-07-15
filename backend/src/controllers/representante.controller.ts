@@ -20,6 +20,14 @@ export const RepresentanteController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
+    if (req.body.cedula_rep) {
+      const existente = await Representante.findOne({ where: { cedula_rep: req.body.cedula_rep } });
+      if (existente) {
+        await existente.update(req.body);
+        res.status(200).json({ data: existente });
+        return;
+      }
+    }
     const result = await Representante.create(req.body);
     getIO().emit('representante:create', { data: result });
     res.status(201).json({ data: result });
