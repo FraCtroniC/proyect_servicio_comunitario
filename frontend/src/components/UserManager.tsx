@@ -32,6 +32,9 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAllUsers, setShowAllUsers] = useState(false);
   
+  const [filterName, setFilterName] = useState('');
+  const [filterRole, setFilterRole] = useState<UserRole | ''>('');
+
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
@@ -40,7 +43,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
       case 'super_admin':
         return <span className="bg-red-50 text-red-700 border border-red-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Director/Principal</span>;
       case 'control_estudios':
-        return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Ctrl de Estudios</span>;
+        return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Control de Estudios</span>;
       case 'coordinador':
         return <span className="bg-amber-50 text-amber-700 border border-amber-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Coordinador</span>;
       case 'docente':
@@ -157,9 +160,44 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
             </div>
           </div>
 
-          <div id="users-items" className="space-y-3.5">
-            {(showAllUsers ? users : users.slice(0, 5)).map(u => (
-              <div id={`user-card-${u.id}`} key={u.id} className="flex items-center justify-between p-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded-xl transition-all">
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="w-full md:w-1/2 flex flex-col gap-1">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, cédula o correo..."
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium w-full"
+              />
+            </div>
+            <div className="w-full md:w-1/2 flex flex-col gap-1">
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value as UserRole | '')}
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium w-full"
+              >
+                <option value="">Todos los roles</option>
+                <option value="super_admin">Director / Principal</option>
+                <option value="control_estudios">Control de Estudios</option>
+                <option value="coordinador">Coordinador</option>
+                <option value="docente">Docente</option>
+              </select>
+            </div>
+          </div>
+
+          {(() => {
+            const filteredUsers = users.filter(u => {
+              const searchLower = filterName.toLowerCase();
+              const matchName = `${u.name} ${u.cedula} ${u.email} ${u.username}`.toLowerCase().includes(searchLower);
+              const matchRole = filterRole ? u.role === filterRole : true;
+              return matchName && matchRole;
+            });
+
+            return (
+              <>
+                <div id="users-items" className="space-y-3.5">
+                  {(showAllUsers ? filteredUsers : filteredUsers.slice(0, 5)).map(u => (
+                    <div id={`user-card-${u.id}`} key={u.id} className="flex items-center justify-between p-3.5 bg-slate-50/50 hover:bg-slate-50 border border-slate-150 rounded-xl transition-all">
                 <div id={`user-card-info-${u.id}`} className="flex items-center gap-3">
                   <img id={`user-avatar-${u.id}`} src={u.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=80'} className="h-10 w-10 rounded-full object-cover border border-slate-200" alt="avatar" />
                   <div>
@@ -219,18 +257,20 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
                   <span className="text-xs text-slate-300 font-medium">Solo lectura</span>
                 )}
               </div>
-            ))}
-          </div>
-          {users.length > 5 && (
-            <div className="pt-2 flex justify-center border-t border-slate-100 mt-4">
-              <button
-                onClick={() => setShowAllUsers(!showAllUsers)}
-                className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 px-4 rounded-lg hover:bg-indigo-50 cursor-pointer"
-              >
-                {showAllUsers ? 'Ocultar usuarios' : `Ver más (${users.length - 5} ocultos)`}
-              </button>
-            </div>
-          )}
+                ))}
+              </div>
+              {filteredUsers.length > 5 && (
+                <div className="pt-2 flex justify-center border-t border-slate-100 mt-4">
+                  <button
+                    onClick={() => setShowAllUsers(!showAllUsers)}
+                    className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 px-4 rounded-lg hover:bg-indigo-50 cursor-pointer"
+                  >
+                    {showAllUsers ? 'Ocultar usuarios' : `Ver más (${filteredUsers.length - 5} ocultos)`}
+                  </button>
+                </div>
+              )}
+            </>
+          )})()}
         </div>
 
       </div>

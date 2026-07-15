@@ -73,15 +73,15 @@ export default function ScheduleCoordinator({
 
   // Filters to display current schedules
   const [filterType, setFilterType] = useState<'section' | 'teacher' | 'classroom'>('section');
-  const [filterYear, setFilterYear] = useState<AcademicYear>(5);
-  const [filterSection, setFilterSection] = useState<string>('A');
+  const [filterYear, setFilterYear] = useState<AcademicYear | 0>(0);
+  const [filterSection, setFilterSection] = useState<string>('');
   const [filterTeacherId, setFilterTeacherId] = useState<string>('t-1');
   const [filterClassroomId, setFilterClassroomId] = useState<string>('rm-201');
 
   // Input states for assigning a block
   const [formDay, setFormDay] = useState<string>(days[0] || 'Lunes');
   const [formBlock, setFormBlock] = useState<string>('');
-  const [formYear, setFormYear] = useState<AcademicYear>(1);
+  const [formYear, setFormYear] = useState<AcademicYear | 0>(0);
   const [formSection, setFormSection] = useState<string>('');
   const [formSubjectId, setFormSubjectId] = useState<string>('');
   const [formTeacherId, setFormTeacherId] = useState<string>('');
@@ -460,7 +460,7 @@ export default function ScheduleCoordinator({
                     onChange={(e) => setFormYear(Number(e.target.value) as AcademicYear)}
                     className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
-                    <option value="">Seleccionar...</option>
+                    <option value={0} disabled hidden>Seleccionar Año...</option>
                     {referenceData.grados.map((g: any) => (
                       <option key={g.id_grado} value={g.numero}>{g.nombre}</option>
                     ))}
@@ -473,7 +473,7 @@ export default function ScheduleCoordinator({
                     onChange={(e) => setFormSection(e.target.value)}
                     className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded font-medium"
                   >
-                    <option value="">Seleccionar...</option>
+                    <option value="" disabled hidden>Seleccionar...</option>
                     {sections
                       .filter(s => s.grade === formYear)
                       .sort((a, b) => a.letter.localeCompare(b.letter))
@@ -591,7 +591,7 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFilterYear(Number(e.target.value) as AcademicYear)}
                   className="bg-white border rounded p-1 font-bold focus:outline-hidden"
                 >
-                  <option value="">Seleccionar Año...</option>
+                  <option value={0} disabled hidden>Seleccionar Año...</option>
                   {referenceData.grados.map((g: any) => (
                     <option key={g.id_grado} value={g.numero}>{g.nombre}</option>
                   ))}
@@ -601,6 +601,7 @@ export default function ScheduleCoordinator({
                   onChange={(e) => setFilterSection(e.target.value)}
                   className="bg-white border rounded p-1 font-bold focus:outline-hidden"
                 >
+                  <option value="" disabled hidden>Seleccionar...</option>
                   {sections
                     .filter(s => s.grade === filterYear)
                     .sort((a, b) => a.letter.localeCompare(b.letter))

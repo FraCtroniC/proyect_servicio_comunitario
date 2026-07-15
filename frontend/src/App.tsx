@@ -539,11 +539,19 @@ export default function App() {
   const handleAddUser = async (newUser: Partial<User> & { password?: string }) => {
     try {
       const tempPassword = newUser.password || 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
+      const cleanCedula = (newUser.cedula || '').replace(/^[VE]-/, '');
+      const docente = docentes.find(d => 
+        d.cedula === cleanCedula || 
+        d.cedula === `V-${cleanCedula}` || 
+        d.cedula === `E-${cleanCedula}`
+      );
+
       const dto = {
         username: newUser.cedula || newUser.email?.split('@')[0] || 'User',
         password: tempPassword,
         correo: newUser.email,
-        idRol: newUser.role === 'super_admin' ? 4 : newUser.role === 'control_estudios' ? 8 : newUser.role === 'coordinador' ? 7 : 5
+        idRol: newUser.role === 'super_admin' ? 4 : newUser.role === 'control_estudios' ? 8 : newUser.role === 'coordinador' ? 7 : 5,
+        idDocente: (newUser.role === 'docente' && docente) ? stripId(docente.id) : null
       };
       await api.post<any>('/api/usuarios', dto);
     } catch (e: any) {
@@ -560,6 +568,21 @@ export default function App() {
       if (data.password) dto.password = data.password;
       if (data.phone) dto.telefono = data.phone;
       if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : data.role === 'control_estudios' ? 8 : data.role === 'coordinador' ? 7 : 5;
+
+      const roleStr = data.role || users.find(u => u.id === userId)?.role;
+      const cedulaStr = data.cedula || users.find(u => u.id === userId)?.cedula || '';
+      
+      if (roleStr === 'docente') {
+        const cleanCedula = cedulaStr.replace(/^[VE]-/, '');
+        const docente = docentes.find(d => 
+          d.cedula === cleanCedula || 
+          d.cedula === `V-${cleanCedula}` || 
+          d.cedula === `E-${cleanCedula}`
+        );
+        dto.idDocente = docente ? stripId(docente.id) : null;
+      } else {
+        dto.idDocente = null;
+      }
 
       await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
     } catch (e: any) {

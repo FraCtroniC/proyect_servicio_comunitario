@@ -219,6 +219,10 @@ export default function StudentManager({ students, sections, classrooms, current
     const matchesSearch = fullName.includes(query) || s.cedula.toLowerCase().includes(query) || s.representativeName.toLowerCase().includes(query);
 
     return matchesYear && matchesSection && matchesSearch;
+  }).sort((a, b) => {
+    const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
+    const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
+    return nameA.localeCompare(nameB);
   });
 
   const validateName = (val: string) => /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]*$/.test(val);

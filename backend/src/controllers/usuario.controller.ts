@@ -4,7 +4,7 @@ import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
 const ALLOWED_CREATE_FIELDS = ['idRol', 'idDocente', 'username', 'password', 'correo'];
-const ALLOWED_UPDATE_FIELDS = ['idRol', 'username', 'password', 'correo', 'estatus', 'telefono'];
+const ALLOWED_UPDATE_FIELDS = ['idRol', 'idDocente', 'username', 'password', 'correo', 'estatus', 'telefono'];
 
 function pick(body: any, fields: string[]): any {
   const result: any = {};
