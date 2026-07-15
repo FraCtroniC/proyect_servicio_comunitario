@@ -4,22 +4,22 @@ export class Usuario extends Model {
   declare id_usuario: number;
   declare id_rol: number;
   declare id_docente: number | null;
+  declare id_persona: number | null;
   declare username: string;
   declare password_hash: string;
   declare estatus: string | null;
   declare failed_attempts: number;
   declare locked_until: Date | null;
   declare token_version: number;
-  declare correo: string | null;
   declare ultimo_acceso: Date | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
   declare rol?: any;
-  declare docente?: any;
+  declare persona?: any;
 
   static associate(models: any) {
     Usuario.belongsTo(models.Rol, { foreignKey: 'id_rol', as: 'rol' });
-    Usuario.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });
+    Usuario.belongsTo(models.Persona, { foreignKey: 'id_persona', as: 'persona' });
   }
 }
 
@@ -45,6 +45,14 @@ export function initUsuario(sequelize: Sequelize): typeof Usuario {
         references: {
           model: 'docentes',
           key: 'id_docente',
+        },
+      },
+      id_persona: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'personas',
+          key: 'id_persona',
         },
       },
       username: {
@@ -74,10 +82,6 @@ export function initUsuario(sequelize: Sequelize): typeof Usuario {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-      },
-      correo: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
       },
       ultimo_acceso: {
         type: DataTypes.DATE,

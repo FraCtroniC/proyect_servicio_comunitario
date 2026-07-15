@@ -3,8 +3,16 @@ import { UsuarioService } from '../services/usuario.service';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
-const ALLOWED_CREATE_FIELDS = ['idRol', 'idDocente', 'username', 'password', 'correo'];
-const ALLOWED_UPDATE_FIELDS = ['idRol', 'idDocente', 'username', 'password', 'correo', 'estatus', 'telefono'];
+const ALLOWED_CREATE_FIELDS = [
+  'idRol', 'idDocente', 'idPersona', 'username', 'password',
+  'cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'correo', 'telefono',
+];
+const ALLOWED_UPDATE_FIELDS = [
+  'idRol', 'idDocente', 'idPersona', 'username', 'password', 'estatus',
+  'cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'correo', 'telefono',
+];
+
+
 
 function pick(body: any, fields: string[]): any {
   const result: any = {};
@@ -27,7 +35,8 @@ export const UsuarioController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const usuario = await UsuarioService.crear(pick(req.body, ALLOWED_CREATE_FIELDS));
+    const dto = pick(req.body, ALLOWED_CREATE_FIELDS);
+    const usuario = await UsuarioService.crear(dto);
     getIO().emit('usuario:create', { data: usuario });
     res.status(201).json({ data: usuario });
   }),

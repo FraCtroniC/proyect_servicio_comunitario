@@ -539,7 +539,7 @@ export default function App() {
     }
   };
 
-  const handleAddUser = async (newUser: Partial<User> & { password?: string }) => {
+  const handleAddUser = async (newUser: Partial<User> & { password?: string; lastName?: string; username?: string }) => {
     try {
       const tempPassword = newUser.password || 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
       const cleanCedula = (newUser.cedula || '').replace(/^[VE]-/, '');
@@ -549,12 +549,16 @@ export default function App() {
         d.cedula === `E-${cleanCedula}`
       );
 
-      const dto = {
-        username: newUser.cedula || newUser.email?.split('@')[0] || 'User',
+      const dto: any = {
+        username: newUser.username || cleanCedula || newUser.email?.split('@')[0] || 'User',
         password: tempPassword,
-        correo: newUser.email,
         idRol: newUser.role === 'super_admin' ? 4 : newUser.role === 'control_estudios' ? 8 : newUser.role === 'coordinador' ? 7 : 5,
-        idDocente: (newUser.role === 'docente' && docente) ? stripId(docente.id) : null
+        idDocente: (newUser.role === 'docente' && docente) ? stripId(docente.id) : null,
+        cedula: newUser.cedula || undefined,
+        nombre1: newUser.name || undefined,
+        apellido1: newUser.lastName || undefined,
+        correo: newUser.email || undefined,
+        telefono: newUser.phone || undefined,
       };
       await api.post<any>('/api/usuarios', dto);
     } catch (e: any) {
@@ -563,13 +567,16 @@ export default function App() {
     }
   };
 
-  const handleEditUser = async (userId: string, data: Partial<User> & { password?: string }) => {
+  const handleEditUser = async (userId: string, data: Partial<User> & { password?: string; lastName?: string; username?: string }) => {
     try {
       const dto: any = {};
-      if (data.email) dto.correo = data.email;
-      if (data.cedula) dto.username = data.cedula;
+      if (data.username) dto.username = data.username;
       if (data.password) dto.password = data.password;
+      if (data.email) dto.correo = data.email;
       if (data.phone) dto.telefono = data.phone;
+      if (data.cedula) dto.cedula = data.cedula;
+      if (data.name) dto.nombre1 = data.name;
+      if (data.lastName) dto.apellido1 = data.lastName;
       if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : data.role === 'control_estudios' ? 8 : data.role === 'coordinador' ? 7 : 5;
 
       const roleStr = data.role || users.find(u => u.id === userId)?.role;

@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Docente, Usuario, Rol, sequelize } from '../models';
+import { Persona, Docente, Usuario, Especialidad, Rol, sequelize } from '../models';
 import { CrearDocenteDto, DocenteConUsuarioDto } from '../types/docente.types';
 import { ValidationError } from '../shared/errors';
 
@@ -21,19 +21,24 @@ function generarPassword(): string {
 }
 
 function mapDocenteToDto(model: Docente): any {
+  const persona = (model as any).persona;
   return {
     idDocente: model.id_docente,
-    cedulaDocente: model.cedula_docente,
-    nombre1: model.nombre1,
-    nombre2: model.nombre2,
-    apellido1: model.apellido1,
-    apellido2: model.apellido2,
+    idPersona: model.id_persona,
     idEspecialidad: model.id_especialidad,
-    fechaNac: model.fecha_nac,
-    telefono: model.telefono,
-    correo: model.correo,
     tokenQr: model.token_qr,
     estatus: model.estatus,
+    persona: persona ? {
+      idPersona: persona.id_persona,
+      cedula: persona.cedula,
+      nombre1: persona.nombre1,
+      nombre2: persona.nombre2,
+      apellido1: persona.apellido1,
+      apellido2: persona.apellido2,
+      fechaNac: persona.fecha_nac,
+      telefono: persona.telefono,
+      correo: persona.correo,
+    } : undefined,
     createdAt: model.created_at,
     updatedAt: model.updated_at,
   };
@@ -43,12 +48,15 @@ export const DocenteService = {
   async listar(): Promise<any[]> {
     const docentes = await Docente.findAll({
       order: [['id_docente', 'ASC']],
+      include: [{ model: Persona, as: 'persona' }],
     });
     return docentes.map(mapDocenteToDto);
   },
 
   async obtenerPorId(id: number): Promise<any> {
-    const docente = await Docente.findByPk(id);
+    const docente = await Docente.findByPk(id, {
+      include: [{ model: Persona, as: 'persona' }],
+    });
     if (!docente) {
       throw new ValidationError({ docente: ['Docente no encontrado'] });
     }
@@ -72,45 +80,63 @@ export const DocenteService = {
         }
       }
 
-      const docente = await Docente.create({
-        cedula_docente: limpiarCedula(dto.cedula_docente),
+      const persona = await Persona.create({
+        cedula: limpiarCedula(dto.cedula),
         nombre1: dto.nombre1,
         nombre2: dto.nombre2 ?? null,
         apellido1: dto.apellido1,
         apellido2: dto.apellido2 ?? null,
-        id_especialidad: dto.id_especialidad ?? null,
         fecha_nac: dto.fecha_nac ?? null,
         telefono: dto.telefono ?? null,
         correo: dto.correo ?? null,
+        created_at: now,
+        updated_at: now,
+      }, { transaction });
+
+      const docente = await Docente.create({
+        id_persona: persona.id_persona,
+        id_especialidad: dto.id_especialidad ?? null,
         estatus: 'Activo',
         created_at: now,
         updated_at: now,
       }, { transaction });
 
-      const username = limpiarCedula(dto.cedula_docente);
+      const username = limpiarCedula(dto.cedula);
       const passwordTemporal = generarPassword();
       const passwordHash = await bcrypt.hash(passwordTemporal, SALT_ROUNDS);
 
       const usuario = await Usuario.create({
         id_rol: ROL_DOCENTE_ID,
         id_docente: docente.id_docente,
+        id_persona: persona.id_persona,
         username,
         password_hash: passwordHash,
         estatus: 'Activo',
-        correo: dto.correo ?? null,
         created_at: now,
         updated_at: now,
       }, { transaction });
 
       await transaction.commit();
 
+      const docenteConPersona = await Docente.findByPk(docente.id_docente, {
+        include: [{ model: Persona, as: 'persona' }],
+      });
+
       return {
-        docente: mapDocenteToDto(docente),
+        docente: mapDocenteToDto(docenteConPersona!),
         usuario: {
           idUsuario: usuario.id_usuario,
           username: usuario.username,
-          correo: usuario.correo,
           estatus: usuario.estatus ?? 'Activo',
+        },
+        persona: {
+          idPersona: persona.id_persona,
+          cedula: persona.cedula,
+          nombre1: persona.nombre1,
+          nombre2: persona.nombre2,
+          apellido1: persona.apellido1,
+          apellido2: persona.apellido2,
+          correo: persona.correo,
         },
         password_temporal: passwordTemporal,
       };
@@ -124,7 +150,10 @@ export const DocenteService = {
     const transaction = await sequelize.transaction();
 
     try {
-      const docente = await Docente.findByPk(id, { transaction });
+      const docente = await Docente.findByPk(id, {
+        include: [{ model: Persona, as: 'persona' }],
+        transaction,
+      });
       if (!docente) {
         throw new ValidationError({ docente: ['Docente no encontrado'] });
       }
@@ -142,24 +171,32 @@ export const DocenteService = {
         }
       }
 
-      const updateData: any = {};
-      if (dto.cedula_docente !== undefined) updateData.cedula_docente = dto.cedula_docente;
-      if (dto.nombre1 !== undefined) updateData.nombre1 = dto.nombre1;
-      if (dto.nombre2 !== undefined) updateData.nombre2 = dto.nombre2;
-      if (dto.apellido1 !== undefined) updateData.apellido1 = dto.apellido1;
-      if (dto.apellido2 !== undefined) updateData.apellido2 = dto.apellido2;
-      if (dto.id_especialidad !== undefined) updateData.id_especialidad = dto.id_especialidad;
-      if (dto.fecha_nac !== undefined) updateData.fecha_nac = dto.fecha_nac;
-      if (dto.telefono !== undefined) updateData.telefono = dto.telefono;
-      if (dto.correo !== undefined) updateData.correo = dto.correo;
+      const persona = (docente as any).persona;
+      if (persona) {
+        const personaUpdate: any = {};
+        if (dto.cedula !== undefined) personaUpdate.cedula = limpiarCedula(dto.cedula);
+        if (dto.nombre1 !== undefined) personaUpdate.nombre1 = dto.nombre1;
+        if (dto.nombre2 !== undefined) personaUpdate.nombre2 = dto.nombre2;
+        if (dto.apellido1 !== undefined) personaUpdate.apellido1 = dto.apellido1;
+        if (dto.apellido2 !== undefined) personaUpdate.apellido2 = dto.apellido2;
+        if (dto.fecha_nac !== undefined) personaUpdate.fecha_nac = dto.fecha_nac;
+        if (dto.telefono !== undefined) personaUpdate.telefono = dto.telefono;
+        if (dto.correo !== undefined) personaUpdate.correo = dto.correo;
+        if (Object.keys(personaUpdate).length > 0) {
+          await persona.update(personaUpdate, { transaction });
+        }
+      }
 
-      await docente.update(updateData, { transaction });
+      const updateData: any = {};
+      if (dto.id_especialidad !== undefined) updateData.id_especialidad = dto.id_especialidad;
+      if (Object.keys(updateData).length > 0) {
+        await docente.update(updateData, { transaction });
+      }
 
       const usuario = await Usuario.findOne({ where: { id_docente: id }, transaction });
       if (usuario) {
         const usuarioUpdate: any = {};
-        if (dto.correo !== undefined) usuarioUpdate.correo = dto.correo;
-        if (dto.cedula_docente !== undefined) usuarioUpdate.username = limpiarCedula(dto.cedula_docente);
+        if (dto.cedula !== undefined) usuarioUpdate.username = limpiarCedula(dto.cedula);
         if (Object.keys(usuarioUpdate).length > 0) {
           await usuario.update(usuarioUpdate, { transaction });
         }
@@ -167,7 +204,9 @@ export const DocenteService = {
 
       await transaction.commit();
 
-      const updatedDocente = await Docente.findByPk(id);
+      const updatedDocente = await Docente.findByPk(id, {
+        include: [{ model: Persona, as: 'persona' }],
+      });
       const updatedUsuario = usuario
         ? await Usuario.findByPk(usuario.id_usuario, {
             attributes: { exclude: ['password_hash'] },
@@ -183,7 +222,6 @@ export const DocenteService = {
           idDocente: updatedUsuario.id_docente,
           username: updatedUsuario.username,
           estatus: updatedUsuario.estatus,
-          correo: updatedUsuario.correo,
           createdAt: updatedUsuario.created_at,
           updatedAt: updatedUsuario.updated_at,
           role: updatedUsuario.rol ? { idRol: updatedUsuario.rol.id_rol, nombre: updatedUsuario.rol.nombre } : undefined,

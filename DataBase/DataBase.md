@@ -6,6 +6,30 @@ DBML para DBDiagram SERVICIO COMUNITARIO
 // =======================================================================
 
 // ------------------------------------------
+// 0. Supertipo: Personas (centraliza datos personales)
+// ------------------------------------------
+
+Table personas {
+  id_persona int [pk, increment]
+  cedula varchar(15) [unique, note: 'Cédula de identidad (V- o E-)']
+  nombre1 varchar(50)
+  nombre2 varchar(50)
+  apellido1 varchar(50)
+  apellido2 varchar(50)
+  fecha_nac date
+  correo varchar(100)
+  telefono varchar(20)
+  genero char(1) [note: 'M / F']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+// Nota: personas es el SUPERTIPO del modelo. docentes, estudiantes,
+// representantes y usuarios son SUBTIPOS que referencian a personas
+// mediante id_persona (FK única). Los datos personales (cedula, nombres,
+// fecha_nac, correo, telefono) viven SOLO en personas.
+
+// ------------------------------------------
 // 1. Estructura Académica y Periodos
 // ------------------------------------------
 
@@ -59,15 +83,9 @@ Table plan_estudio {
 
 Table docentes {
   id_docente int [pk, increment]
-  cedula_docente varchar(15) [unique, note: 'V- o E-']
-  nombre1 varchar(20)
-  nombre2 varchar(20)
-  apellido1 varchar(20)
-  apellido2 varchar(20)
-  especialidad varchar(100)
-  telefono varchar(20)
-  correo varchar(50)
-  token_qr varchar(255) [unique, note: 'Cadena alfanumérica única e indescifrable generada por el backend. Ej: a7b8x9...']
+  id_persona int [unique, ref: > personas.id_persona, note: 'FK al supertipo personas']
+  id_especialidad int [ref: > especialidades.id_especialidad]
+  token_qr varchar(255) [unique, note: 'Cadena alfanumérica única generada por el backend']
   estatus varchar(15) [note: 'Activo, Reposo, Jubilado']
   created_at timestamp [default: `now()`]
   updated_at timestamp
@@ -75,30 +93,19 @@ Table docentes {
 
 Table representantes {
   id_representante int [pk, increment]
-  cedula_rep varchar(15) [unique, note: 'V- o E- según corresponda']
-  nombre1 varchar(20)
-  nombre2 varchar(20)
-  apellido1 varchar(20)
-  apellido2 varchar(20)
+  id_persona int [unique, ref: > personas.id_persona, note: 'FK al supertipo personas']
   telefono varchar(20)
   direccion text
-  correo varchar(50)
   created_at timestamp [default: `now()`]
   updated_at timestamp
 }
 
 Table estudiantes {
   id_estudiante int [pk, increment]
-  cedula_escolar varchar(15) [unique, note: 'Cédula de identidad o escolar asignada por MPPE']
-  nombre1 varchar(50)
-  nombre2 varchar(50)
-  apellido1 varchar(50)
-  apellido2 varchar(50)
-  fecha_nac date
+  id_persona int [unique, ref: > personas.id_persona, note: 'FK al supertipo personas']
   lugar_nac varchar(100) [note: 'Requisito obligatorio para Notas Certificadas']
   municipio varchar(50)
   estado varchar(50)
-  genero char(1) [note: 'M / F']
   id_representante int [ref: > representantes.id_representante]
   estatus_estudiante varchar(20) [note: 'Activo, Graduado, Retirado']
   created_at timestamp [default: `now()`]
@@ -244,11 +251,15 @@ Table roles {
 Table usuarios {
   id_usuario int [pk, increment]
   id_rol int [ref: > roles.id_rol]
-  id_docente int [ref: > docentes.id_docente, note: 'Opcional: Solo si el usuario es también un docente de la institución']
-  username varchar(50) [unique, note: 'Ej: jperez o la cédula']
-  password_hash varchar(255) [note: 'Contraseña encriptada (Ej: bcrypt)']
+  id_docente int [ref: > docentes.id_docente, note: 'Opcional: Solo si el usuario es tambien un docente']
+  id_persona int [unique, ref: > personas.id_persona, note: 'FK al supertipo personas']
+  username varchar(50) [unique, note: 'Ej: jperez o la cedula']
+  password_hash varchar(255) [note: 'Contrasena encriptada (Ej: bcrypt)']
   estatus varchar(15) [note: 'Activo, Bloqueado, Inactivo']
   ultimo_acceso timestamp
+  token_version int [default: 0, note: 'Invalida tokens JWT al hacer logout']
+  failed_attempts int [default: 0, note: 'Intentos fallidos de login']
+  locked_until timestamp [note: 'Bloqueo por intentos fallidos']
   created_at timestamp [default: `now()`]
   updated_at timestamp
 }

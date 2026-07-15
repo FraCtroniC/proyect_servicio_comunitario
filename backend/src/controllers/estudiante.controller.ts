@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { Estudiante } from '../models/Estudiante';
+import { Persona, Estudiante, Representante } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
+import { ValidationError } from '../shared/errors';
 
-const ALLOWED_CREATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'id_representante', 'estatus_estudiante'];
-const ALLOWED_UPDATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'estatus_estudiante'];
+const ALLOWED_ESTUDIANTE_FIELDS = ['lugar_nac', 'municipio', 'estado', 'id_representante', 'estatus_estudiante'];
 
 function pick(body: any, fields: string[]): any {
   const result: any = {};
@@ -14,17 +14,38 @@ function pick(body: any, fields: string[]): any {
   return result;
 }
 
+function personaPick(body: any): any {
+  const fields = ['cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'genero'];
+  const result: any = {};
+  for (const field of fields) {
+    if (body[field] !== undefined) result[field] = body[field];
+  }
+  return result;
+}
+
+async function findCompleto(id: number) {
+  return await Estudiante.findByPk(id, {
+    include: [
+      { model: Persona, as: 'persona' },
+      { model: Representante, as: 'representante' },
+    ],
+  });
+}
+
 export const EstudianteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
     const result = await Estudiante.findAll({
-      include: ['representante']
+      include: [
+        { model: Persona, as: 'persona' },
+        { model: Representante, as: 'representante' },
+      ],
     });
     res.json({ data: result });
   }),
 
   obtenerPorId: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const result = await Estudiante.findByPk(id);
+    const result = await findCompleto(id);
     if (!result) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
@@ -33,21 +54,39 @@ export const EstudianteController = {
   }),
 
   crear: wrapAsync(async (req: Request, res: Response) => {
-    const result = await Estudiante.create(pick(req.body, ALLOWED_CREATE_FIELDS));
-    const completo = await Estudiante.findByPk(result.get('id_estudiante'), { include: ['representante'] });
+    const now = new Date();
+    const persona = await Persona.create({
+      ...personaPick(req.body),
+      created_at: now,
+      updated_at: now,
+    });
+    const result = await Estudiante.create({
+      id_persona: persona.id_persona,
+      ...pick(req.body, ALLOWED_ESTUDIANTE_FIELDS),
+      created_at: now,
+      updated_at: now,
+    });
+    const completo = await findCompleto(result.get('id_estudiante') as number);
     getIO().emit('estudiante:create', { data: completo });
     res.status(201).json({ data: completo });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const record = await Estudiante.findByPk(id);
+    const record = await Estudiante.findByPk(id, {
+      include: [{ model: Persona, as: 'persona' }],
+    });
     if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    await record.update(pick(req.body, ALLOWED_UPDATE_FIELDS));
-    const completo = await Estudiante.findByPk(id, { include: ['representante'] });
+    const personaData = personaPick(req.body);
+    const persona = (record as any).persona;
+    if (persona && Object.keys(personaData).length > 0) {
+      await persona.update(personaData);
+    }
+    await record.update(pick(req.body, ALLOWED_ESTUDIANTE_FIELDS));
+    const completo = await findCompleto(id);
     getIO().emit('estudiante:update', { data: completo });
     res.json({ data: completo });
   }),

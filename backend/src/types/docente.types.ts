@@ -1,22 +1,26 @@
 export interface DocenteDto {
   idDocente: number;
-  cedulaDocente: string;
-  nombre1: string;
-  nombre2: string | null;
-  apellido1: string;
-  apellido2: string | null;
+  idPersona: number | null;
   idEspecialidad: number | null;
-  fechaNac: string | null;
-  telefono: string | null;
-  correo: string | null;
   tokenQr: string | null;
   estatus: string | null;
+  persona?: {
+    idPersona: number;
+    cedula: string;
+    nombre1: string;
+    nombre2: string | null;
+    apellido1: string;
+    apellido2: string | null;
+    fechaNac: string | null;
+    telefono: string | null;
+    correo: string | null;
+  };
   createdAt: Date;
   updatedAt: Date | null;
 }
 
 export interface CrearDocenteDto {
-  cedula_docente: string;
+  cedula: string;
   nombre1: string;
   nombre2?: string;
   apellido1: string;
@@ -32,8 +36,16 @@ export interface DocenteConUsuarioDto {
   usuario: {
     idUsuario: number;
     username: string;
-    correo: string | null;
     estatus: string;
+  };
+  persona: {
+    idPersona: number;
+    cedula: string;
+    nombre1: string;
+    nombre2: string | null;
+    apellido1: string;
+    apellido2: string | null;
+    correo: string | null;
   };
   password_temporal: string;
 }

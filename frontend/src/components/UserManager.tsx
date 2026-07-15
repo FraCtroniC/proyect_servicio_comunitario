@@ -20,9 +20,11 @@ interface UserManagerProps {
 export default function UserManager({ users, currentUserRole, onAddUser, onEditUser, onDeleteUser, onToggleUserActive }: UserManagerProps) {
   // Setup forms
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('docente');
   const [cedula, setCedula] = useState('');
+  const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -53,9 +55,11 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
 
   const openAddModal = () => {
     setName('');
+    setLastName('');
     setEmail('');
     setRole('docente');
     setCedula('');
+    setUsername('');
     setPhone('');
     setPassword('');
     setEditingUserId(null);
@@ -65,10 +69,12 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
   };
 
   const openEditModal = (u: User) => {
-    setName(u.name);
+    setName(u.firstName || u.name?.split(' ')[0] || '');
+    setLastName(u.lastName || u.name?.split(' ').slice(1).join(' ') || '');
     setEmail(u.email);
     setRole(u.role);
-    setCedula(u.cedula || u.username || '');
+    setCedula(u.cedula || '');
+    setUsername(u.username || u.cedula || '');
     setPhone(u.phone || '');
     setPassword('');
     setEditingUserId(u.id);
@@ -77,29 +83,21 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
     setIsModalOpen(true);
   };
 
-  const isDocente = !!users.find(u => u.id === editingUserId)?.teacherId;
-
-  const handleCedulaChange = (value: string) => {
-    setCedula(value);
-    if (!isDocente) {
-      setName(value);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setFieldErrors({});
     try {
+      const userData = { name, lastName, email, role, cedula, username, phone, password };
       if (editingUserId) {
-        await onEditUser(editingUserId, { name, email, role, cedula, phone, password });
+        await onEditUser(editingUserId, userData);
         setSuccessMsg('Usuario editado con éxito.');
       } else {
         if (!password) {
           setErrorMsg('La contraseña es requerida para un nuevo usuario.');
           return;
         }
-        await onAddUser({ name, email, role, cedula, phone, password });
+        await onAddUser(userData);
         setSuccessMsg('Usuario agregado con éxito.');
       }
       setIsModalOpen(false);
@@ -278,14 +276,29 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUserId ? "Editar Usuario" : "Nuevo Usuario"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           {errorMsg && <div className="text-red-600 text-sm bg-red-50 p-2 rounded whitespace-pre-line">{errorMsg}</div>}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700">Nombre</label>
-            <input type="text" required value={name} onChange={e => setName(e.target.value)} readOnly={!isDocente} className={`mt-1 w-full p-2 border border-slate-300 rounded-lg text-base ${!isDocente ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Nombre(s)</label>
+              <input type="text" required value={name} onChange={e => setName(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.nombre1 ? 'border-red-500 bg-red-50' : 'border-slate-300'}`} />
+              {fieldErrors.nombre1 && <p className="text-red-600 text-sm mt-1">{fieldErrors.nombre1}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Apellido(s)</label>
+              <input type="text" required value={lastName} onChange={e => setLastName(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.apellido1 ? 'border-red-500 bg-red-50' : 'border-slate-300'}`} />
+              {fieldErrors.apellido1 && <p className="text-red-600 text-sm mt-1">{fieldErrors.apellido1}</p>}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700">Usuario / Cedula</label>
-            <input type="text" required value={cedula} onChange={e => handleCedulaChange(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.username ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
-            {fieldErrors.username && <p className="text-red-600 text-sm mt-1">{fieldErrors.username}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Cédula</label>
+              <input type="text" required value={cedula} onChange={e => setCedula(e.target.value)} placeholder="V-12345678" className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.cedula ? 'border-red-500 bg-red-50' : 'border-slate-300'}`} />
+              {fieldErrors.cedula && <p className="text-red-600 text-sm mt-1">{fieldErrors.cedula}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Usuario</label>
+              <input type="text" required value={username} onChange={e => setUsername(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.username ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+              {fieldErrors.username && <p className="text-red-600 text-sm mt-1">{fieldErrors.username}</p>}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700">Email</label>

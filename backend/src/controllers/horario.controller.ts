@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import {
   HorarioDocente, Asignatura, Seccion, GradoAno,
   DiaSemana, BloqueHorario, Aula, PeriodoEscolar,
-  Usuario, Docente, Matricula, Estudiante
+  Persona, Usuario, Docente, Matricula, Estudiante
 } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -18,7 +18,10 @@ export const HorarioController = {
     const fecha = String(req.query.fecha || new Date().toISOString().split('T')[0]);
 
     const usuario = await Usuario.findByPk(req.user!.idUsuario, {
-      include: [{ model: Docente, as: 'docente' }]
+      include: [
+        { model: Persona, as: 'persona' },
+        { model: Docente, as: 'docente' },
+      ]
     });
 
     if (!usuario || !usuario.id_docente) {
@@ -70,7 +73,8 @@ export const HorarioController = {
           include: [
             {
               model: Estudiante, as: 'estudiante',
-              where: { estatus_estudiante: 'Activo' }
+              where: { estatus_estudiante: 'Activo' },
+              include: [{ model: Persona, as: 'persona' }],
             }
           ],
           attributes: ['id_matricula', 'id_estudiante'],
@@ -78,12 +82,17 @@ export const HorarioController = {
 
         return {
           ...h.toJSON(),
-          estudiantes: estudiantes.map((m: any) => ({
-            id_matricula: m.id_matricula,
-            id_estudiante: m.id_estudiante,
-            nombre: `${m.estudiante?.apellido1 || ''} ${m.estudiante?.apellido2 || ''}, ${m.estudiante?.nombre1 || ''} ${m.estudiante?.nombre2 || ''}`.trim().replace(/^, /, ''),
-            cedula: m.estudiante?.cedula_escolar || '',
-          })),
+          estudiantes: estudiantes.map((m: any) => {
+            const ep = m.estudiante?.persona;
+            return {
+              id_matricula: m.id_matricula,
+              id_estudiante: m.id_estudiante,
+              nombre: ep
+                ? `${ep.apellido1 || ''} ${ep.apellido2 || ''}, ${ep.nombre1 || ''} ${ep.nombre2 || ''}`.trim().replace(/^, /, '')
+                : '',
+              cedula: ep?.cedula || '',
+            };
+          }),
         };
       })
     );
@@ -91,7 +100,7 @@ export const HorarioController = {
     res.json({
       data: horariosConEstudiantes,
       meta: {
-        docente: `${usuario.docente?.nombre1 || ''} ${usuario.docente?.apellido1 || ''}`.trim(),
+        docente: `${(usuario.persona as any)?.nombre1 || ''} ${(usuario.persona as any)?.apellido1 || ''}`.trim(),
         fecha,
         dia: diaSemana,
         total_horarios: horariosConEstudiantes.length,

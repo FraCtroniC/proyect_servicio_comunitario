@@ -1,31 +1,33 @@
 import bcrypt from 'bcrypt';
-import { Usuario as UsuarioModel, Rol, Docente, RefreshToken, sequelize } from '../models';
+import { Usuario as UsuarioModel, Persona, Rol, RefreshToken, sequelize } from '../models';
 import { UsuarioDto, CrearUsuarioDto, ActualizarUsuarioDto } from '../types/usuario.types';
 import { NotFoundError, ValidationError } from '../shared/errors';
 
 const SALT_ROUNDS = 10;
 
 function mapModelToDto(model: UsuarioModel): UsuarioDto {
-  const docente = (model as any).docente;
+  const persona = (model as any).persona;
   return {
     id: model.id_usuario,
     idRol: model.id_rol,
     idDocente: model.id_docente,
+    idPersona: model.id_persona,
     username: model.username,
     estatus: model.estatus,
-    correo: model.correo,
     ultimoAcceso: model.ultimo_acceso,
     createdAt: model.created_at,
     updatedAt: model.updated_at,
     role: model.rol ? { idRol: model.rol.id_rol, nombre: model.rol.nombre } : undefined,
-    docente: docente ? {
-      cedula_docente: docente.cedula_docente,
-      nombre1: docente.nombre1,
-      nombre2: docente.nombre2,
-      apellido1: docente.apellido1,
-      apellido2: docente.apellido2,
-      telefono: docente.telefono,
-      correo: docente.correo,
+    persona: persona ? {
+      idPersona: persona.id_persona,
+      cedula: persona.cedula,
+      nombre1: persona.nombre1,
+      nombre2: persona.nombre2,
+      apellido1: persona.apellido1,
+      apellido2: persona.apellido2,
+      fechaNac: persona.fecha_nac,
+      correo: persona.correo,
+      telefono: persona.telefono,
     } : undefined,
   };
 }
@@ -37,7 +39,7 @@ export const UsuarioService = {
       order: [['id_usuario', 'ASC']],
       include: [
         { model: Rol, as: 'rol' },
-        { model: Docente, as: 'docente' },
+        { model: Persona, as: 'persona' },
       ],
     });
     return usuarios.map(mapModelToDto);
@@ -48,7 +50,7 @@ export const UsuarioService = {
       attributes: { exclude: ['password_hash'] },
       include: [
         { model: Rol, as: 'rol' },
-        { model: Docente, as: 'docente' },
+        { model: Persona, as: 'persona' },
       ],
     });
     if (!usuario) {
@@ -75,16 +77,52 @@ export const UsuarioService = {
 
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
 
-    const usuario = await UsuarioModel.create({
-      id_rol: dto.idRol,
-      id_docente: dto.idDocente ?? null,
-      username: dto.username,
-      password_hash: passwordHash,
-      correo: dto.correo ?? null,
-      estatus: dto.estatus ?? 'Activo',
-    });
+    const transaction = await sequelize.transaction();
 
-    return mapModelToDto(usuario);
+    try {
+      let idPersona = dto.idPersona ?? null;
+
+      if (dto.cedula && dto.nombre1) {
+        const [persona] = await Persona.findOrCreate({
+          where: { cedula: dto.cedula },
+          defaults: {
+            cedula: dto.cedula,
+            nombre1: dto.nombre1,
+            nombre2: dto.nombre2 ?? null,
+            apellido1: dto.apellido1 ?? '',
+            apellido2: dto.apellido2 ?? null,
+            correo: dto.correo ?? null,
+            telefono: dto.telefono ?? null,
+          },
+          transaction,
+        });
+        idPersona = persona.id_persona;
+      }
+
+      const usuario = await UsuarioModel.create({
+        id_rol: dto.idRol,
+        id_docente: dto.idDocente ?? null,
+        id_persona: idPersona,
+        username: dto.username,
+        password_hash: passwordHash,
+        estatus: dto.estatus ?? 'Activo',
+      }, { transaction });
+
+      await transaction.commit();
+
+      const created = await UsuarioModel.findByPk(usuario.id_usuario, {
+        attributes: { exclude: ['password_hash'] },
+        include: [
+          { model: Rol, as: 'rol' },
+          { model: Persona, as: 'persona' },
+        ],
+      });
+
+      return mapModelToDto(created!);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   },
 
   async actualizar(id: number, dto: ActualizarUsuarioDto): Promise<UsuarioDto> {
@@ -100,34 +138,15 @@ export const UsuarioService = {
       if (existente && existente.id_usuario !== id) {
         errores.username = ['El username ya está en uso'];
       } else {
-        const [cedulaResults] = await Docente.sequelize!.query(
-          `SELECT id_docente FROM docentes WHERE cedula_docente = :cedula AND id_docente != :idDocente`,
-          { replacements: { cedula: dto.username, idDocente: usuario.id_docente || 0 } }
+        const [cedulaResults] = await Persona.sequelize!.query(
+          `SELECT id_persona FROM personas WHERE cedula = :cedula AND id_persona != :idPersona`,
+          { replacements: { cedula: dto.username, idPersona: usuario.id_persona || 0 } }
         );
         if ((cedulaResults as any[]).length > 0) {
-          errores.username = ['El username coincide con la cédula de otro docente'];
+          errores.username = ['El username coincide con la cédula de otra persona'];
         } else {
           usuario.username = dto.username;
         }
-      }
-    }
-
-    if (dto.correo) {
-      const existente = await UsuarioModel.findOne({ where: { correo: dto.correo } });
-      if (existente && existente.id_usuario !== id) {
-        errores.correo = ['El correo ya está registrado'];
-      } else {
-        usuario.correo = dto.correo;
-      }
-    }
-
-    if (dto.telefono && usuario.id_docente) {
-      const [results] = await Docente.sequelize!.query(
-        `SELECT id_docente FROM docentes WHERE telefono = :telefono AND id_docente != :idDocente`,
-        { replacements: { telefono: dto.telefono, idDocente: usuario.id_docente } }
-      );
-      if ((results as any[]).length > 0) {
-        errores.telefono = ['El teléfono ya está registrado'];
       }
     }
 
@@ -147,25 +166,52 @@ export const UsuarioService = {
       usuario.id_docente = dto.idDocente ?? null;
     }
 
+    if (dto.idPersona !== undefined) {
+      usuario.id_persona = dto.idPersona ?? null;
+    }
+
     if (dto.estatus !== undefined) {
       usuario.estatus = dto.estatus;
     }
 
-    await usuario.save();
-
-    if (dto.telefono && usuario.id_docente) {
-      const docente = await Docente.findByPk(usuario.id_docente);
-      if (docente) {
-        (docente as any).telefono = dto.telefono;
-        await docente.save();
+    if (dto.cedula !== undefined || dto.nombre1 !== undefined || dto.apellido1 !== undefined || dto.correo !== undefined || dto.telefono !== undefined) {
+      if (usuario.id_persona) {
+        await Persona.update(
+          {
+            ...(dto.cedula !== undefined && { cedula: dto.cedula }),
+            ...(dto.nombre1 !== undefined && { nombre1: dto.nombre1 }),
+            ...(dto.nombre2 !== undefined && { nombre2: dto.nombre2 }),
+            ...(dto.apellido1 !== undefined && { apellido1: dto.apellido1 }),
+            ...(dto.apellido2 !== undefined && { apellido2: dto.apellido2 }),
+            ...(dto.correo !== undefined && { correo: dto.correo }),
+            ...(dto.telefono !== undefined && { telefono: dto.telefono }),
+          },
+          { where: { id_persona: usuario.id_persona } }
+        );
+      } else if (dto.cedula && dto.nombre1) {
+        const [persona] = await Persona.findOrCreate({
+          where: { cedula: dto.cedula },
+          defaults: {
+            cedula: dto.cedula,
+            nombre1: dto.nombre1,
+            nombre2: dto.nombre2 ?? null,
+            apellido1: dto.apellido1 ?? '',
+            apellido2: dto.apellido2 ?? null,
+            correo: dto.correo ?? null,
+            telefono: dto.telefono ?? null,
+          },
+        });
+        usuario.id_persona = persona.id_persona;
       }
     }
+
+    await usuario.save();
 
     const updated = await UsuarioModel.findByPk(id, {
       attributes: { exclude: ['password_hash'] },
       include: [
         { model: Rol, as: 'rol' },
-        { model: Docente, as: 'docente' },
+        { model: Persona, as: 'persona' },
       ],
     });
     return mapModelToDto(updated!);
