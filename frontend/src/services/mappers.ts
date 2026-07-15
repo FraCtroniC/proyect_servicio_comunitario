@@ -59,10 +59,10 @@ export function mapEstudianteToStudent(dbStudent: any, matriculas?: any[], secci
     }
     const activeMatricula = studentMatriculas.find((m: any) => m.estatus_matricula === 'Activo') || studentMatriculas[0];
     if (activeMatricula) {
-      const seccion = secciones.find((s: any) => s.id_seccion === activeMatricula.id_seccion);
+      const seccion = secciones.find((s: any) => String(s.id_seccion || s.id) === String(activeMatricula.id_seccion));
       if (seccion) {
-        academicYear = seccion.grado?.numero || seccion.id_grado || 1;
-        section = seccion.letra || 'A';
+        academicYear = seccion.grado?.numero || seccion.id_grado || seccion.grade || 1;
+        section = seccion.letra || seccion.letter || 'A';
       }
     }
   }

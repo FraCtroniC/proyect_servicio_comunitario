@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { Estudiante } from '../models/Estudiante';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
-const ALLOWED_CREATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'id_representante'];
+const ALLOWED_CREATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'id_representante', 'estatus_estudiante'];
 const ALLOWED_UPDATE_FIELDS = ['cedula_escolar', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'fecha_nac', 'lugar_nac', 'municipio', 'estado', 'genero', 'estatus_estudiante'];
 
 function pick(body: any, fields: string[]): any {
@@ -33,8 +34,9 @@ export const EstudianteController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await Estudiante.create(pick(req.body, ALLOWED_CREATE_FIELDS));
-    res.status(201).json({ data: result });
-
+    const completo = await Estudiante.findByPk(result.get('id_estudiante'), { include: ['representante'] });
+    getIO().emit('estudiante:create', { data: completo });
+    res.status(201).json({ data: completo });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
@@ -45,8 +47,9 @@ export const EstudianteController = {
       return;
     }
     await record.update(pick(req.body, ALLOWED_UPDATE_FIELDS));
-    res.json({ data: record });
-
+    const completo = await Estudiante.findByPk(id, { include: ['representante'] });
+    getIO().emit('estudiante:update', { data: completo });
+    res.json({ data: completo });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
@@ -57,6 +60,7 @@ export const EstudianteController = {
       return;
     }
     await record.destroy();
+    getIO().emit('estudiante:delete', { data: { id_estudiante: id } });
     res.status(204).send();
   }),
 };
