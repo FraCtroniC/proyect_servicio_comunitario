@@ -59,7 +59,7 @@ export const exportGradesToExcel = (
     let aplazadas = 0;
 
     yearSubjects.forEach(sub => {
-      const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id);
+      const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, year, section);
       row[sub.shortName] = rounded || 0;
       
       if (rounded >= 10) aprobadas++;

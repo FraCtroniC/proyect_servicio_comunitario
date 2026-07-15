@@ -34,7 +34,7 @@ export const generateBoletinPDF = (
   // Prepare table data
   const tableData = yearSubjects.map(sub => {
     // We only need the final grade rounded according to MPPE
-    const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id);
+    const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, student.academicYear, student.section);
     const literal = rounded >= 18 ? 'A' : (rounded >= 14 ? 'B' : (rounded >= 10 ? 'C' : 'D'));
     const status = rounded >= 10 ? 'Aprobado' : 'Aplazado';
 

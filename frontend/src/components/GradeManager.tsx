@@ -1005,7 +1005,7 @@ export default function GradeManager({
                       const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, sabanaSubjectId, 3) : { rounded: 0, raw: 0 };
 
                       // Calculate final rounded score
-                      const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId);
+                      const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId, sabanaYear, sabanaSection);
 
                       return (
                         <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-sm">
@@ -1201,7 +1201,7 @@ export default function GradeManager({
                         const l3Plan = evaluationPlans.find(p => p.subjectId === sub.id && p.year === student.academicYear && p.section === student.section && p.lapso === 3);
                         const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, sub.id, 3) : { rounded: 0, raw: 0 };
 
-                        const finalScore = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id);
+                        const finalScore = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, student.academicYear, student.section);
 
                         return (
                           <tr id={`bol-sub-${sub.id}`} key={sub.id} className="hover:bg-slate-50/20 text-sm">

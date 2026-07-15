@@ -32,28 +32,23 @@ export const calculateEvaluationAverage = (grades: Grade[], evaluations: Evaluat
   };
 };
 
-export const calculateSubjectFinalGrade = (grades: Grade[], evaluationPlans: EvaluationPlan[], studentId: string, subjectId: string) => {
-  // Let's get the average of the three Lapsos
-  let lapsosSum = 0;
-  let lapsosSubmittals = 0;
+export const calculateSubjectFinalGrade = (grades: Grade[], evaluationPlans: EvaluationPlan[], studentId: string, subjectId: string, year?: number, section?: string) => {
   const lapsos: (1|2|3)[] = [1, 2, 3];
 
-  lapsos.forEach(lap => {
-    const plan = evaluationPlans.find(p => p.subjectId === subjectId && p.lapso === lap);
+  const sumaLapsos = lapsos.reduce((sum, lap) => {
+    const plan = evaluationPlans.find(p =>
+      p.subjectId === subjectId && p.lapso === lap &&
+      (year === undefined || p.year === year) &&
+      (section === undefined || p.section === section)
+    );
     if (plan) {
       const { raw, rounded } = calculateEvaluationAverage(grades, plan.evaluations, studentId, subjectId, lap);
-      if (raw > 0) {
-        // Standard Venezuelan instruction: Lapso grades are represented as rounded integers in official records.
-        // The final grade is the arithmetic average of the THREE rounded lapso scores.
-        lapsosSum += rounded;
-        lapsosSubmittals++;
-      }
+      return sum + (raw > 0 ? rounded : 1);
     }
-  });
+    return sum + 1;
+  }, 0);
 
-  if (lapsosSubmittals === 0) return { raw: 0, rounded: 0 };
-
-  const rawFinal = lapsosSum / 3; // divided by 3 according to total periods
+  const rawFinal = sumaLapsos / 3;
   const roundedFinal = Math.round(rawFinal);
 
   return {
