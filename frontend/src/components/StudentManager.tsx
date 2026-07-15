@@ -491,7 +491,7 @@ export default function StudentManager({ students, sections, classrooms, current
         <div id="student-explorer-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-xs">
           
           {/* Controls Bar */}
-          <div id="explorer-filters-bar" className="flex flex-col md:flex-row md:items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
+          <div id="explorer-filters-bar" className="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
             <div id="explorer-filter-icon" className="flex items-center gap-1 text-sm font-semibold text-slate-500 shrink-0">
               <Filter className="h-4 w-4" />
               <span>Filtros:</span>
@@ -532,24 +532,24 @@ export default function StudentManager({ students, sections, classrooms, current
             {/* Text Search input */}
             <input
               type="text"
-              placeholder="Buscar por Nombre, Cédula, Representante..."
+              placeholder="Buscar por Nombre, Cédula, Rep..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-[200px]"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-0 flex-1 sm:flex-none sm:min-w-[200px]"
             />
             
             <button
               onClick={() => exportStudentsToExcel(filteredStudents)}
-              className="hidden md:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
             >
               <Download className="w-4 h-4" />
               Exportar Nómina
             </button>
 
-{['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
+            {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
               <button
                 onClick={handleOpenCreate}
-                className="md:ml-auto flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
               >
                 <UserPlus className="w-4 h-4" />
                 Matricular Alumno

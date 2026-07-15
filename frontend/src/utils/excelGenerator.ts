@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Student, Grade, Subject, EvaluationPlan } from '../types';
-import { calculateSubjectFinalGrade } from './gradeCalculations';
+import { calculateSubjectFinalGrade, gradeToLiteral } from './gradeCalculations';
 
 export const exportStudentsToExcel = (students: Student[]) => {
   const data = students.map(s => ({
@@ -60,7 +60,8 @@ export const exportGradesToExcel = (
 
     yearSubjects.forEach(sub => {
       const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, year, section);
-      row[sub.shortName] = rounded || 0;
+      const isCualitativa = sub.tipoCalificacion === 'Cualitativo';
+      row[sub.shortName] = isCualitativa ? gradeToLiteral(rounded) : (rounded || 0);
       
       if (rounded >= 10) aprobadas++;
       else if (rounded > 0) aplazadas++;

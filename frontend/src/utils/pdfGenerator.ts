@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Student, Grade, Subject, EvaluationPlan, Attendance, AcademicYear } from '../types';
-import { calculateSubjectFinalGrade } from './gradeCalculations';
+import { calculateSubjectFinalGrade, gradeToLiteral } from './gradeCalculations';
 
 export const generateBoletinPDF = (
   student: Student,
@@ -35,12 +35,13 @@ export const generateBoletinPDF = (
   const tableData = yearSubjects.map(sub => {
     // We only need the final grade rounded according to MPPE
     const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, student.academicYear, student.section);
-    const literal = rounded >= 18 ? 'A' : (rounded >= 14 ? 'B' : (rounded >= 10 ? 'C' : 'D'));
+    const isCualitativa = sub.tipoCalificacion === 'Cualitativo';
+    const literal = gradeToLiteral(rounded);
     const status = rounded >= 10 ? 'Aprobado' : 'Aplazado';
 
     return [
       sub.name,
-      rounded.toString(),
+      isCualitativa ? literal : rounded.toString(),
       literal,
       status
     ];

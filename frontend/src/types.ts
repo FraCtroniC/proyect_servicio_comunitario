@@ -91,6 +91,7 @@ export interface Subject {
   name: string;
   shortName: string;
   years: AcademicYear[]; // Which years have this subject
+  tipoCalificacion?: 'Cuantitativa' | 'Cualitativo';
 }
 
 export interface StudyPlanItem {

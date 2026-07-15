@@ -1,5 +1,13 @@
 import { Grade, EvaluationPlan, EvaluationItem } from '../types';
 
+// Conversión de nota numérica a letra según escala MPPE (escala_calificaciones.ponderacion_letra)
+export const gradeToLiteral = (grade: number): string => {
+  if (grade >= 18) return 'A';
+  if (grade >= 14) return 'B';
+  if (grade >= 10) return 'C';
+  return 'D';
+};
+
 // Helper functions for MPPE Rounded Grades logic
 export const calculateEvaluationAverage = (grades: Grade[], evaluations: EvaluationItem[], studentId: string, subjectId: string, lapso: 1|2|3) => {
   let totalWeightedScore = 0;

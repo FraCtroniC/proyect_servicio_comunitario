@@ -118,7 +118,8 @@ export function mapAsignaturaToSubject(dbAsignatura: any, studyPlans?: any[]): S
     id: String(dbAsignatura.id_asignatura),
     name: dbAsignatura.nombre,
     shortName: dbAsignatura.nombre.substring(0, 3).toUpperCase(),
-    years
+    years,
+    tipoCalificacion: dbAsignatura.tipo_calificacion || 'Cuantitativa'
   };
 }
 

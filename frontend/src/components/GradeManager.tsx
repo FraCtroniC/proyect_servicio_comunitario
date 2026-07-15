@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash, ScrollText, Download, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole, StudyPlanItem, SchoolPeriod, Section } from '../types';
-import { calculateEvaluationAverage, calculateSubjectFinalGrade } from '../utils/gradeCalculations';
+import { calculateEvaluationAverage, calculateSubjectFinalGrade, gradeToLiteral } from '../utils/gradeCalculations';
 import { generateBoletinPDF } from '../utils/pdfGenerator';
 import { exportGradesToExcel } from '../utils/excelGenerator';
 import { api } from '../services/api';
@@ -1007,6 +1007,19 @@ export default function GradeManager({
                       // Calculate final rounded score
                       const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId, sabanaYear, sabanaSection);
 
+                      // Check if subject is Cualitativa
+                      const isCualitativa = subjects.find(s => s.id === sabanaSubjectId)?.tipoCalificacion === 'Cualitativo';
+
+                      const renderGrade = (avg: { raw: number; rounded: number }) => {
+                        if (avg.raw === 0) return '--';
+                        return isCualitativa ? gradeToLiteral(avg.rounded) : String(avg.rounded).padStart(2, '0');
+                      };
+
+                      const renderFinal = (fg: { raw: number; rounded: number }) => {
+                        if (fg.raw === 0) return '--';
+                        return isCualitativa ? gradeToLiteral(fg.rounded) : String(fg.rounded).padStart(2, '0');
+                      };
+
                       return (
                         <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-sm">
                           <td className="p-2 border border-slate-300 text-center font-bold font-mono">{idx + 1}</td>
@@ -1015,16 +1028,16 @@ export default function GradeManager({
                             <span className="font-extrabold uppercase text-slate-800">{student.lastName}</span>, {student.firstName}
                           </td>
                           <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
-                            {l1Avg.raw > 0 ? String(l1Avg.rounded).padStart(2, '0') : '--'}
+                            {renderGrade(l1Avg)}
                           </td>
                           <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
-                            {l2Avg.raw > 0 ? String(l2Avg.rounded).padStart(2, '0') : '--'}
+                            {renderGrade(l2Avg)}
                           </td>
                           <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
-                            {l3Avg.raw > 0 ? String(l3Avg.rounded).padStart(2, '0') : '--'}
+                            {renderGrade(l3Avg)}
                           </td>
                           <td className="p-2 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-base text-blue-900">
-                            {finalGrade.raw > 0 ? String(finalGrade.rounded).padStart(2, '0') : '--'}
+                            {renderFinal(finalGrade)}
                           </td>
                           <td className="p-2 border border-slate-300 text-center">
                             {finalGrade.raw > 0 ? (
@@ -1203,20 +1216,32 @@ export default function GradeManager({
 
                         const finalScore = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, student.academicYear, student.section);
 
+                        const isCualitativa = sub.tipoCalificacion === 'Cualitativo';
+
+                        const renderGrade = (avg: { raw: number; rounded: number }) => {
+                          if (avg.raw === 0) return '--';
+                          return isCualitativa ? gradeToLiteral(avg.rounded) : String(avg.rounded).padStart(2, '0');
+                        };
+
+                        const renderFinal = (fg: { raw: number; rounded: number }) => {
+                          if (fg.raw === 0) return '--';
+                          return isCualitativa ? gradeToLiteral(fg.rounded) : String(fg.rounded).padStart(2, '0');
+                        };
+
                         return (
                           <tr id={`bol-sub-${sub.id}`} key={sub.id} className="hover:bg-slate-50/20 text-sm">
                             <td className="p-2.5 border border-slate-300 font-bold text-slate-800">{sub.name}</td>
                             <td className="p-2.5 border border-slate-300 text-center font-mono">
-                              {l1Avg.raw > 0 ? String(l1Avg.rounded).padStart(2, '0') : '--'}
+                              {renderGrade(l1Avg)}
                             </td>
                             <td className="p-2.5 border border-slate-300 text-center font-mono">
-                              {l2Avg.raw > 0 ? String(l2Avg.rounded).padStart(2, '0') : '--'}
+                              {renderGrade(l2Avg)}
                             </td>
                             <td className="p-2.5 border border-slate-300 text-center font-mono">
-                              {l3Avg.raw > 0 ? String(l3Avg.rounded).padStart(2, '0') : '--'}
+                              {renderGrade(l3Avg)}
                             </td>
                             <td className="p-2.5 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-sm text-blue-950">
-                              {finalScore.raw > 0 ? String(finalScore.rounded).padStart(2, '0') : '--'}
+                              {renderFinal(finalScore)}
                             </td>
                             <td className="p-2.5 border border-slate-300 text-center">
                               {finalScore.raw > 0 ? (
