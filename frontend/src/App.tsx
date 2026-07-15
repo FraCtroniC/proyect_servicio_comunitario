@@ -259,6 +259,28 @@ export default function App() {
       setSections(prev => prev.filter(s =>
         s.id !== String(payload.data.id_seccion)
       ));
+    } else if (event === 'estudiante:create') {
+      refreshStudents();
+    } else if (event === 'estudiante:update') {
+      const activePeriodId = periods.find(p => p.status === 'Activo')?.id ? Number(periods.find(p => p.status === 'Activo')?.id) : undefined;
+      setStudents(prev => prev.map(s =>
+        s.id === String(payload.data.id_estudiante)
+          ? mapEstudianteToStudent(payload.data, matriculasCache, sections, activePeriodId) : s
+      ));
+    } else if (event === 'estudiante:delete') {
+      setStudents(prev => prev.filter(s =>
+        s.id !== String(payload.data.id_estudiante)
+      ));
+    } else if (event === 'representante:create') {
+      setRepresentatives(prev => [...prev, payload.data]);
+    } else if (event === 'representante:update') {
+      setRepresentatives(prev => prev.map(r =>
+        r.id_representante === payload.data.id_representante ? payload.data : r
+      ));
+    } else if (event === 'representante:delete') {
+      setRepresentatives(prev => prev.filter(r =>
+        r.id_representante !== payload.data.id_representante
+      ));
     }
   });
 
@@ -593,10 +615,6 @@ const handleLogout = async () => {
       const created = await api.post<any>('/api/estudiantes', estPayload);
       const studentId = created.id_estudiante || created.id;
 
-      setStudents(prev => prev.map(s =>
-        s.id === newStudent.id ? { ...s, id: String(studentId) } : s
-      ));
-
       const activePeriod = periods.find(p => p.status === 'Activo');
       const matchingSection = sections.find(s => s.grade === newStudent.academicYear && s.letter === newStudent.section);
       if (activePeriod && matchingSection) {
@@ -607,6 +625,8 @@ const handleLogout = async () => {
           estatus_matricula: 'Activo'
         }).catch((e: any) => console.warn('Matrícula no creada:', e.message));
       }
+
+      refreshStudents();
     } catch (e) {
       console.error(e);
       toast.error('Error al crear estudiante en BD');
@@ -616,7 +636,6 @@ const handleLogout = async () => {
   const handleUpdateStudentStatus = async (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => {
     try {
       await api.patch(`/api/estudiantes/${stripId(studentId)}`, { estatus_estudiante: status });
-      setStudents(p => p.map(s => s.id === studentId ? { ...s, status } : s));
     } catch (e) {
       console.error(e);
     }
@@ -660,8 +679,6 @@ const handleLogout = async () => {
       };
       
       await api.patch(`/api/estudiantes/${realId}`, estPayload);
-      
-      setStudents(p => p.map(s => s.id === studentId ? { ...s, ...updatedData } : s));
     } catch (e) {
       console.error(e);
       throw e;
@@ -938,6 +955,7 @@ const handleLogout = async () => {
       const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
 
       const matriculasList = Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [];
+      setMatriculasCache(matriculasList);
       setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, matriculasList, Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
       setRepresentatives(Array.isArray(representantesData) ? representantesData : []);
     } catch (e) {

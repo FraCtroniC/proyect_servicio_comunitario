@@ -428,12 +428,13 @@ export default function StudentManager({ students, sections, classrooms, current
       setMunicipio('');
       setEstado('');
       setErrors({});
+      setTimeout(() => setIsStudentModalOpen(false), 3000);
     } else {
       if (onUpdateStudentProfile) {
         try {
           await onUpdateStudentProfile(editingStudentId, newStudent);
           setFormSuccess('Datos del estudiante actualizados exitosamente.');
-          setTimeout(() => setIsStudentModalOpen(false), 1500);
+          setTimeout(() => setIsStudentModalOpen(false), 3000);
         } catch (err: any) {
           setFormError(err.message || 'Error al actualizar el estudiante');
           scrollToError();

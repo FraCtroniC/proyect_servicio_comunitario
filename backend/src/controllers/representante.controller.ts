@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Representante } from '../models/Representante';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 export const RepresentanteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
@@ -20,6 +21,7 @@ export const RepresentanteController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await Representante.create(req.body);
+    getIO().emit('representante:create', { data: result });
     res.status(201).json({ data: result });
   }),
 
@@ -31,6 +33,7 @@ export const RepresentanteController = {
       return;
     }
     await record.update(req.body);
+    getIO().emit('representante:update', { data: record });
     res.json({ data: record });
   }),
 
@@ -42,6 +45,7 @@ export const RepresentanteController = {
       return;
     }
     await record.destroy();
+    getIO().emit('representante:delete', { data: { id_representante: id } });
     res.status(204).send();
   }),
 };
