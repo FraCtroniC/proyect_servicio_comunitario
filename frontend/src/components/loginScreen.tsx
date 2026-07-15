@@ -470,7 +470,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
 
             <div className="space-y-1 2xl:space-y-2">
               <div className="flex justify-between items-center">
-                <label> className="text-sm 2xl:text-base text-slate-400 font-bold uppercase tracking-wider block">
+                <label className="text-sm 2xl:text-base text-slate-400 font-bold uppercase tracking-wider block">
                   Contraseña
                 </label>
                 <button
