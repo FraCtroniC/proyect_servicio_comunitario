@@ -1768,6 +1768,7 @@ const handleLogout = async () => {
               {activeTab === 'docentes' && (
                 <DocenteManager
                   docentes={docentes}
+                  users={users}
                   currentUserRole={currentUserRole}
                   onAddDocente={handleAddDocente}
                   onUpdateDocente={handleUpdateDocente}

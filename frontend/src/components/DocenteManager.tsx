@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, UserPlus, CheckCircle2, AlertCircle, PlusCircle, UserCheck } from 'lucide-react';
-import { Docente, UserRole, Especialidad } from '../types';
+import { Docente, UserRole, Especialidad, User } from '../types';
 import { Modal } from './Modal';
 import { api } from '../services/api';
 import { SearchableSelect } from './SearchableSelect';
 
 interface DocenteManagerProps {
   docentes: Docente[];
+  users: User[];
   currentUserRole: UserRole;
   onAddDocente: (docente: Omit<Docente, 'id'>) => Promise<string | undefined>;
   onUpdateDocente?: (id: string, docente: Omit<Docente, 'id'>) => Promise<void>;
@@ -14,7 +15,7 @@ interface DocenteManagerProps {
   onToggleDocenteActive: (id: string) => Promise<void>;
 }
 
-export default function DocenteManager({ docentes, currentUserRole, onAddDocente, onUpdateDocente, onDeleteDocente, onToggleDocenteActive }: DocenteManagerProps) {
+export default function DocenteManager({ docentes, users, currentUserRole, onAddDocente, onUpdateDocente, onDeleteDocente, onToggleDocenteActive }: DocenteManagerProps) {
   // Setup forms
   const [firstName, setFirstName] = useState('');
   const [secondName, setSecondName] = useState('');
@@ -58,21 +59,37 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     loadEspecialidades();
   }, []);
 
-  const checkCedula = (val: string, type: string) => {
+  const checkCedula = (val: string, type: string, isBlur: boolean = false) => {
     if (!val) {
       setCedulaError('');
       return;
     }
-    if (!val.trim().match(/^\d{7,9}$/)) {
+    const fullCedula = `${type}-${val.trim()}`;
+    const cleanCedula = val.trim();
+    
+    if (editingDocente && (editingDocente.cedula === fullCedula || editingDocente.cedula === cleanCedula)) {
+      setCedulaError('');
+      return;
+    }
+
+    const isDuplicateDocente = docentes.some(d => 
+      d.cedula === fullCedula || d.cedula === cleanCedula || d.cedula === `V-${cleanCedula}` || d.cedula === `E-${cleanCedula}`
+    );
+    const isDuplicateUser = users.some(u => 
+      u.username === fullCedula || u.username === cleanCedula || u.cedula === fullCedula || u.cedula === cleanCedula
+    );
+
+    if (isDuplicateDocente || isDuplicateUser) {
+      setCedulaError('Esta cédula ya está registrada.');
+      return;
+    } 
+
+    if (isBlur && !val.trim().match(/^\d{7,9}$/)) {
       setCedulaError('Formato inválido (Solo 7-9 números)');
       return;
     }
-    const fullCedula = `${type}-${val.trim()}`;
-    if (docentes.some(d => d.cedula === fullCedula)) {
-      setCedulaError('Esta cédula ya está registrada.');
-    } else {
-      setCedulaError('');
-    }
+    
+    setCedulaError('');
   };
 
   const checkDateOfBirth = (val: string) => {
@@ -188,8 +205,16 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
     }
     
     const fullCedula = `${cedulaType}-${cedula.trim()}`;
-    if (!editingDocente || editingDocente.cedula !== fullCedula) {
-      if (docentes.some(d => d.cedula === fullCedula)) {
+    const cleanCedula = cedula.trim();
+
+    if (!editingDocente || (editingDocente.cedula !== fullCedula && editingDocente.cedula !== cleanCedula)) {
+      const isDuplicateDocente = docentes.some(d => 
+        d.cedula === fullCedula || d.cedula === cleanCedula || d.cedula === `V-${cleanCedula}` || d.cedula === `E-${cleanCedula}`
+      );
+      const isDuplicateUser = users.some(u => 
+        u.username === fullCedula || u.username === cleanCedula || u.cedula === fullCedula || u.cedula === cleanCedula
+      );
+      if (isDuplicateDocente || isDuplicateUser) {
         setCedulaError('Esta cédula ya está registrada.');
         return;
       }
@@ -430,7 +455,7 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                     value={cedulaType}
                     onChange={(e) => {
                       setCedulaType(e.target.value);
-                      if (cedula) checkCedula(cedula, e.target.value);
+                      if (cedula) checkCedula(cedula, e.target.value, false);
                     }}
                     className={`text-base p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0 transition-colors`}
                   >
@@ -442,10 +467,11 @@ export default function DocenteManager({ docentes, currentUserRole, onAddDocente
                     type="text" 
                     value={cedula} 
                     onChange={e => {
-                      setCedula(e.target.value.replace(/\D/g, ''));
-                      setCedulaError('');
+                      const val = e.target.value.replace(/\D/g, '');
+                      setCedula(val);
+                      checkCedula(val, cedulaType, false);
                     }} 
-                    onBlur={(e) => checkCedula(e.target.value, cedulaType)}
+                    onBlur={(e) => checkCedula(e.target.value, cedulaType, true)}
                     className={`w-full text-base p-2 bg-slate-50 border ${cedulaError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:outline-hidden focus:bg-white transition-colors font-mono`} 
                     placeholder="Ej. 12345678" 
                   />

@@ -256,28 +256,55 @@ export default function StudentManager({ students, sections, classrooms, current
     setErrors(newErrors);
   };
 
-  const checkCedula = (val: string, type: 'student' | 'rep', natType: string) => {
-    if (!val) return;
-    const newErrors = { ...errors };
-    if (!validateCedula(val)) {
-      newErrors[type === 'student' ? 'cedula' : 'repCedula'] = 'Formato inválido (Solo 7-9 números)';
+  const checkCedula = (val: string, type: 'student' | 'rep', natType: string, isBlur: boolean = false) => {
+    if (!val) {
+      const newErrors = { ...errors };
+      delete newErrors[type === 'student' ? 'cedula' : 'repCedula'];
       setErrors(newErrors);
       return;
     }
     
     let fullCedula = `${natType}-${val.trim()}`;
+    let cleanCedula = val.trim();
+    const newErrors = { ...errors };
     
     if (type === 'student') {
-      const exists = students.some(s => s.cedula === fullCedula);
-      if (exists) newErrors['cedula'] = 'Esta cédula ya está registrada.';
-      else delete newErrors['cedula'];
+      const exists = students.some(s => 
+        (s.cedula === fullCedula || s.cedula === cleanCedula || s.cedula === `V-${cleanCedula}` || s.cedula === `E-${cleanCedula}`) && 
+        (!editingStudentId || s.id !== editingStudentId)
+      );
+      if (exists) {
+        newErrors['cedula'] = 'Esta cédula ya está registrada.';
+        setErrors(newErrors);
+        return;
+      } else {
+        delete newErrors['cedula'];
+      }
     } else {
       const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
       const currentRepCedula = currentStudent?.representativeCedula || '';
-      const exists = representatives.some(r => r.cedula_rep === fullCedula && r.cedula_rep !== currentRepCedula);
-      if (exists) newErrors['repCedula'] = 'Esta cédula de representante ya está registrada.';
-      else delete newErrors['repCedula'];
+      
+      const exists = representatives.some(r => {
+        const isDuplicate = r.cedula_rep === fullCedula || r.cedula_rep === cleanCedula || r.cedula_rep === `V-${cleanCedula}` || r.cedula_rep === `E-${cleanCedula}`;
+        const isNotCurrent = r.cedula_rep !== currentRepCedula && r.cedula_rep !== currentRepCedula.replace(/^[VvEe]-/, '');
+        return isDuplicate && isNotCurrent;
+      });
+
+      if (exists) {
+        newErrors['repCedula'] = 'Esta cédula de representante ya está registrada.';
+        setErrors(newErrors);
+        return;
+      } else {
+        delete newErrors['repCedula'];
+      }
     }
+
+    if (isBlur && !validateCedula(val)) {
+      newErrors[type === 'student' ? 'cedula' : 'repCedula'] = 'Formato inválido (Solo 7-9 números)';
+      setErrors(newErrors);
+      return;
+    }
+    
     setErrors(newErrors);
   };
 
@@ -655,7 +682,10 @@ export default function StudentManager({ students, sections, classrooms, current
                 <div className="flex">
                   <select
                     value={cedulaType}
-                    onChange={(e) => setCedulaType(e.target.value)}
+                    onChange={(e) => {
+                      setCedulaType(e.target.value);
+                      if (cedula) checkCedula(cedula, 'student', e.target.value, false);
+                    }}
                     className={`text-base p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
                   >
                     <option value="V">V</option>
@@ -665,8 +695,12 @@ export default function StudentManager({ students, sections, classrooms, current
                     type="text" 
                     placeholder="e.g. 32112443" 
                     value={cedula} 
-                    onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))}
-                    onBlur={(e) => checkCedula(e.target.value, 'student', cedulaType)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setCedula(val);
+                      checkCedula(val, 'student', cedulaType, false);
+                    }}
+                    onBlur={(e) => checkCedula(e.target.value, 'student', cedulaType, true)}
                     className={`w-full text-base p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
                   />
                 </div>
@@ -824,7 +858,10 @@ export default function StudentManager({ students, sections, classrooms, current
                 <div className="flex">
                   <select
                     value={repCedulaType}
-                    onChange={(e) => setRepCedulaType(e.target.value)}
+                    onChange={(e) => {
+                      setRepCedulaType(e.target.value);
+                      if (repCedula) checkCedula(repCedula, 'rep', e.target.value, false);
+                    }}
                     className={`text-base p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
                   >
                     <option value="V">V</option>
@@ -834,8 +871,12 @@ export default function StudentManager({ students, sections, classrooms, current
                     type="text" 
                     placeholder="e.g. 12111000" 
                     value={repCedula} 
-                    onChange={(e) => setRepCedula(e.target.value.replace(/\D/g, ''))}
-                    onBlur={(e) => checkCedula(e.target.value, 'rep', repCedulaType)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setRepCedula(val);
+                      checkCedula(val, 'rep', repCedulaType, false);
+                    }}
+                    onBlur={(e) => checkCedula(e.target.value, 'rep', repCedulaType, true)}
                     className={`w-full text-base p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
                   />
                 </div>
