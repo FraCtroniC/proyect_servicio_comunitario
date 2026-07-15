@@ -103,7 +103,7 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
-  
+
   // Phase 2 Seed arrays from Backend
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -309,17 +309,17 @@ export default function App() {
     sessionStorage.setItem('frontend_new_user', JSON.stringify(user));
   };
 
-const handleLogout = async () => {
-  try {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-  } catch {}
-  setIsLoggedIn(false);
-  setCurrentUser(null);
-  setCurrentUserRole('super_admin');
-  setActiveTab('dashboard');
-  sessionStorage.removeItem('liceo-auth-session');
-  sessionStorage.removeItem('frontend_new_user');
-};
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch { }
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setCurrentUserRole('super_admin');
+    setActiveTab('dashboard');
+    sessionStorage.removeItem('liceo-auth-session');
+    sessionStorage.removeItem('frontend_new_user');
+  };
 
   const daysAgo = (days: number): string => {
     const d = new Date();
@@ -374,7 +374,7 @@ const handleLogout = async () => {
             api.get<any[]>('/api/docentes').catch(() => ({ data: [] })),
             api.get<any[]>('/api/grados').catch(() => ({ data: [] }))
           ]);
-          
+
           const seccionesMap = aulasData.reduce((acc, a) => {
             if (a.secciones) a.secciones.forEach((s: any) => acc[s.id_seccion] = s);
             return acc;
@@ -390,13 +390,13 @@ const handleLogout = async () => {
           setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
-          
+
           const studyPlansList = planesData.map(mapPlanToStudyPlanItem);
           setStudyPlans(studyPlansList);
-          
+
           const dbEvaluationsList = (Array.isArray((evaluacionesPlanesResp as any)?.data) ? (evaluacionesPlanesResp as any).data : (Array.isArray(evaluacionesPlanesResp) ? evaluacionesPlanesResp : [])) || [];
           const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, planesData, seccionesMap);
-          
+
           setEvaluationPlans(dbPlans);
 
           setScheduleEvents(horariosData.map(mapHorarioToScheduleEvent));
@@ -408,7 +408,7 @@ const handleLogout = async () => {
           } else {
             setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
           }
-          
+
           setAuditLogs(auditoriaData.sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
           const periodosList = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
           setPeriods(periodosList.map(mapPeriodoToSchoolPeriod));
@@ -463,7 +463,7 @@ const handleLogout = async () => {
       api.get<any[]>('/api/usuarios').then(data => {
         const parsed = Array.isArray(data) ? data : (data as any)?.data || [];
         setUsers(parsed.map(mapUsuarioToUser));
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [activeTab, isLoggedIn]);
 
@@ -560,7 +560,7 @@ const handleLogout = async () => {
       if (data.password) dto.password = data.password;
       if (data.phone) dto.telefono = data.phone;
       if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : data.role === 'control_estudios' ? 8 : data.role === 'coordinador' ? 7 : 5;
-      
+
       await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
     } catch (e: any) {
       console.error(e);
@@ -662,7 +662,7 @@ const handleLogout = async () => {
   const handleUpdateStudentProfile = async (studentId: string, updatedData: Student) => {
     try {
       const realId = stripId(studentId);
-      
+
       const stuResp = await api.get<any>(`/api/estudiantes/${realId}`);
       const repId = stuResp.id_representante;
 
@@ -679,7 +679,7 @@ const handleLogout = async () => {
         };
         await api.patch(`/api/representantes/${repId}`, repPayload);
       }
-      
+
       const stuNameParts = updatedData.firstName.trim().split(' ');
       const stuLastParts = updatedData.lastName.trim().split(' ');
       const estPayload: any = {
@@ -695,7 +695,7 @@ const handleLogout = async () => {
         estado: updatedData.state,
         estatus_estudiante: updatedData.status
       };
-      
+
       await api.patch(`/api/estudiantes/${realId}`, estPayload);
     } catch (e) {
       console.error(e);
@@ -706,7 +706,7 @@ const handleLogout = async () => {
   const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
     // 1. Check if subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
-    
+
     if (!subjectId) {
       const subResp = await api.post<any>('/api/asignaturas', {
         nombre: name,
@@ -738,7 +738,7 @@ const handleLogout = async () => {
       setSubjects(p => [...p, newSub]);
       subjectId = newSub.id;
     }
-    
+
     // 2. Update the plan_estudio record
     await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
       id_asignatura: Number(subjectId),
@@ -804,7 +804,7 @@ const handleLogout = async () => {
       const created = await api.post<any>('/api/secciones', payload);
       const newSection = mapSeccionToSection(created);
       if (homeClassroomId && !newSection.homeClassroomId) {
-         newSection.homeClassroomId = homeClassroomId; // inject locally if backend drops it
+        newSection.homeClassroomId = homeClassroomId; // inject locally if backend drops it
       }
       return newSection;
     } catch (e: any) {
@@ -874,12 +874,12 @@ const handleLogout = async () => {
     try {
       const plan = studyPlans.find(p => p.subjectId === subId && Number(p.year) === year);
       if (!plan) throw new Error("Plan de estudio no encontrado para esta materia y año");
-      
+
       const realPlanId = Number(plan.id);
-      
+
       const seccion = sections.find(s => s.grade === year && s.letter === section);
       const realSectionId = seccion ? Number(seccion.id) : 1;
-      
+
       const payload = {
         id_plan: realPlanId,
         id_seccion: realSectionId,
@@ -892,18 +892,18 @@ const handleLogout = async () => {
       };
 
       const result = await api.post<any[]>('/api/evaluaciones/planes', payload);
-      
+
       // Update local state with real IDs from DB
       setEvaluationPlans(p => {
         const copy = [...p];
         const idx = copy.findIndex(pl => pl.subjectId === subId && pl.year === year && pl.section === section && pl.lapso === lap);
-        
+
         const mappedEvs = result.map((r: any) => ({
           id: String(r.id_evaluacion),
           name: r.descripcion,
           percentage: r.ponderacion
         }));
-        
+
         if (idx >= 0) {
           copy[idx] = { ...copy[idx], evaluations: mappedEvs };
         } else {
@@ -1179,22 +1179,22 @@ const handleLogout = async () => {
       if (idAsistencia) {
         const payload: any = { id_asistencia: idAsistencia, motivo };
         if (soporteDigital) payload.soporte_digital = soporteDigital;
-        
+
         const resp = await api.post<any>('/api/justificaciones', payload);
         const newJustificacion = resp.data;
-        
+
         setTeacherLogs(p => p.map(l => {
           if (l.id === logId) {
             const currentJusts = l.justificaciones || [];
-            return { 
-              ...l, 
-              status: 'Justified', 
-              justificaciones: [...currentJusts, newJustificacion] 
+            return {
+              ...l,
+              status: 'Justified',
+              justificaciones: [...currentJusts, newJustificacion]
             };
           }
           return l;
         }));
-        
+
         return true;
       }
       return false;
@@ -1239,7 +1239,7 @@ const handleLogout = async () => {
     try {
       const id = Number(evtId.replace(/\D/g, ''));
       if (!id) return;
-      
+
       const payload: any = {};
       if (evt.day) {
         const dayObj = referenceData.dias.find((d: any) => d.nombre === evt.day);
@@ -1300,7 +1300,7 @@ const handleLogout = async () => {
       if (data.capacity) payload.capacidad = data.capacity;
       if (data.type) payload.tipo_espacio = data.type;
       if (data.location !== undefined) payload.ubicacion = data.location;
-      
+
       await api.patch<any>(`/api/aulas/${id}`, payload);
     }
   };
@@ -1324,16 +1324,16 @@ const handleLogout = async () => {
       group: 'Configuración Inicial',
       items: [
         { id: 'periods', label: 'Periodos Escolares', icon: CalendarDays, allowedRoles: ['super_admin', 'control_estudios'] },
-        { id: 'users', label: 'Roles de Acceso', icon: Shield, allowedRoles: ['super_admin'] },
-        { id: 'facilities', label: 'Salones & Aulas', icon: Home, allowedRoles: ['super_admin', 'control_estudios'] }
+        { id: 'users', label: 'Usuarios', icon: Shield, allowedRoles: ['super_admin'] },
+        { id: 'facilities', label: 'Salones y Aulas', icon: Home, allowedRoles: ['super_admin', 'control_estudios'] }
       ]
     },
     {
       group: 'Planificación Académica',
       items: [
         { id: 'subjects', label: 'Plan de Estudio', icon: Book, allowedRoles: ['super_admin', 'control_estudios'] },
-        { id: 'docentes', label: 'Gestión de Docentes', icon: Briefcase, allowedRoles: ['super_admin', 'control_estudios'] },
-        { id: 'schedule', label: 'Estructura Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'docente'] }
+        { id: 'docentes', label: 'Personal Docente', icon: Briefcase, allowedRoles: ['super_admin', 'control_estudios'] },
+        { id: 'schedule', label: 'Programacion Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'docente'] }
       ]
     },
     {
@@ -1404,14 +1404,14 @@ const handleLogout = async () => {
 
   return (
     <div id="mppe-app-root" className="h-screen overflow-hidden bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
-      <Toaster 
-        position="top-center" 
-        toastOptions={{ 
-          duration: 4000, 
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
           style: { fontSize: '13px', fontWeight: 'bold', borderRadius: '12px' },
           success: { style: { background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' } },
           error: { style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }, duration: 6000 }
-        }} 
+        }}
       />
 
       {/* Top Banner Warning context (Simulated) */}
@@ -1439,11 +1439,11 @@ const handleLogout = async () => {
             {/* Brand Logo Banner */}
             <div id="mppe-logo-banner" className="px-5 mb-8 flex items-center gap-3 shrink-0 relative mt-2">
               <div className="absolute left-3 top-0 w-10 h-10 bg-blue-500/30 blur-xl rounded-full"></div>
-              
+
               <div className="h-11 w-11 bg-white rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-white/10 relative z-10 overflow-hidden p-0.5">
                 <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-contain rounded-lg" />
               </div>
-              
+
               <div className="relative z-10 min-w-0">
                 <span className="block font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-base tracking-widest uppercase leading-none mb-1">
                   Estilita Orozco
@@ -1475,8 +1475,8 @@ const handleLogout = async () => {
                             setIsMobileMenuOpen(false);
                           }}
                           className={`w-full py-2.5 px-3.5 rounded-xl text-sm font-bold font-sans transition-all flex items-center justify-between pointer-events-auto cursor-pointer ${isActive
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                              : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                            : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
                             }`}
                         >
                           <span className="flex items-center gap-3">
@@ -1515,7 +1515,7 @@ const handleLogout = async () => {
                   <span className="block text-sm text-slate-400 font-bold uppercase tracking-tight truncate">{currentRoleLabel}</span>
                 </div>
               </button>
-              
+
               <button
                 onClick={handleLogout}
                 className="w-full py-1.5 px-3 bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-bold uppercase tracking-wide rounded-lg shadow-sm border border-rose-500/50 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
@@ -1523,7 +1523,7 @@ const handleLogout = async () => {
                 <LogOut className="h-3.5 w-3.5" /> Cerrar Sesión
               </button>
             </div>
-            
+
             <div className="text-sm text-slate-600 text-center font-mono leading-relaxed px-2">
               Homologación MPPE Venezuela © 2026. LOPNA compilado.
             </div>
@@ -1591,8 +1591,8 @@ const handleLogout = async () => {
                             setIsMobileMenuOpen(false);
                           }}
                           className={`w-full py-2.5 px-3.5 rounded-xl text-sm font-bold transition-all flex items-center gap-3 pointer-events-auto cursor-pointer ${isActive
-                              ? 'bg-blue-600 text-white'
-                              : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-slate-800 hover:text-slate-100 text-slate-400'
                             }`}
                         >
                           <Icon className="h-4.5 w-4.5" />
