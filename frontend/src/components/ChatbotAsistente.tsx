@@ -98,16 +98,16 @@ export default function ChatbotAsistente({ roleId = 3, userName = '' }: ChatbotA
           }}
         >
           <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600/90 to-indigo-700/90 border-b border-white/10 shrink-0">
-            <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+            <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-base">
               <MessageCircle className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-white font-bold text-sm truncate">
+              <div className="text-white font-bold text-base truncate">
                 Asistente - {ROLE_LABELS[roleId] || 'Usuario'}
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-400 inline-block" />
-                <span className="text-[10px] text-green-300 font-medium">En línea</span>
+                <span className="text-xs text-green-300 font-medium">En línea</span>
               </div>
             </div>
             <button
@@ -131,7 +131,7 @@ export default function ChatbotAsistente({ roleId = 3, userName = '' }: ChatbotA
                 style={{ animation: 'chatbotFadeIn 0.2s ease-out' }}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-base leading-relaxed ${
                     msg.emisor === 'usuario'
                       ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-br-md'
                       : 'bg-slate-800/80 text-slate-200 rounded-bl-md border border-slate-700/40'
@@ -145,7 +145,7 @@ export default function ChatbotAsistente({ roleId = 3, userName = '' }: ChatbotA
 
             {cargando && (
               <div className="flex justify-start" style={{ animation: 'chatbotFadeIn 0.2s ease-out' }}>
-                <div className="bg-slate-800/80 text-slate-400 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm border border-slate-700/40 flex items-center gap-2">
+                <div className="bg-slate-800/80 text-slate-400 rounded-2xl rounded-bl-md px-4 py-2.5 text-base border border-slate-700/40 flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
                   Pensando...
                 </div>
@@ -163,7 +163,7 @@ export default function ChatbotAsistente({ roleId = 3, userName = '' }: ChatbotA
                 onKeyDown={handleKeyDown}
                 placeholder="Escribe tu consulta..."
                 disabled={cargando}
-                className="flex-1 bg-slate-800/80 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm border border-slate-700/60 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 transition-all disabled:opacity-50"
+                className="flex-1 bg-slate-800/80 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-base border border-slate-700/60 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 transition-all disabled:opacity-50"
               />
               <button
                 onClick={enviar}

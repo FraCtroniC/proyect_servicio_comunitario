@@ -38,13 +38,13 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
   const getRoleBadge = (r: UserRole) => {
     switch (r) {
       case 'super_admin':
-        return <span className="bg-red-50 text-red-700 border border-red-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Director/Principal</span>;
+        return <span className="bg-red-50 text-red-700 border border-red-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Director/Principal</span>;
       case 'control_estudios':
-        return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Ctrl de Estudios</span>;
+        return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Ctrl de Estudios</span>;
       case 'coordinador':
-        return <span className="bg-amber-50 text-amber-700 border border-amber-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Coordinador</span>;
+        return <span className="bg-amber-50 text-amber-700 border border-amber-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Coordinador</span>;
       case 'docente':
-        return <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[10px] px-2 py-0.5 rounded-full font-bold">Docente</span>;
+        return <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-xs px-2 py-0.5 rounded-full font-bold">Docente</span>;
     }
   };
 
@@ -130,7 +130,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
       <div id="user-manager-container" className="space-y-8 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
 
       {successMsg && (
-        <div id="user-success" className="p-3 bg-indigo-50 text-indigo-800 text-xs rounded-lg flex items-center gap-2 border border-indigo-100">
+        <div id="user-success" className="p-3 bg-indigo-50 text-indigo-800 text-sm rounded-lg flex items-center gap-2 border border-indigo-100">
           <CheckCircle2 className="h-4 bg-transparent text-indigo-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
@@ -142,13 +142,13 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
         {/* Users List */}
         <div id="users-list-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
           <div id="users-list-header" className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-800 tracking-tight">Cuentas de Acceso del Sistema</h3>
+            <h3 className="text-base font-bold text-slate-800 tracking-tight">Cuentas de Acceso del Sistema</h3>
             <div className="flex items-center gap-4">
-              <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Total Cuentas: {users.length}</span>
+              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Total Cuentas: {users.length}</span>
               {['super_admin'].includes(currentUserRole) && (
                 <button
                   onClick={openAddModal}
-                  className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-700 flex items-center gap-1 cursor-pointer"
+                  className="bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-700 flex items-center gap-1 cursor-pointer"
                 >
                   <UserPlus className="h-4 w-4" />
                   Agregar
@@ -164,10 +164,10 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
                   <img id={`user-avatar-${u.id}`} src={u.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=80'} className="h-10 w-10 rounded-full object-cover border border-slate-200" alt="avatar" />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-800 leading-tight">{u.name}</span>
+                      <span className="text-sm font-bold text-slate-800 leading-tight">{u.name}</span>
                       {getRoleBadge(u.role)}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-1 text-[11px] text-slate-400">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-1 text-sm text-slate-400">
                       <span className="font-medium text-slate-500 font-mono">{u.cedula}</span>
                       <span>•</span>
                       <span>{u.email}</span>
@@ -210,13 +210,13 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
                     </button>
                     {['super_admin'].includes(currentUserRole) && (
                       <div className="flex items-center gap-2 ml-2">
-                        <button onClick={() => openEditModal(u)} className="text-xs text-blue-600 hover:underline cursor-pointer">Editar</button>
-                        <button onClick={() => triggerDelete(u)} className="text-xs text-red-600 hover:underline cursor-pointer">Eliminar</button>
+                        <button onClick={() => openEditModal(u)} className="text-sm text-blue-600 hover:underline cursor-pointer">Editar</button>
+                        <button onClick={() => triggerDelete(u)} className="text-sm text-red-600 hover:underline cursor-pointer">Eliminar</button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <span className="text-[10px] text-slate-300 font-medium">Solo lectura</span>
+                  <span className="text-xs text-slate-300 font-medium">Solo lectura</span>
                 )}
               </div>
             ))}
@@ -225,7 +225,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
             <div className="pt-2 flex justify-center border-t border-slate-100 mt-4">
               <button
                 onClick={() => setShowAllUsers(!showAllUsers)}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 px-4 rounded-lg hover:bg-indigo-50 cursor-pointer"
+                className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 px-4 rounded-lg hover:bg-indigo-50 cursor-pointer"
               >
                 {showAllUsers ? 'Ocultar usuarios' : `Ver más (${users.length - 5} ocultos)`}
               </button>
@@ -237,29 +237,29 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUserId ? "Editar Usuario" : "Nuevo Usuario"}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {errorMsg && <div className="text-red-600 text-xs bg-red-50 p-2 rounded whitespace-pre-line">{errorMsg}</div>}
+          {errorMsg && <div className="text-red-600 text-sm bg-red-50 p-2 rounded whitespace-pre-line">{errorMsg}</div>}
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Nombre</label>
-            <input type="text" required value={name} onChange={e => setName(e.target.value)} readOnly={!isDocente} className={`mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm ${!isDocente ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`} />
+            <label className="block text-sm font-semibold text-slate-700">Nombre</label>
+            <input type="text" required value={name} onChange={e => setName(e.target.value)} readOnly={!isDocente} className={`mt-1 w-full p-2 border border-slate-300 rounded-lg text-base ${!isDocente ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Usuario / Cedula</label>
-            <input type="text" required value={cedula} onChange={e => handleCedulaChange(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-sm ${fieldErrors.username ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
-            {fieldErrors.username && <p className="text-red-600 text-[11px] mt-1">{fieldErrors.username}</p>}
+            <label className="block text-sm font-semibold text-slate-700">Usuario / Cedula</label>
+            <input type="text" required value={cedula} onChange={e => handleCedulaChange(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.username ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            {fieldErrors.username && <p className="text-red-600 text-sm mt-1">{fieldErrors.username}</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Email</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-sm ${fieldErrors.correo ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
-            {fieldErrors.correo && <p className="text-red-600 text-[11px] mt-1">{fieldErrors.correo}</p>}
+            <label className="block text-sm font-semibold text-slate-700">Email</label>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.correo ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            {fieldErrors.correo && <p className="text-red-600 text-sm mt-1">{fieldErrors.correo}</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Teléfono</label>
-            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="xxxx-xxxxxxx" className={`mt-1 w-full p-2 border rounded-lg text-sm ${fieldErrors.telefono ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
-            {fieldErrors.telefono && <p className="text-red-600 text-[11px] mt-1">{fieldErrors.telefono}</p>}
+            <label className="block text-sm font-semibold text-slate-700">Teléfono</label>
+            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="xxxx-xxxxxxx" className={`mt-1 w-full p-2 border rounded-lg text-base ${fieldErrors.telefono ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-slate-300'}`} />
+            {fieldErrors.telefono && <p className="text-red-600 text-sm mt-1">{fieldErrors.telefono}</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Rol</label>
-            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm">
+            <label className="block text-sm font-semibold text-slate-700">Rol</label>
+            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-base">
               <option value="docente">Docente</option>
               <option value="control_estudios">Control de Estudios</option>
               <option value="coordinador">Coordinador</option>
@@ -267,12 +267,12 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Contraseña {editingUserId ? '(Dejar en blanco para no cambiar)' : ''}</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-sm" />
+            <label className="block text-sm font-semibold text-slate-700">Contraseña {editingUserId ? '(Dejar en blanco para no cambiar)' : ''}</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 w-full p-2 border border-slate-300 rounded-lg text-base" />
           </div>
           <div className="flex justify-end gap-3 mt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
-            <button type="submit" className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Guardar</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="submit" className="px-4 py-2 text-base text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Guardar</button>
           </div>
         </form>
       </Modal>
@@ -280,7 +280,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
       {/* Modal de Eliminación */}
       <Modal isOpen={!!deletingUser} onClose={() => setDeletingUser(null)} title="Confirmar Eliminación">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-base text-slate-600 leading-relaxed">
             Esta acción es irreversible. Para confirmar que deseas eliminar al usuario <strong className="text-slate-800">{deletingUser?.name}</strong>, por favor escribe su nombre exactamente en el campo de abajo.
           </p>
           <div>
@@ -288,17 +288,17 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
               type="text" 
               value={deleteConfirmText} 
               onChange={e => setDeleteConfirmText(e.target.value)} 
-              className="w-full p-2 border border-slate-300 rounded-lg text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none" 
+              className="w-full p-2 border border-slate-300 rounded-lg text-base focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none" 
               placeholder={`Escribe: ${deletingUser?.name}`}
             />
           </div>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <button type="button" onClick={() => setDeletingUser(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button type="button" onClick={() => setDeletingUser(null)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
             <button 
               type="button" 
               onClick={confirmDelete}
               disabled={deleteConfirmText !== deletingUser?.name}
-              className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              className="px-4 py-2 text-base font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               Eliminar Permanentemente
             </button>

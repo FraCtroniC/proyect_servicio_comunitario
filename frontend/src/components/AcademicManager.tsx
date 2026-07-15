@@ -131,7 +131,7 @@ export default function AcademicManager({
     setIsSectionModalOpen(true);
   };
 
-  const inputBase = "w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden transition-colors";
+  const inputBase = "w-full text-sm p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden transition-colors";
   const inputNormal = `${inputBase} border-slate-200 focus:border-indigo-500`;
   const inputError = `${inputBase} border-rose-400 focus:border-rose-500`;
 
@@ -144,9 +144,9 @@ export default function AcademicManager({
             <Layers className="h-6 w-6 text-indigo-600" />
             Gestión de Secciones
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Administración de Secciones Activas por Grado y Periodo Escolar.</p>
+          <p className="text-sm text-slate-500 mt-1">Administración de Secciones Activas por Grado y Periodo Escolar.</p>
         </div>
-        <span className="text-[10px] bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded mt-2 md:mt-0">
+        <span className="text-xs bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded mt-2 md:mt-0">
           Total: {filteredSections.length} secciones
         </span>
       </div>
@@ -155,7 +155,7 @@ export default function AcademicManager({
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-800">Secciones Aperturadas</h3>
+              <h3 className="text-base font-bold text-slate-800">Secciones Aperturadas</h3>
               <div className="w-56">
                 <SearchableSelect
                   value={viewPeriod}
@@ -173,7 +173,7 @@ export default function AcademicManager({
               <select
                 value={viewGrade}
                 onChange={(e) => setViewGrade(Number(e.target.value))}
-                className="text-[10px] p-1.5 bg-slate-50 border border-slate-200 rounded font-bold"
+                className="text-xs p-1.5 bg-slate-50 border border-slate-200 rounded font-bold"
               >
                 <option value={0}>Todos los Años</option>
                 {[1,2,3,4,5].map(g => (
@@ -184,7 +184,7 @@ export default function AcademicManager({
             {['super_admin', 'control_estudios'].includes(currentUserRole) && (
               <button
                 onClick={openCreateModal}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
               >
                 <Layers className="w-4 h-4" />
                 Aperturar Sección
@@ -196,7 +196,7 @@ export default function AcademicManager({
             <div className="space-y-3">
               {Object.entries(groupedSections).sort(([a], [b]) => Number(a) - Number(b)).map(([grade, secs]) => (
                 <div key={grade} className="bg-slate-50/50 rounded-lg p-3">
-                  <h4 className="text-xs font-bold text-slate-700 mb-2">{grade}° Año</h4>
+                  <h4 className="text-sm font-bold text-slate-700 mb-2">{grade}° Año</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                     {secs.map(s => {
                       const aula = getClassroom(s.homeClassroomId);
@@ -210,8 +210,8 @@ export default function AcademicManager({
                           className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
                         >
                           <div>
-                            <span className="text-sm font-black text-indigo-700">Sección "{s.letter}"</span>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+                            <span className="text-base font-black text-indigo-700">Sección "{s.letter}"</span>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                               <Users className="h-3 w-3" />
                               <span>{ocupados} / {cupos || '?'} cupos</span>
                               <ChevronRight className="h-3 w-3" />
@@ -219,8 +219,8 @@ export default function AcademicManager({
                             </div>
                             {aula && (
                                <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
-                                  <span className="text-[9px] font-bold text-slate-400">Aula Base: <span className="text-slate-700">{aula.name}</span></span>
-                                  {isFull && <span className="text-[9px] text-rose-600 bg-rose-50 px-1 rounded font-bold">LLENO</span>}
+                                  <span className="text-sm font-bold text-slate-400">Aula Base: <span className="text-slate-700">{aula.name}</span></span>
+                                  {isFull && <span className="text-sm text-rose-600 bg-rose-50 px-1 rounded font-bold">LLENO</span>}
                                </div>
                             )}
                           </div>
@@ -232,7 +232,7 @@ export default function AcademicManager({
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center text-slate-500 text-xs">
+            <div className="p-8 text-center text-slate-500 text-sm">
               {viewGrade === 0 && viewPeriod === 'all'
                 ? 'No hay secciones aperturadas. Use el botón "Aperturar Sección" para crear una nueva.'
                 : `No hay secciones para los filtros seleccionados.`}
@@ -244,14 +244,14 @@ export default function AcademicManager({
       <Modal isOpen={isSectionModalOpen} onClose={() => setIsSectionModalOpen(false)} title="Aperturar Nueva Sección">
         <form onSubmit={handleCreateSection} className="space-y-4">
           {secError && (
-            <div className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-[11px]">{secError}</div>
+            <div className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-sm">{secError}</div>
           )}
           {secSuccess && (
-            <div className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-[11px]">{secSuccess}</div>
+            <div className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-sm">{secSuccess}</div>
           )}
 
           <div className="space-y-0.5">
-            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Periodo Académico</label>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Periodo Académico</label>
             <select
               value={secPeriodo}
               onChange={(e) => {
@@ -269,7 +269,7 @@ export default function AcademicManager({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Grado / Año</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Grado / Año</label>
               <select
                 value={secGrado}
                 onChange={(e) => {
@@ -284,10 +284,10 @@ export default function AcademicManager({
                   <option key={g} value={g}>{g}° Año</option>
                 ))}
               </select>
-              {secGradoError && <p className="text-rose-500 text-xs mt-1 font-semibold">{secGradoError}</p>}
+              {secGradoError && <p className="text-rose-500 text-sm mt-1 font-semibold">{secGradoError}</p>}
             </div>
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Letra</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Letra</label>
               <select
                 value={secLetra}
                 onChange={(e) => {
@@ -301,13 +301,13 @@ export default function AcademicManager({
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
-              {secLetraError && <p className="text-rose-500 text-xs mt-1 font-semibold">{secLetraError}</p>}
+              {secLetraError && <p className="text-rose-500 text-sm mt-1 font-semibold">{secLetraError}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Docente Guía</label>
               <SearchableSelect
                 options={docentes.map(d => ({ value: d.id, label: `${d.firstName} ${d.lastName} ${d.cedula ? `(${d.cedula})` : ''}` }))}
                 value={secDocente}
@@ -317,7 +317,7 @@ export default function AcademicManager({
             </div>
             
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
               <SearchableSelect
                 options={(classrooms || []).filter(c => c.type === 'Teórica').map(c => {
                   const isTaken = sections.some(s => s.homeClassroomId === c.id);
@@ -337,7 +337,7 @@ export default function AcademicManager({
           <button
             type="submit"
             disabled={secLoading}
-            className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-400 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+            className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
           >
             {secLoading ? 'Creando...' : 'Aperturar Sección'}
           </button>
@@ -359,8 +359,8 @@ export default function AcademicManager({
                 <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-lg">
                   <GraduationCap className="h-8 w-8 text-indigo-600" />
                   <div>
-                    <p className="text-sm font-black text-indigo-800">{selectedSection.grade}° Año - Sección "{selectedSection.letter}"</p>
-                    <p className="text-[10px] text-indigo-500 font-medium">ID: {selectedSection.id}</p>
+                    <p className="text-base font-black text-indigo-800">{selectedSection.grade}° Año - Sección "{selectedSection.letter}"</p>
+                    <p className="text-xs text-indigo-500 font-medium">ID: {selectedSection.id}</p>
                   </div>
                 </div>
 
@@ -368,10 +368,10 @@ export default function AcademicManager({
                   <div className="bg-slate-50 rounded-lg p-3">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Layers className="h-3 w-3 text-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Periodo</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase">Periodo</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-800">{period?.name || 'No definido'}</p>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${
+                    <p className="text-sm font-bold text-slate-800">{period?.name || 'No definido'}</p>
+                    <span className={`text-sm font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${
                       period?.status === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {period?.status || 'N/A'}
@@ -381,13 +381,13 @@ export default function AcademicManager({
                   <div className="bg-slate-50 rounded-lg p-3">
                     <div className="flex items-center gap-1.5 mb-1">
                       <UserCheck className="h-3 w-3 text-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Docente Guía</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase">Docente Guía</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-800">
+                    <p className="text-sm font-bold text-slate-800">
                       {teacher ? `${teacher.firstName} ${teacher.lastName}` : `Docente #${selectedSection.teacherGuideId}`}
                     </p>
                     {teacher?.cedula && (
-                      <p className="text-[10px] text-slate-500 mt-0.5">{teacher.cedula}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{teacher.cedula}</p>
                     )}
                   </div>
                 </div>
@@ -396,22 +396,22 @@ export default function AcademicManager({
                   <div className="bg-slate-50 rounded-lg p-3">
                     <div className="flex items-center gap-1.5 mb-1">
                       <MapPin className="h-3 w-3 text-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Aula Base</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase">Aula Base</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-800">{aula?.name || 'No asignada'}</p>
+                    <p className="text-sm font-bold text-slate-800">{aula?.name || 'No asignada'}</p>
                     {aula && (
-                      <p className="text-[10px] text-slate-500 mt-0.5">Capacidad: {aula.capacity}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Capacidad: {aula.capacity}</p>
                     )}
                   </div>
 
                   <div className="bg-slate-50 rounded-lg p-3">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Users className="h-3 w-3 text-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Estudiantes</span>
+                      <span className="text-xs font-bold text-slate-500 uppercase">Estudiantes</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-800">{ocupados} / {cupos || '?'} cupos</p>
+                    <p className="text-sm font-bold text-slate-800">{ocupados} / {cupos || '?'} cupos</p>
                     {isFull && (
-                      <span className="text-[9px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">LLENO</span>
+                      <span className="text-sm text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">LLENO</span>
                     )}
                     {cupos > 0 && !isFull && (
                       <div className="mt-1.5 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -426,7 +426,7 @@ export default function AcademicManager({
 
                 <button
                   onClick={() => setSelectedSection(null)}
-                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors"
+                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-lg transition-colors"
                 >
                   Cerrar
                 </button>

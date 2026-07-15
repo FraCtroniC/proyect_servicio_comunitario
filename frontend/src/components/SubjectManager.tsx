@@ -141,7 +141,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
             <Book className="h-6 w-6 text-indigo-600" />
             Configuración del Plan de Estudio
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Gestión de códigos y posiciones de materias según normativa MPPE.</p>
+          <p className="text-sm text-slate-500 mt-1">Gestión de códigos y posiciones de materias según normativa MPPE.</p>
         </div>
         {canEdit && (
           <div className="mt-4 md:mt-0 flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
               <select
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value === 'Todos' ? 'Todos' : Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-slate-600 focus:outline-hidden"
+                className="bg-transparent text-sm font-bold text-slate-600 focus:outline-hidden"
               >
                 <option value="Todos">Todos los Años</option>
                 <option value={1}>1er Año</option>
@@ -162,7 +162,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
             </div>
             <button
               onClick={openAddModal}
-              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Agregar Materia
@@ -174,16 +174,16 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
       {/* Main layout */}
       <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <h3 className="text-sm font-bold text-slate-800">Materias del Plan de Estudio {filterYear !== 'Todos' ? `(${filterYear}° Año)` : ''}</h3>
+          <h3 className="text-base font-bold text-slate-800">Materias del Plan de Estudio {filterYear !== 'Todos' ? `(${filterYear}° Año)` : ''}</h3>
         </div>
         
         {filteredPlans.length === 0 ? (
           <div className="text-center p-8 border-2 border-dashed border-slate-100 rounded-lg">
-            <p className="text-xs font-semibold text-slate-400">No hay materias registradas en este año.</p>
+            <p className="text-sm font-semibold text-slate-400">No hay materias registradas en este año.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-200">
                   <th className="p-3 font-bold w-24 text-center">CÓDIGO</th>
@@ -198,12 +198,12 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                 {filteredPlans.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="p-3 text-center">
-                      <span className="bg-slate-100 text-slate-600 font-mono font-bold px-2 py-1 rounded text-[10px]">
+                      <span className="bg-slate-100 text-slate-600 font-mono font-bold px-2 py-1 rounded text-xs">
                         {item.codigo || '-'}
                       </span>
                     </td>
                     <td className="p-3 text-center">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded ${
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${
                         item.tipoCalificacion === 'Cualitativo' 
                           ? 'bg-violet-100 text-violet-700' 
                           : 'bg-emerald-100 text-emerald-700'
@@ -219,7 +219,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => openEditModal(item)}
-                            className="text-xs text-slate-500 hover:text-indigo-600 transition-colors font-bold cursor-pointer"
+                            className="text-sm text-slate-500 hover:text-indigo-600 transition-colors font-bold cursor-pointer"
                           >
                             Editar
                           </button>
@@ -228,7 +228,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                               setPlanToDelete(item);
                               setIsDeleteModalOpen(true);
                             }}
-                            className="text-xs text-rose-500 hover:text-rose-700 transition-colors font-bold cursor-pointer"
+                            className="text-sm text-rose-500 hover:text-rose-700 transition-colors font-bold cursor-pointer"
                           >
                             Eliminar
                           </button>
@@ -251,40 +251,40 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
         <form onSubmit={handleSubmit} className="space-y-4">
           
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Materia</label>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Materia</label>
             <input 
               type="text"
               placeholder="Ej. Castellano"
               value={nombre}
               onChange={(e) => handleFieldChange('nombre', e.target.value, setNombre)}
               onBlur={() => checkDuplicate('nombre')}
-              className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.nombre ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
+              className={`w-full text-sm p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.nombre ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
               required
             />
-            {fieldErrors.nombre && <p className="text-red-600 text-[11px]">{fieldErrors.nombre}</p>}
+            {fieldErrors.nombre && <p className="text-red-600 text-sm">{fieldErrors.nombre}</p>}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Código Asignatura</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Código Asignatura</label>
               <input 
                 type="text"
                 placeholder="Ej. CAS1"
                 value={codigo}
                 onChange={(e) => handleFieldChange('codigo', e.target.value.toUpperCase(), setCodigo)}
                 onBlur={() => checkDuplicate('codigo')}
-                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-mono font-bold uppercase ${fieldErrors.codigo ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
+                className={`w-full text-sm p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-mono font-bold uppercase ${fieldErrors.codigo ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
                 required
               />
-              {fieldErrors.codigo && <p className="text-red-600 text-[11px]">{fieldErrors.codigo}</p>}
+              {fieldErrors.codigo && <p className="text-red-600 text-sm">{fieldErrors.codigo}</p>}
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Tipo de Calificación</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Tipo de Calificación</label>
               <select
                 value={tipoCalificacion}
                 onChange={(e) => setTipoCalificacion(e.target.value)}
-                className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
+                className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
               >
                 <option value="Cuantitativo">Cuantitativo (Numérico 1-20)</option>
                 <option value="Cualitativo">Cualitativo (Letras A-D)</option>
@@ -292,27 +292,27 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Posición en Boletín</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Posición en Boletín</label>
               <input 
                 type="number"
                 min="1"
                 value={posicion}
                 onChange={(e) => handleFieldChange('posicion', e.target.value, setPosicion, 'number')}
                 onBlur={() => checkDuplicate('posicion')}
-                className={`w-full text-xs p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.posicion ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
+                className={`w-full text-sm p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden font-medium ${fieldErrors.posicion ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-indigo-500'}`}
                 required
               />
-              {fieldErrors.posicion && <p className="text-red-600 text-[11px]">{fieldErrors.posicion}</p>}
+              {fieldErrors.posicion && <p className="text-red-600 text-sm">{fieldErrors.posicion}</p>}
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Año Escolar</label>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Año Escolar</label>
             <select
               value={year}
               onChange={(e) => { setYear(Number(e.target.value)); }}
               onBlur={() => { checkDuplicate('codigo'); checkDuplicate('posicion'); }}
-              className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
             >
               <option value={1}>1er Año</option>
               <option value={2}>2do Año</option>
@@ -326,7 +326,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
             <button
               type="submit"
               disabled={Object.keys(fieldErrors).length > 0}
-              className={`px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors cursor-pointer ${Object.keys(fieldErrors).length > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className={`px-4 py-2 text-base font-bold text-white rounded-lg transition-colors cursor-pointer ${Object.keys(fieldErrors).length > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               {editingPlan ? "Guardar Cambios" : "Guardar Materia"}
             </button>
@@ -337,11 +337,11 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
       {/* Delete Confirmation Modal */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-base text-slate-600 leading-relaxed">
             ¿Está seguro de eliminar la materia <span className="font-bold text-slate-800">{planToDelete?.subjectName}</span> del plan de estudio?
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
             <button 
               onClick={() => {
                 if (planToDelete && onDeleteStudyPlanItem) {
@@ -350,7 +350,7 @@ export default function SubjectManager({ studyPlans, currentUserRole, onAddStudy
                   setPlanToDelete(null);
                 }
               }}
-              className="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-base font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
             >
               Eliminar
             </button>

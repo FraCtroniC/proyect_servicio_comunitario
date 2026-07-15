@@ -123,13 +123,13 @@ export default function Dashboard({ students, users, attendance, grades, subject
         <div id="banner-decoration-2" className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-blue-500/20 blur-xl"></div>
         
         <div id="banner-content" className="relative z-10 space-y-2">
-          <span className="bg-blue-500/30 border border-blue-400/30 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase">
+          <span className="bg-blue-500/30 border border-blue-400/30 px-3 py-1 rounded-full text-sm font-semibold tracking-wider uppercase">
             Año Escolar Activo: 2025 - 2026
           </span>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Estilita Orozco
           </h1>
-          <p className="text-blue-100 text-sm max-w-2xl leading-relaxed">
+          <p className="text-blue-100 text-base max-w-2xl leading-relaxed">
             Plataforma homologada de Control de Estudios para Educación Media General. 
             Cumplimiento absoluto con la normativa del MPPE (Calificaciones 1-20, Redondeo Oficial Art. 108 del RLOE, y protección LOPNA).
           </p>
@@ -144,9 +144,9 @@ export default function Dashboard({ students, users, attendance, grades, subject
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Estudiantes</p>
-            <h3 className="text-2xl font-bold text-slate-800 mt-1">{activeStudents}<span className="text-slate-300 text-xs font-normal"> / {totalStudents}</span></h3>
-            <p className="text-[10px] text-green-600 font-medium">Activos en el sistema</p>
+            <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Estudiantes</p>
+            <h3 className="text-2xl font-bold text-slate-800 mt-1">{activeStudents}<span className="text-slate-300 text-sm font-normal"> / {totalStudents}</span></h3>
+            <p className="text-xs text-green-600 font-medium">Activos en el sistema</p>
           </div>
         </div>
 
@@ -156,9 +156,9 @@ export default function Dashboard({ students, users, attendance, grades, subject
             <GraduationCap className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Docentes</p>
+            <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Docentes</p>
             <h3 className="text-2xl font-bold text-slate-800 mt-1">{totalTeachers}</h3>
-            <p className="text-[10px] text-slate-500 font-medium">Personal académico</p>
+            <p className="text-xs text-slate-500 font-medium">Personal académico</p>
           </div>
         </div>
 
@@ -168,9 +168,9 @@ export default function Dashboard({ students, users, attendance, grades, subject
             <Calendar className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Asistencia Gral.</p>
+            <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Asistencia Gral.</p>
             <h3 className="text-2xl font-bold text-slate-800 mt-1">{attendanceRate}%</h3>
-            <p className="text-[10px] text-emerald-600 font-medium">Promedio de puntualidad</p>
+            <p className="text-xs text-emerald-600 font-medium">Promedio de puntualidad</p>
           </div>
         </div>
 
@@ -180,9 +180,9 @@ export default function Dashboard({ students, users, attendance, grades, subject
             <Award className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Promedio Escolar</p>
-            <h3 className="text-2xl font-bold text-slate-800 mt-1">{averageSchoolGrade} <span className="text-slate-400 text-xs font-normal">/20</span></h3>
-            <p className={`text-[10px] ${averageSchoolGrade >= 10 ? 'text-green-600' : 'text-rose-600'} font-medium`}>
+            <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Promedio Escolar</p>
+            <h3 className="text-2xl font-bold text-slate-800 mt-1">{averageSchoolGrade} <span className="text-slate-400 text-sm font-normal">/20</span></h3>
+            <p className={`text-xs ${averageSchoolGrade >= 10 ? 'text-green-600' : 'text-rose-600'} font-medium`}>
               {averageSchoolGrade >= 10 ? 'Aprobatorio general' : 'Rendimiento crítico'}
             </p>
           </div>
@@ -195,8 +195,8 @@ export default function Dashboard({ students, users, attendance, grades, subject
         {/* Left Column: Grade distributions by Year */}
         <div id="year-performance-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 lg:col-span-2 space-y-6">
           <div id="year-perf-header" className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-800 tracking-tight">Rendimiento Académico Promedio por Año</h3>
-            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono font-medium">Escala MPPE (1 - 20)</span>
+            <h3 className="text-base font-bold text-slate-800 tracking-tight">Rendimiento Académico Promedio por Año</h3>
+            <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono font-medium">Escala MPPE (1 - 20)</span>
           </div>
 
           <div id="performance-chart" className="h-[250px] w-full">
@@ -214,7 +214,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
             <div>
-              <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-4">Desglose de Matrícula (Género)</h3>
+              <h3 className="text-base font-bold text-slate-800 tracking-tight mb-4">Desglose de Matrícula (Género)</h3>
               <div className="h-[200px] w-full flex justify-center">
                 <ResponsiveContainer width="99%" height="100%">
                   <PieChart>
@@ -231,7 +231,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
             </div>
             
             <div id="year-bars" className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-2">Promedios Oficiales</h3>
+              <h3 className="text-base font-bold text-slate-800 tracking-tight mb-2">Promedios Oficiales</h3>
               {[1, 2, 3, 4, 5].map(yr => {
               const yearAvg = averageGradeByYear(yr);
               // Percentage represented on 1-20 scale (e.g. 15 is 75%)
@@ -245,7 +245,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
 
               return (
                 <div id={`year-row-${yr}`} key={yr} className="space-y-1.5">
-                  <div id={`year-row-info-${yr}`} className="flex justify-between text-xs">
+                  <div id={`year-row-info-${yr}`} className="flex justify-between text-sm">
                     <span className="font-semibold text-slate-700">{yr}° Año - Educación Media</span>
                     <span className="font-mono font-bold text-slate-800">{yearAvg} pts</span>
                   </div>
@@ -263,7 +263,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
           </div>
 
           {/* Additional note info on the grading laws */}
-          <div id="law-disclaimer" className="flex items-start gap-3 bg-blue-50/50 p-4 rounded-lg border border-blue-100/30 text-xs text-blue-800">
+          <div id="law-disclaimer" className="flex items-start gap-3 bg-blue-50/50 p-4 rounded-lg border border-blue-100/30 text-sm text-blue-800">
             <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
             <div id="law-disclaimer-text" className="leading-relaxed">
               <strong>Regulación de Repitencia (Art. 112 RLOE):</strong> Los alumnos de 1er a 5to año que resulten reprobados en 3 o más asignaturas (promedio final final &lt; 10) deberán repetir el año completo. Con 1 o 2 materias pendientes tienen derecho a presentar evaluaciones extraordinarias (reparación).
@@ -274,7 +274,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
         {/* Right Column: Alerts & Operational System Reminders */}
         <div id="system-alerts-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-6">
           <div id="system-alerts-header" className="border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-800 tracking-tight">Notificaciones de Control de Estudios</h3>
+            <h3 className="text-base font-bold text-slate-800 tracking-tight">Notificaciones de Control de Estudios</h3>
           </div>
 
           <div id="alerts-list" className="space-y-4">
@@ -282,12 +282,12 @@ export default function Dashboard({ students, users, attendance, grades, subject
             {strugglingStudents.length > 0 ? (
               <div id="failing-alert-card" className="p-3 bg-red-50/90 border border-red-200 rounded-lg flex items-start gap-2.5">
                 <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-                <div id="failing-alert-content" className="text-xs w-full">
+                <div id="failing-alert-content" className="text-sm w-full">
                   <span className="font-bold text-rose-900 block">Estudiantes en riesgo de repitencia</span>
                   <p className="text-rose-700/90 mt-0.5 leading-relaxed">
                     Hay <strong>{strugglingStudents.length}</strong> estudiante(s) activo(s) con promedio acumulado inferior a 10 ptos.
                   </p>
-                  <ul className="mt-1.5 pl-2 list-disc list-inside text-[11px] text-rose-800 font-medium space-y-1">
+                  <ul className="mt-1.5 pl-2 list-disc list-inside text-sm text-rose-800 font-medium space-y-1">
                     {strugglingStudents.map(s => (
                       <li key={s.id} className="flex items-center justify-between">
                         <span>{s.firstName} {s.lastName} ({s.academicYear}° Año "{s.section}")</span>
@@ -303,40 +303,40 @@ export default function Dashboard({ students, users, attendance, grades, subject
                 </div>
               </div>
             ) : (
-              <div id="no-failing-alert-card" className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center gap-2.5 text-xs text-emerald-800">
+              <div id="no-failing-alert-card" className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center gap-2.5 text-sm text-emerald-800">
                 <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
                 <div>
                   <span className="font-bold block">Integridad de Matrícula OK</span>
-                  <p className="text-[10px] text-emerald-700">No hay alertas críticas de bajas de rendimiento total.</p>
+                  <p className="text-xs text-emerald-700">No hay alertas críticas de bajas de rendimiento total.</p>
                 </div>
               </div>
             )}
 
             {/* Timetable audit checklist */}
             <div id="operational-checklist" className="space-y-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Bitácora de Periodo Actual</span>
+              <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider block">Bitácora de Periodo Actual</span>
               
-              <div id="checklist-item-1" className="flex gap-2 text-xs">
+              <div id="checklist-item-1" className="flex gap-2 text-sm">
                 <Clock className="h-4.5 w-4.5 text-blue-500 shrink-0" />
                 <div>
                   <span className="font-bold text-slate-700 block">Lapso 3 en curso</span>
-                  <p className="text-slate-400 text-[10px]">Cierre del ingreso de notas programado para fin del mes corriente.</p>
+                  <p className="text-slate-400 text-xs">Cierre del ingreso de notas programado para fin del mes corriente.</p>
                 </div>
               </div>
 
-              <div id="checklist-item-2" className="flex gap-2 text-xs">
+              <div id="checklist-item-2" className="flex gap-2 text-sm">
                 <Clock className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
                 <div>
                   <span className="font-bold text-slate-700 block">Auditoría de Planta Física</span>
-                  <p className="text-slate-400 text-[10px]">6 de 7 aulas y laboratorios activos sin solapamientos en las asignaciones diarias.</p>
+                  <p className="text-slate-400 text-xs">6 de 7 aulas y laboratorios activos sin solapamientos en las asignaciones diarias.</p>
                 </div>
               </div>
 
-              <div id="checklist-item-3" className="flex gap-2 text-xs">
+              <div id="checklist-item-3" className="flex gap-2 text-sm">
                 <Clock className="h-4.5 w-4.5 text-purple-500 shrink-0" />
                 <div>
                   <span className="font-bold text-slate-700 block">Carga de Representantes</span>
-                  <p className="text-slate-400 text-[10px]">100% de los estudiantes del 1er Año cuentan con un representante legal registrado bajo LOPNA.</p>
+                  <p className="text-slate-400 text-xs">100% de los estudiantes del 1er Año cuentan con un representante legal registrado bajo LOPNA.</p>
                 </div>
               </div>
             </div>
@@ -346,7 +346,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
                 <button
                   onClick={handleBackup}
                   disabled={isBackingUp}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ${
                     isBackingUp 
                       ? 'bg-slate-400 cursor-not-allowed text-white' 
                       : 'bg-slate-800 hover:bg-slate-900 text-white'
@@ -373,11 +373,11 @@ export default function Dashboard({ students, users, attendance, grades, subject
 
       <Modal isOpen={!!alertingStudent} onClose={() => setAlertingStudent(null)} title="Confirmar Envío de Alerta">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-base text-slate-600 leading-relaxed">
             ¿Está seguro de enviar una alerta de bajo rendimiento al representante de <strong>{alertingStudent?.firstName} {alertingStudent?.lastName}</strong>?
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <button onClick={() => setAlertingStudent(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button onClick={() => setAlertingStudent(null)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
             <button 
               onClick={async () => {
                 if (!alertingStudent) return;
@@ -398,7 +398,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
                 }
                 setAlertingStudent(null);
               }}
-              className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
             >
               Enviar Alerta
             </button>

@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  /* Aumento global de tamaños de fuente para mejorar legibilidad */
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
+  --text-base: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+}
+
 @layer utilities {
   .scrollbar-hide {
     /* IE and Edge */

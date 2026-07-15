@@ -445,13 +445,13 @@ export default function StudentManager({ students, sections, classrooms, current
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'Activo':
-        return 'bg-green-50 text-green-700 border border-green-150 text-[10px] px-2 py-0.5 rounded-full font-semibold';
+        return 'bg-green-50 text-green-700 border border-green-200 text-xs px-2.5 py-1 rounded-full font-semibold';
       case 'Inactivo':
-        return 'bg-slate-100 text-slate-600 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-semibold';
+        return 'bg-slate-100 text-slate-600 border border-slate-200 text-xs px-2.5 py-1 rounded-full font-semibold';
       case 'Retirado':
-        return 'bg-rose-50 text-rose-700 border border-rose-200/55 text-[10px] px-2 py-0.5 rounded-full font-semibold';
+        return 'bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold';
       default:
-        return 'bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-semibold';
+        return 'bg-slate-100 text-slate-500 text-xs px-2.5 py-1 rounded-full font-semibold';
     }
   };
 
@@ -465,9 +465,9 @@ export default function StudentManager({ students, sections, classrooms, current
             <Users className="h-6 w-6 text-indigo-600" />
             Matrícula Estudiantes
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Directorio de estudiantes matriculados y sus representantes.</p>
+          <p className="text-sm text-slate-500 mt-1">Directorio de estudiantes matriculados y sus representantes.</p>
         </div>
-        <div className="flex items-center gap-1.5 mt-3 md:mt-0 text-xs bg-indigo-50 border border-indigo-100/50 p-2.5 rounded-xl text-indigo-800">
+        <div className="flex items-center gap-1.5 mt-3 md:mt-0 text-sm bg-indigo-50 border border-indigo-100/50 p-2.5 rounded-xl text-indigo-800">
           <Users className="h-4.5 w-4.5 shrink-0" />
           <span>Matrícula Total: <strong>{students.length}</strong> alumnos ({students.filter(s => s.status === 'Activo').length} Activos)</span>
         </div>
@@ -481,7 +481,7 @@ export default function StudentManager({ students, sections, classrooms, current
           
           {/* Controls Bar */}
           <div id="explorer-filters-bar" className="flex flex-col md:flex-row md:items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
-            <div id="explorer-filter-icon" className="flex items-center gap-1 text-xs font-semibold text-slate-500 shrink-0">
+            <div id="explorer-filter-icon" className="flex items-center gap-1 text-sm font-semibold text-slate-500 shrink-0">
               <Filter className="h-4 w-4" />
               <span>Filtros:</span>
             </div>
@@ -490,7 +490,7 @@ export default function StudentManager({ students, sections, classrooms, current
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear | 0)}
-              className="text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
             >
               <option value={0}>Todos los Años (1°-5to)</option>
               <option value={1}>1er Año (General)</option>
@@ -504,7 +504,7 @@ export default function StudentManager({ students, sections, classrooms, current
             <select
               value={selectedSection}
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
             >
               <option value="Todos">Todas las Secciones</option>
               {sections
@@ -523,12 +523,12 @@ export default function StudentManager({ students, sections, classrooms, current
               placeholder="Buscar por Nombre, Cédula, Representante..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-[200px]"
+              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-[200px]"
             />
             
             <button
               onClick={() => exportStudentsToExcel(filteredStudents)}
-              className="hidden md:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
+              className="hidden md:flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
             >
               <Download className="w-4 h-4" />
               Exportar Nómina
@@ -537,7 +537,7 @@ export default function StudentManager({ students, sections, classrooms, current
 {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
               <button
                 onClick={handleOpenCreate}
-                className="md:ml-auto flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                className="md:ml-auto flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
               >
                 <UserPlus className="w-4 h-4" />
                 Matricular Alumno
@@ -547,32 +547,32 @@ export default function StudentManager({ students, sections, classrooms, current
 
           {/* Student list layout */}
           <div id="student-list-scroller" className="overflow-x-auto w-full pb-4">
-            <table className="w-full text-left border-collapse text-xs min-w-[800px]">
+            <table className="w-full text-left border-collapse text-sm min-w-[800px]">
               <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5 whitespace-nowrap">Cédula</th>
-                  <th className="py-2.5 whitespace-nowrap">Estudiante</th>
-                  <th className="py-2.5 whitespace-nowrap">Año / Secc.</th>
-                  <th className="py-2.5 whitespace-nowrap">Representante (LOPNA)</th>
-                  <th className="py-2.5 whitespace-nowrap">Estatus</th>
-                  <th className="py-2.5 text-right whitespace-nowrap">Acciones</th>
+                <tr className="border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                  <th className="py-3 whitespace-nowrap">Cédula</th>
+                  <th className="py-3 whitespace-nowrap">Estudiante</th>
+                  <th className="py-3 whitespace-nowrap">Año / Secc.</th>
+                  <th className="py-3 whitespace-nowrap">Representante (LOPNA)</th>
+                  <th className="py-3 whitespace-nowrap">Estatus</th>
+                  <th className="py-3 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/60 font-medium text-slate-750">
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map(s => (
                     <tr id={`std-row-${s.id}`} key={s.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 font-mono font-bold text-slate-700 whitespace-nowrap">{s.cedula}</td>
+                      <td className="py-3 font-mono font-bold text-slate-700 text-sm whitespace-nowrap">{s.cedula}</td>
                       <td className="py-3 min-w-[150px]">
-                        <span className="font-bold text-slate-800 text-[12px] block">{s.lastName}, {s.firstName}</span>
-                        <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Nacimiento: {s.dateOfBirth}</span>
+                        <span className="font-bold text-slate-800 text-sm block">{s.lastName}, {s.firstName}</span>
+                        <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Nacimiento: {s.dateOfBirth}</span>
                       </td>
                       <td className="py-3">
-                        <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold">{s.academicYear}° Año "{s.section}"</span>
+                        <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded font-bold text-xs">{s.academicYear}° Año "{s.section}"</span>
                       </td>
                       <td className="py-3">
-                        <span className="text-slate-700 block text-sm font-semibold">{s.representativeName}</span>
-                        <span className="text-[10px] text-slate-400 font-medium font-mono">{s.representativeCedula} | {s.representativePhone}</span>
+                        <span className="text-slate-800 block text-sm font-semibold">{s.representativeName}</span>
+                        <span className="text-xs text-slate-500 font-medium font-mono">{s.representativeCedula} | {s.representativePhone}</span>
                       </td>
                       <td className="py-3">
                         <span className={getStatusStyle(s.status)}>{s.status}</span>
@@ -603,7 +603,7 @@ export default function StudentManager({ students, sections, classrooms, current
                           <select
                             value={s.status}
                             onChange={(e) => onUpdateStudentStatus(s.id, e.target.value as 'Activo' | 'Inactivo' | 'Retirado')}
-                            className="bg-white border border-slate-200 text-[10px] rounded p-1 font-semibold focus:outline-hidden cursor-pointer"
+                            className="bg-white border border-slate-200 text-xs rounded p-1.5 font-semibold focus:outline-hidden cursor-pointer"
                           >
                             <option value="Activo">Activar</option>
                             <option value="Inactivo">Pasar Inactivo</option>
@@ -634,28 +634,28 @@ export default function StudentManager({ students, sections, classrooms, current
       >
         <form onSubmit={handleRegister} className="space-y-6">
           {formError && (
-            <div id="enrollment-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-sm">
+            <div id="enrollment-error" className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-base">
               {formError}
             </div>
           )}
           {formSuccess && (
-            <div id="enrollment-success" className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-sm">
+            <div id="enrollment-success" className="p-2.5 bg-green-50 border border-green-200 font-medium rounded-lg text-green-800 text-base">
               {formSuccess}
             </div>
           )}
 
           {/* Form division: student details */}
           <div id="section-form-part1" className="space-y-3">
-            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Estudiante</span>
+            <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Estudiante</span>
             
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Cédula Escolar <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Cédula Escolar <span className="text-red-500 font-bold text-base">*</span></label>
                 <div className="flex">
                   <select
                     value={cedulaType}
                     onChange={(e) => setCedulaType(e.target.value)}
-                    className={`text-sm p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
+                    className={`text-base p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
                   >
                     <option value="V">V</option>
                     <option value="E">E</option>
@@ -666,77 +666,77 @@ export default function StudentManager({ students, sections, classrooms, current
                     value={cedula} 
                     onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))}
                     onBlur={(e) => checkCedula(e.target.value, 'student', cedulaType)}
-                    className={`w-full text-sm p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
+                    className={`w-full text-base p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
                   />
                 </div>
-                {errors.cedula && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.cedula}</p>}
+                {errors.cedula && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.cedula}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Fecha Nac. <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Fecha Nac. <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="date" 
                   value={birthYear} 
                   onChange={(e) => setBirthYear(e.target.value)}
                   onBlur={(e) => checkAge(e.target.value)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.birthYear ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.birthYear ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.birthYear && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.birthYear}</p>}
+                {errors.birthYear && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.birthYear}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. Alejandro" 
                   value={firstName} 
                   onChange={(e) => handleFieldChange('firstName', e.target.value, setFirstName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.firstName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.firstName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.firstName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.firstName}</p>}
+                {errors.firstName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.firstName}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Segundo Nombre</label>
+                <label className="text-sm font-semibold text-slate-500">Segundo Nombre</label>
                 <input 
                   type="text" 
                   placeholder="e.g. José" 
                   value={secondName} 
                   onChange={(e) => handleFieldChange('secondName', e.target.value, setSecondName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.secondName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.secondName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.secondName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.secondName}</p>}
+                {errors.secondName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.secondName}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. Gómez" 
                   value={lastName} 
                   onChange={(e) => handleFieldChange('lastName', e.target.value, setLastName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.lastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.lastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.lastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.lastName}</p>}
+                {errors.lastName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.lastName}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Segundo Apellido</label>
+                <label className="text-sm font-semibold text-slate-500">Segundo Apellido</label>
                 <input 
                   type="text" 
                   placeholder="e.g. López" 
                   value={secondLastName} 
                   onChange={(e) => handleFieldChange('secondLastName', e.target.value, setSecondLastName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.secondLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.secondLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.secondLastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.secondLastName}</p>}
+                {errors.secondLastName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.secondLastName}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Estado (Nacimiento) <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Estado (Nacimiento) <span className="text-red-500 font-bold text-base">*</span></label>
                 <SearchableSelect
                   options={getStates().map(s => ({ value: s, label: s }))}
                   value={estado}
@@ -745,7 +745,7 @@ export default function StudentManager({ students, sections, classrooms, current
                 />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Municipio (Nacimiento) <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Municipio (Nacimiento) <span className="text-red-500 font-bold text-base">*</span></label>
                 <SearchableSelect
                   options={estado ? getMunicipalities(estado).map(m => ({ value: m, label: m })) : []}
                   value={municipio}
@@ -755,7 +755,7 @@ export default function StudentManager({ students, sections, classrooms, current
                 />
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Parroquia (Nacimiento)</label>
+                <label className="text-sm font-semibold text-slate-500">Parroquia (Nacimiento)</label>
                 <SearchableSelect
                   options={(estado && municipio) ? getParishes(estado, municipio).map((p: string) => ({ value: p, label: p })) : []}
                   value={birthPlace}
@@ -768,11 +768,11 @@ export default function StudentManager({ students, sections, classrooms, current
 
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Género</label>
+                <label className="text-sm font-semibold text-slate-500">Género</label>
                 <select 
                   value={gender} 
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                  className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
                   <option value="">Seleccionar</option>
                   <option value="M">Masculino</option>
@@ -780,11 +780,11 @@ export default function StudentManager({ students, sections, classrooms, current
                 </select>
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Año Escolar <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Año Escolar <span className="text-red-500 font-bold text-base">*</span></label>
                 <select 
                   value={enrollYear} 
                   onChange={(e) => setEnrollYear(Number(e.target.value) as AcademicYear)}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                  className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
                   <option value={1}>1er Año</option>
                   <option value={2}>2do Año</option>
@@ -794,11 +794,11 @@ export default function StudentManager({ students, sections, classrooms, current
                 </select>
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Sección <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Sección <span className="text-red-500 font-bold text-base">*</span></label>
                 <select 
                   value={enrollSection} 
                   onChange={(e) => setEnrollSection(e.target.value)}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
+                  className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
                   {sections
                     .filter(s => s.grade === enrollYear)
@@ -815,16 +815,16 @@ export default function StudentManager({ students, sections, classrooms, current
 
           {/* Form division: Representative details */}
           <div id="section-form-part2" className="space-y-3 pt-2">
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-widest block border-b border-amber-50 pb-0.5">Representante Legal (LOPNA)</span>
+            <span className="text-sm font-bold text-amber-600 uppercase tracking-widest block border-b border-amber-50 pb-0.5">Representante Legal (LOPNA)</span>
             
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Cédula Rep. <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Cédula Rep. <span className="text-red-500 font-bold text-base">*</span></label>
                 <div className="flex">
                   <select
                     value={repCedulaType}
                     onChange={(e) => setRepCedulaType(e.target.value)}
-                    className={`text-sm p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
+                    className={`text-base p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
                   >
                     <option value="V">V</option>
                     <option value="E">E</option>
@@ -835,96 +835,96 @@ export default function StudentManager({ students, sections, classrooms, current
                     value={repCedula} 
                     onChange={(e) => setRepCedula(e.target.value.replace(/\D/g, ''))}
                     onBlur={(e) => checkCedula(e.target.value, 'rep', repCedulaType)}
-                    className={`w-full text-sm p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
+                    className={`w-full text-base p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
                   />
                 </div>
-                {errors.repCedula && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repCedula}</p>}
+                {errors.repCedula && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repCedula}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Teléfono Rep. <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Teléfono Rep. <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. 0414-1112233" 
                   value={repPhone} 
                   onChange={(e) => handleFieldChange('repPhone', e.target.value, setRepPhone)}
                   onBlur={(e) => checkRepField('telefono', e.target.value)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repPhone ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium font-mono`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.repPhone ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium font-mono`}
                 />
-                {errors.repPhone && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repPhone}</p>}
+                {errors.repPhone && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repPhone}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Primer Nombre <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. Carmen" 
                   value={repFirstName} 
                   onChange={(e) => handleFieldChange('repFirstName', e.target.value, setRepFirstName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repFirstName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.repFirstName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.repFirstName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repFirstName}</p>}
+                {errors.repFirstName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repFirstName}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Segundo Nombre</label>
+                <label className="text-sm font-semibold text-slate-500">Segundo Nombre</label>
                 <input 
                   type="text" 
                   placeholder="e.g. María" 
                   value={repSecondName} 
                   onChange={(e) => handleFieldChange('repSecondName', e.target.value, setRepSecondName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repSecondName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.repSecondName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.repSecondName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repSecondName}</p>}
+                {errors.repSecondName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repSecondName}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-sm">*</span></label>
+                <label className="text-sm font-semibold text-slate-500">Primer Apellido <span className="text-red-500 font-bold text-base">*</span></label>
                 <input 
                   type="text" 
                   placeholder="e.g. de Gómez" 
                   value={repLastName} 
                   onChange={(e) => handleFieldChange('repLastName', e.target.value, setRepLastName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.repLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.repLastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repLastName}</p>}
+                {errors.repLastName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repLastName}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Segundo Apellido</label>
+                <label className="text-sm font-semibold text-slate-500">Segundo Apellido</label>
                 <input 
                   type="text" 
                   placeholder="e.g. López" 
                   value={repSecondLastName} 
                   onChange={(e) => handleFieldChange('repSecondLastName', e.target.value, setRepSecondLastName)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repSecondLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.repSecondLastName ? 'border-rose-400' : 'border-slate-200'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.repSecondLastName && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repSecondLastName}</p>}
+                {errors.repSecondLastName && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repSecondLastName}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Correo Rep.</label>
+                <label className="text-sm font-semibold text-slate-500">Correo Rep.</label>
                 <input 
                   type="email" 
                   placeholder="ej: carmen@email.com" 
                   value={repEmail} 
                   onChange={(e) => setRepEmail(e.target.value)}
                   onBlur={(e) => checkRepField('correo', e.target.value)}
-                  className={`w-full text-sm p-2 bg-slate-50 border ${errors.repEmail ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
+                  className={`w-full text-base p-2 bg-slate-50 border ${errors.repEmail ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
-                {errors.repEmail && <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.repEmail}</p>}
+                {errors.repEmail && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.repEmail}</p>}
               </div>
               <div className="space-y-0.5">
-                <label className="text-xs font-semibold text-slate-500">Dirección Rep.</label>
+                <label className="text-sm font-semibold text-slate-500">Dirección Rep.</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Calle 5, Urb. Las Flores" 
                   value={repAddress} 
                   onChange={(e) => setRepAddress(e.target.value)}
-                  className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
+                  className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden font-medium" 
                 />
               </div>
             </div>
@@ -933,7 +933,7 @@ export default function StudentManager({ students, sections, classrooms, current
           <button 
             type="submit" 
             disabled={Object.keys(errors).length > 0}
-            className={`w-full py-2.5 text-white font-bold text-xs rounded-lg shadow-sm transition-colors text-center ${Object.keys(errors).length > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-700 hover:bg-indigo-800 cursor-pointer'}`}
+            className={`w-full py-2.5 text-white font-bold text-sm rounded-lg shadow-sm transition-colors text-center ${Object.keys(errors).length > 0 ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-700 hover:bg-indigo-800 cursor-pointer'}`}
           >
             {modalMode === 'create' ? 'Inscribir y Matricular' : 'Guardar Cambios'}
           </button>
@@ -946,11 +946,11 @@ export default function StudentManager({ students, sections, classrooms, current
           <div className="space-y-4">
             <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
               <h3 className="font-bold text-indigo-900">{selectedStudent.firstName} {selectedStudent.lastName}</h3>
-              <p className="text-xs text-indigo-700">C.I: {selectedStudent.cedula} | {selectedStudent.academicYear}° Año "{selectedStudent.section}"</p>
+              <p className="text-sm text-indigo-700">C.I: {selectedStudent.cedula} | {selectedStudent.academicYear}° Año "{selectedStudent.section}"</p>
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-slate-800 mb-3 border-b pb-2 flex items-center gap-2">
+              <h4 className="text-base font-bold text-slate-800 mb-3 border-b pb-2 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-slate-500" />
                 Materias Pendientes (Arrastre)
               </h4>
@@ -960,22 +960,22 @@ export default function StudentManager({ students, sections, classrooms, current
                   {pendingSubjects.map(mp => (
                     <li key={mp.id_materia_pendiente} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
                       <div>
-                        <span className="font-bold text-slate-800 text-xs block">{mp.asignatura?.name || 'Asignatura'}</span>
-                        <span className="text-[10px] text-slate-500">Periodo de Arrastre: {mp.id_periodo}</span>
+                        <span className="font-bold text-slate-800 text-sm block">{mp.asignatura?.name || 'Asignatura'}</span>
+                        <span className="text-xs text-slate-500">Periodo de Arrastre: {mp.id_periodo}</span>
                       </div>
                       <div className="text-right">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${mp.estatus === 'Aprobada' ? 'bg-green-100 text-green-700' : mp.estatus === 'Aplazada' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${mp.estatus === 'Aprobada' ? 'bg-green-100 text-green-700' : mp.estatus === 'Aplazada' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                           {mp.estatus}
                         </span>
                         {mp.nota_definitiva !== null && (
-                          <span className="block text-xs font-mono font-bold mt-1 text-slate-700">Nota: {mp.nota_definitiva}/20</span>
+                          <span className="block text-sm font-mono font-bold mt-1 text-slate-700">Nota: {mp.nota_definitiva}/20</span>
                         )}
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-slate-500 text-center py-4 bg-slate-50 rounded-lg border border-slate-100 border-dashed">
+                <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-lg border border-slate-100 border-dashed">
                   Este estudiante no posee materias pendientes.
                 </p>
               )}
@@ -999,7 +999,7 @@ export default function StudentManager({ students, sections, classrooms, current
                     }
                   }
                 }}
-                className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition-colors"
+                className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-lg shadow-sm transition-colors"
               >
                 + Registrar Nueva Materia Pendiente
               </button>

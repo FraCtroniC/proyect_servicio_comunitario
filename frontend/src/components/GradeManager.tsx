@@ -448,7 +448,7 @@ export default function GradeManager({
                   <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 text-center">¡Guardado Exitoso!</h3>
-                <p className="text-sm text-slate-500 text-center mt-2">
+                <p className="text-base text-slate-500 text-center mt-2">
                   Calificaciones guardadas exitosamente en la base de datos.
                 </p>
               </>
@@ -456,7 +456,7 @@ export default function GradeManager({
               <>
                 <div className="h-12 w-12 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin mb-4" />
                 <h3 className="text-lg font-bold text-slate-800">Guardando Calificaciones</h3>
-                <p className="text-sm text-slate-500 text-center mt-2">
+                <p className="text-base text-slate-500 text-center mt-2">
                   Por favor espera mientras sincronizamos los datos con la base de datos...
                 </p>
               </>
@@ -470,7 +470,7 @@ export default function GradeManager({
         <button
           id="btn-subtab-carga"
           onClick={() => setActiveSubTab('carga')}
-          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             activeSubTab === 'carga' 
               ? 'border-blue-600 text-blue-700' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -482,7 +482,7 @@ export default function GradeManager({
         <button
           id="btn-subtab-sabana"
           onClick={() => setActiveSubTab('sabana')}
-          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             activeSubTab === 'sabana' 
               ? 'border-blue-600 text-blue-700' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -494,7 +494,7 @@ export default function GradeManager({
         <button
           id="btn-subtab-boletin"
           onClick={() => setActiveSubTab('boletin')}
-          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             activeSubTab === 'boletin' 
               ? 'border-blue-600 text-blue-700' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -506,7 +506,7 @@ export default function GradeManager({
         <button
           id="btn-subtab-certificadas"
           onClick={() => setActiveSubTab('certificadas')}
-          className={`py-3 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             activeSubTab === 'certificadas' 
               ? 'border-amber-600 text-amber-700' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -525,11 +525,11 @@ export default function GradeManager({
           <div id="carga-filters-bar" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             
             <div id="filter-year-group" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Año de Educación Media</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Año de Educación Media</span>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 <option value={1}>1er Año</option>
                 <option value={2}>2do Año</option>
@@ -540,11 +540,11 @@ export default function GradeManager({
             </div>
 
             <div id="filter-section-group" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Sección</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Sección</span>
               <select
                 value={selectedSection}
                 onChange={(e) => setSelectedSection(e.target.value)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 {availableSections.map(s => (
                   <option key={s.id} value={s.letter}>Sección "{s.letter}"</option>
@@ -553,7 +553,7 @@ export default function GradeManager({
             </div>
 
             <div id="filter-subject-group" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Asignatura</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Asignatura</span>
               <SearchableSelect
                 options={subjects.filter(s => s.years.includes(selectedYear)).map(s => ({ value: s.id, label: s.name }))}
                 value={selectedSubjectId}
@@ -562,11 +562,11 @@ export default function GradeManager({
             </div>
 
             <div id="filter-lapso-group" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Período ("Lapso")</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Período ("Lapso")</span>
               <select
                 value={selectedLapso}
                 onChange={(e) => setSelectedLapso(Number(e.target.value) as 1|2|3)}
-                className="text-xs p-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-bold"
+                className="text-sm p-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-bold"
               >
                 <option value={1}>Primer Lapso (L1)</option>
                 <option value={2}>Segundo Lapso (L2)</option>
@@ -578,7 +578,7 @@ export default function GradeManager({
               <button
                 id="btn-modify-eval-plan"
                 onClick={handleStartModifyPlan}
-                className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 text-xs rounded-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer"
+                className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 text-sm rounded-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer"
               >
                 <PlusCircle className="h-4 w-4" />
                 Configurar Plan de Evaluación
@@ -591,10 +591,10 @@ export default function GradeManager({
           {isModifyingPlan && (
             <div id="modal-plan-builder" className="bg-amber-50/75 border border-amber-200 p-5 rounded-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-amber-200 pb-2">
-                <span className="text-xs font-bold text-amber-900">
+                <span className="text-sm font-bold text-amber-900">
                   🔧 Estructurando actividades para: {getSubjectName(selectedSubjectId)} ({selectedYear}° Año "{selectedSection}" - Lapso {selectedLapso})
                 </span>
-                <span className="text-[11px] font-semibold text-amber-700">Debe sumar exactamente 100%</span>
+                <span className="text-sm font-semibold text-amber-700">Debe sumar exactamente 100%</span>
               </div>
               
               <div className="space-y-2.5 max-w-xl">
@@ -605,16 +605,16 @@ export default function GradeManager({
                       value={ev.name} 
                       onChange={(e) => handleUpdatePlanName(idx, e.target.value)}
                       placeholder="Nombre de la actividad" 
-                      className="text-xs p-2 bg-white border border-slate-200 rounded-lg flex-1 focus:outline-hidden"
+                      className="text-sm p-2 bg-white border border-slate-200 rounded-lg flex-1 focus:outline-hidden"
                     />
                     <div className="flex items-center gap-1 shrink-0 w-28">
                       <input 
                         type="number" 
                         value={ev.percentage || ''} 
                         onChange={(e) => handleUpdatePlanWeight(idx, e.target.value)}
-                        className="text-xs p-2 bg-white border border-slate-200 rounded-lg w-16 text-center focus:outline-hidden"
+                        className="text-sm p-2 bg-white border border-slate-200 rounded-lg w-16 text-center focus:outline-hidden"
                       />
-                      <span className="text-xs font-bold text-slate-500">%</span>
+                      <span className="text-sm font-bold text-slate-500">%</span>
                     </div>
                     {planEvaluations.length > 2 && (
                       <button 
@@ -629,7 +629,7 @@ export default function GradeManager({
                 ))}
 
                 <div className="flex gap-3 justify-between items-center border-t border-amber-200/50 pt-3">
-                  <div className="text-xs font-bold text-amber-800">
+                  <div className="text-sm font-bold text-amber-800">
                     Total: <span className={planEvaluations.reduce((a, b) => a + b.percentage, 0) === 100 ? 'text-green-700' : 'text-rose-600'}>
                       {planEvaluations.reduce((a, b) => a + b.percentage, 0)}%
                     </span>
@@ -639,7 +639,7 @@ export default function GradeManager({
                       <button 
                         type="button" 
                         onClick={handleAddPlanEvaluation}
-                        className="text-xs py-1.5 px-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg pointer-events-auto cursor-pointer"
+                        className="text-sm py-1.5 px-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg pointer-events-auto cursor-pointer"
                       >
                         + Actividad
                       </button>
@@ -647,14 +647,14 @@ export default function GradeManager({
                     <button 
                       type="button" 
                       onClick={() => setIsModifyingPlan(false)}
-                      className="text-xs py-1.5 px-3 bg-slate-200 text-slate-700 font-semibold rounded-lg pointer-events-auto cursor-pointer"
+                      className="text-sm py-1.5 px-3 bg-slate-200 text-slate-700 font-semibold rounded-lg pointer-events-auto cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button 
                       type="button" 
                       onClick={handleSavePlan}
-                      className="text-xs py-1.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg pointer-events-auto cursor-pointer"
+                      className="text-sm py-1.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg pointer-events-auto cursor-pointer"
                     >
                       Guardar Cambios
                     </button>
@@ -668,16 +668,16 @@ export default function GradeManager({
           <div id="grading-matrix-box" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
             <div id="grading-matrix-header" className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
               <div>
-                <h3 className="text-sm font-bold text-slate-800">Ingreso Manual de Calificaciones</h3>
-                <p className="text-[11px] text-slate-400 font-medium">Haga clic sobre cualquier celda para cargar o editar la nota del 1 al 20.</p>
+                <h3 className="text-base font-bold text-slate-800">Ingreso Manual de Calificaciones</h3>
+                <p className="text-sm text-slate-400 font-medium">Haga clic sobre cualquier celda para cargar o editar la nota del 1 al 20.</p>
                 {!activePlan && (
-                  <div className="mt-2 text-xs font-bold text-rose-600 bg-rose-50 p-2 border border-rose-200 rounded">
+                  <div className="mt-2 text-sm font-bold text-rose-600 bg-rose-50 p-2 border border-rose-200 rounded">
                     ⚠️ Esta asignatura no está asignada al plan de estudios de este año o no tiene evaluaciones configuradas. Ve a "Plan de Estudio" o usa "Configurar Plan de Evaluación".
                   </div>
                 )}
               </div>
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-                <div className="flex gap-2 text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-100 font-medium text-slate-500">
+                <div className="flex gap-2 text-xs bg-slate-50 p-2 rounded-lg border border-slate-100 font-medium text-slate-500">
                   <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-rose-500 inline-block"></span> Insuficiente (1-9)</span>
                   <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block"></span> Mínima (10-14)</span>
                   <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span> Sobresaliente (15-20)</span>
@@ -685,7 +685,7 @@ export default function GradeManager({
                 {['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) && (
                   <button
                     onClick={handleGlobalSave}
-                    className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 pointer-events-auto cursor-pointer"
+                    className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2 pointer-events-auto cursor-pointer"
                   >
                     <CheckCircle className="h-4 w-4" />
                     Guardar Calificaciones
@@ -696,14 +696,14 @@ export default function GradeManager({
 
             {/* Matrix Scroll wrapper */}
             <div id="grading-matrix-scroller" className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-150 text-slate-400 uppercase tracking-widest font-bold text-[9px]">
+                  <tr className="border-b border-slate-150 text-slate-400 uppercase tracking-widest font-bold text-sm">
                     <th className="py-2.5">Estudiante</th>
                     {activePlan?.evaluations.map((ev, index) => (
                       <th key={ev.id} className="py-2.5 text-center px-4 max-w-[120px]">
                         <span className="block font-semibold text-slate-600 text-center truncate" title={ev.name}>{ev.name}</span>
-                        <span className="block text-[10px] text-slate-400 font-bold font-mono text-center">{ev.percentage}%</span>
+                        <span className="block text-xs text-slate-400 font-bold font-mono text-center">{ev.percentage}%</span>
                       </th>
                     ))}
                     <th className="py-2.5 text-center font-bold text-slate-700">LAPSO RAW</th>
@@ -726,8 +726,8 @@ export default function GradeManager({
                       return (
                         <tr id={`grad-row-${student.id}`} key={student.id} className="hover:bg-slate-50/50">
                           <td className="py-3 pr-4">
-                            <span className="font-bold text-slate-800 text-[11px] block">{student.lastName}, {student.firstName}</span>
-                            <span className="text-[10px] text-slate-400 font-mono font-bold leading-none">{student.cedula}</span>
+                            <span className="font-bold text-slate-800 text-sm block">{student.lastName}, {student.firstName}</span>
+                            <span className="text-xs text-slate-400 font-mono font-bold leading-none">{student.cedula}</span>
                           </td>
                           
                           {/* Render cells */}
@@ -751,12 +751,12 @@ export default function GradeManager({
                                         if (e.key === 'Escape') setEditingGradeCell(null);
                                       }}
                                       autoFocus
-                                      className="w-12 text-center text-xs p-1 bg-white border-2 border-blue-500 rounded focus:outline-hidden font-bold"
+                                      className="w-12 text-center text-sm p-1 bg-white border-2 border-blue-500 rounded focus:outline-hidden font-bold"
                                     />
                                     <button 
                                       type="button"
                                       onClick={() => handleSaveGrade(student.id, ev.id, true)}
-                                      className="text-[11px] text-white bg-blue-600 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                                      className="text-sm text-white bg-blue-600 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                                     >
                                       ✓
                                     </button>
@@ -765,7 +765,7 @@ export default function GradeManager({
                                   <button
                                     id={`cell-btn-${student.id}-${ev.id}`}
                                     onClick={() => handleStartEditGrade(student.id, ev.id, scoreRecord?.score)}
-                                    className={`px-3 py-1.5 rounded-md min-w-[44px] font-mono font-bold text-xs border text-center transition-all ${
+                                    className={`px-3 py-1.5 rounded-md min-w-[44px] font-mono font-bold text-sm border text-center transition-all ${
                                       scoreRecord 
                                         ? getFailingClass(scoreRecord.score) 
                                         : 'bg-slate-50/50 border-slate-200 text-slate-300 hover:bg-slate-100 hover:border-slate-300 pointer-events-auto cursor-pointer'
@@ -781,12 +781,12 @@ export default function GradeManager({
                           })}
 
                           {/* Computed averages */}
-                          <td className="py-3 text-center px-4 font-mono text-slate-500 text-xs font-bold">
+                          <td className="py-3 text-center px-4 font-mono text-slate-500 text-sm font-bold">
                             {avgObj.raw > 0 ? avgObj.raw : '--'}
                           </td>
                           <td className="py-3 text-center px-4">
                             {avgObj.raw > 0 ? (
-                              <span className={`px-2.5 py-1 rounded-md font-mono text-xs font-black ${
+                              <span className={`px-2.5 py-1 rounded-md font-mono text-sm font-black ${
                                 avgObj.rounded >= 10 
                                   ? 'bg-blue-100 text-blue-900 border border-blue-200' 
                                   : 'bg-rose-100 text-rose-900 border border-rose-200'
@@ -815,11 +815,11 @@ export default function GradeManager({
           {/* Historial de Modificaciones Card */}
           <div id="grades-history-box" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 mt-6">
             <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <FileText className="h-4.5 w-4.5 text-indigo-500" />
                 Historial de Modificaciones (Auditoría)
               </h3>
-              <p className="text-[11px] text-slate-400 font-medium mt-1">
+              <p className="text-sm text-slate-400 font-medium mt-1">
                 Registro permanente de las calificaciones guardadas en el sistema.
               </p>
             </div>
@@ -839,12 +839,12 @@ export default function GradeManager({
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-800">Carga de Calificaciones Exitosa</span>
-                            <span className="text-[9px] font-mono text-slate-400">
+                            <span className="text-sm font-bold text-slate-800">Carga de Calificaciones Exitosa</span>
+                            <span className="text-sm font-mono text-slate-400">
                               {new Date(log.fecha_hora).toLocaleString('es-VE')}
                             </span>
                           </div>
-                          <p className="text-[10px] text-slate-500 mt-1">
+                          <p className="text-xs text-slate-500 mt-1">
                             Se registraron y guardaron las notas para <strong>{log.valores_nuevos?.asignatura}</strong>, 
                             pertenecientes a {log.valores_nuevos?.year}° Año "{log.valores_nuevos?.section}" 
                             (Lapso {log.valores_nuevos?.lapso}).
@@ -852,7 +852,7 @@ export default function GradeManager({
                           {log.valores_nuevos?.detalles && (
                             <button
                               onClick={() => setSelectedAuditLog(log)}
-                              className="mt-2 text-[10px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+                              className="mt-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
                             >
                               <FileText className="h-3 w-3" />
                               Ver Archivo de Notas
@@ -865,7 +865,7 @@ export default function GradeManager({
                       <div className="flex justify-center pt-2 pb-1">
                         <button
                           onClick={() => setVisibleAuditLogsCount(prev => prev + 3)}
-                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors flex items-center gap-1"
+                          className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors flex items-center gap-1"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           Ver más
@@ -875,7 +875,7 @@ export default function GradeManager({
                   </>
                 ) : (
                   <div className="text-center p-6 border-2 border-dashed border-slate-100 rounded-lg">
-                    <p className="text-xs font-semibold text-slate-400">Aún no hay registros de carga de calificaciones en base de datos.</p>
+                    <p className="text-sm font-semibold text-slate-400">Aún no hay registros de carga de calificaciones en base de datos.</p>
                   </div>
                 );
               })()}
@@ -894,11 +894,11 @@ export default function GradeManager({
           <div id="sabana-controls" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             
             <div id="sabana-ctrl-year" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Año Académico</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Año Académico</span>
               <select
                 value={sabanaYear}
                 onChange={(e) => setSabanaYear(Number(e.target.value) as AcademicYear)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 <option value={1}>1er Año</option>
                 <option value={2}>2do Año</option>
@@ -909,11 +909,11 @@ export default function GradeManager({
             </div>
 
             <div id="sabana-ctrl-section" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Sección</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Sección</span>
               <select
                 value={sabanaSection}
                 onChange={(e) => setSabanaSection(e.target.value)}
-                className="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+                className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
                 {availableSectionsSabana.map(s => (
                   <option key={s.id} value={s.letter}>Sección "{s.letter}"</option>
@@ -922,7 +922,7 @@ export default function GradeManager({
             </div>
 
             <div id="sabana-ctrl-subject" className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Asignatura</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Asignatura</span>
               <SearchableSelect
                 options={subjects.filter(s => s.years.includes(sabanaYear)).map(s => ({ value: s.id, label: s.name }))}
                 value={sabanaSubjectId}
@@ -930,21 +930,21 @@ export default function GradeManager({
               />
             </div>
 
-            <p className="text-[11px] text-slate-500 italic max-w-sm mt-3">
+            <p className="text-sm text-slate-500 italic max-w-sm mt-3">
               Muestra el consolidado oficial de Lapsos 1, 2 y 3 para la asignatura de <strong>{getSubjectName(sabanaSubjectId)}</strong>.
             </p>
 
             <button
               id="btn-print-sabana"
               onClick={() => window.print()}
-              className="ml-auto py-2 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
+              className="ml-auto py-2 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
             >
               <Printer className="h-4.5 w-4.5" />
               <span>Imprimir Formato MPPE</span>
             </button>
             <button
               onClick={() => exportGradesToExcel(students, subjects, grades, evaluationPlans, sabanaYear, sabanaSection)}
-              className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
+              className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
             >
               <Printer className="h-4 w-4" /> Excel (Sábana)
             </button>
@@ -954,9 +954,9 @@ export default function GradeManager({
           <div id="printable-sabana" className="bg-white p-8 border border-slate-250 shadow-md rounded-xl space-y-8 select-text selection:bg-slate-100">
             
             {/* Header matching venezuelan public layouts */}
-            <div id="sabana-gov-header" className="flex justify-between items-start text-[10px] text-slate-600 font-medium">
+            <div id="sabana-gov-header" className="flex justify-between items-start text-xs text-slate-600 font-medium">
               <div id="gov-dep" className="space-y-0.5">
-                <span className="block font-bold text-slate-800 uppercase text-[11px]">República Bolivariana de Venezuela</span>
+                <span className="block font-bold text-slate-800 uppercase text-sm">República Bolivariana de Venezuela</span>
                 <span className="block">Ministerio del Poder Popular para la Educación</span>
                 <span className="block">Liceo Bolivariano "José Antonio Anzoátegui"</span>
                 <span className="block font-mono">Código MPPE: #EM-77218320</span>
@@ -967,18 +967,18 @@ export default function GradeManager({
             </div>
 
             {/* Title description of sheet */}
-            <div id="sabana-sheet-title" className="text-center font-black text-xs space-y-1 text-slate-900 uppercase">
+            <div id="sabana-sheet-title" className="text-center font-black text-sm space-y-1 text-slate-900 uppercase">
               <h4>ACTA INTEGRAL DE EVALUACIONES CONTINUAS ("SÁBANA DE NOTAS")</h4>
-              <p className="text-[11px] font-semibold text-slate-500 font-mono">
+              <p className="text-sm font-semibold text-slate-500 font-mono">
                 Año Escolar: 2025-2026 | {sabanaYear}° Año EMG - Sección "{sabanaSection}" | Asignatura: {getSubjectName(sabanaSubjectId)?.toUpperCase() || ''}
               </p>
             </div>
 
             {/* Sheet Matrix */}
             <div id="sabana-matrix-scroller" className="overflow-x-auto">
-              <table className="w-full text-left text-xs border border-slate-300 border-collapse">
+              <table className="w-full text-left text-sm border border-slate-300 border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-300 font-bold text-slate-800 text-[10px]">
+                  <tr className="bg-slate-50 border-b border-slate-300 font-bold text-slate-800 text-xs">
                     <th className="p-2 border border-slate-300 w-16 text-center font-bold">N°</th>
                     <th className="p-2 border border-slate-300 w-32 font-bold font-mono">Cédula</th>
                     <th className="p-2 border border-slate-300">Nombres y Apellidos del Estudiante</th>
@@ -1008,7 +1008,7 @@ export default function GradeManager({
                       const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId);
 
                       return (
-                        <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-[11px]">
+                        <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-sm">
                           <td className="p-2 border border-slate-300 text-center font-bold font-mono">{idx + 1}</td>
                           <td className="p-2 border border-slate-300 font-mono font-bold text-slate-900">{student.cedula}</td>
                           <td className="p-2 border border-slate-300">
@@ -1023,15 +1023,15 @@ export default function GradeManager({
                           <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
                             {l3Avg.raw > 0 ? String(l3Avg.rounded).padStart(2, '0') : '--'}
                           </td>
-                          <td className="p-2 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-[12px] text-blue-900">
+                          <td className="p-2 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-base text-blue-900">
                             {finalGrade.raw > 0 ? String(finalGrade.rounded).padStart(2, '0') : '--'}
                           </td>
                           <td className="p-2 border border-slate-300 text-center">
                             {finalGrade.raw > 0 ? (
                               finalGrade.rounded >= 10 ? (
-                                <span className="text-green-700 font-bold uppercase text-[9px] bg-green-50 px-1.5 py-0.5 rounded">Aprobado</span>
+                                <span className="text-green-700 font-bold uppercase text-sm bg-green-50 px-1.5 py-0.5 rounded">Aprobado</span>
                               ) : (
-                                <span className="text-rose-700 font-bold uppercase text-[9px] bg-rose-50 px-1.5 py-0.5 rounded">A Aplazar / Reprobado</span>
+                                <span className="text-rose-700 font-bold uppercase text-sm bg-rose-50 px-1.5 py-0.5 rounded">A Aplazar / Reprobado</span>
                               )
                             ) : (
                               <span className="text-slate-400">Cursando</span>
@@ -1052,7 +1052,7 @@ export default function GradeManager({
             </div>
 
             {/* Regulatory Signatures block matching actual templates */}
-            <div id="regulatory-signatures" className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 text-[10px] text-slate-600 font-medium">
+            <div id="regulatory-signatures" className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 text-xs text-slate-600 font-medium">
               <div id="sig-director" className="text-center space-y-12">
                 <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
                 <div>
@@ -1091,7 +1091,7 @@ export default function GradeManager({
           {/* Student picker */}
           <div id="boletin-student-controls" className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
             <div id="boletin-student-group" className="flex flex-col gap-1 w-72">
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Seleccione Alumno Matriculado</span>
+              <span className="text-sm font-bold text-slate-400 uppercase">Seleccione Alumno Matriculado</span>
               <SearchableSelect
                 options={students.map(s => ({ value: s.id, label: `[${s.academicYear}° Año "${s.section}"] - ${s.lastName}, ${s.firstName} (${s.cedula})` }))}
                 value={selectedStudentId}
@@ -1099,14 +1099,14 @@ export default function GradeManager({
               />
             </div>
 
-            <p className="text-[11px] text-slate-400 italic max-w-xs mt-3">
+            <p className="text-sm text-slate-400 italic max-w-xs mt-3">
               Genera la boleta acumulativa del período corriente. Las calificaciones en actas ya se entregan debidamente redondeadas.
             </p>
 
             <button
               id="btn-print-boletin"
               onClick={() => window.print()}
-              className="ml-auto py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
+              className="ml-auto py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
             >
               <Printer className="h-4.5 w-4.5" />
               <span>Imprimir Boleta de Notas</span>
@@ -1126,31 +1126,31 @@ export default function GradeManager({
                 
                 {/* Header elements unified design */}
                 <div id="boletin-header" className="flex justify-between items-start border-b pb-4 border-slate-200">
-                  <div className="text-[10px] text-slate-600 space-y-0.5 leading-normal">
-                    <span className="block font-bold text-slate-800 uppercase text-[11px]">Liceo Bolivariano "José Antonio Anzoátegui"</span>
+                  <div className="text-xs text-slate-600 space-y-0.5 leading-normal">
+                    <span className="block font-bold text-slate-800 uppercase text-sm">Liceo Bolivariano "José Antonio Anzoátegui"</span>
                     <span className="block">Ministerio del Poder Popular para la Educación</span>
                     <span className="block italic">Estado Anzoátegui, Venezuela</span>
                   </div>
-                  <div className="text-right text-[10px] text-slate-400 font-mono">
+                  <div className="text-right text-xs text-slate-400 font-mono">
                     <span className="block">Boleta de Notas Acumulada</span>
                     <span className="block">Año Escolar: <strong>2025 - 2026</strong></span>
                   </div>
                 </div>
 
                 {/* Participant Ficha detail cards */}
-                <div id="boletin-student-ficha" className="bg-slate-50/50 border border-slate-150 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold text-slate-700">
+                <div id="boletin-student-ficha" className="bg-slate-50/50 border border-slate-150 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-semibold text-slate-700">
                   <div className="space-y-2">
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block">Estudiante</span>
-                      <span className="text-[12px] font-bold text-indigo-900 uppercase">{student.lastName}, {student.firstName}</span>
+                      <span className="text-sm font-bold text-slate-400 uppercase block">Estudiante</span>
+                      <span className="text-base font-bold text-indigo-900 uppercase">{student.lastName}, {student.firstName}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Cédula de Identidad</span>
+                        <span className="text-sm font-bold text-slate-400 uppercase block">Cédula de Identidad</span>
                         <span className="font-mono font-bold text-slate-805">{student.cedula}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Año / Sección Matrícula</span>
+                        <span className="text-sm font-bold text-slate-400 uppercase block">Año / Sección Matrícula</span>
                         <span className="text-slate-805">{student.academicYear}° Año de Educación Media - "{student.section}"</span>
                       </div>
                     </div>
@@ -1158,16 +1158,16 @@ export default function GradeManager({
 
                   <div className="space-y-2">
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block">Propietario / Representante Legal (LOPNA)</span>
+                      <span className="text-sm font-bold text-slate-400 uppercase block">Propietario / Representante Legal (LOPNA)</span>
                       <span className="text-slate-900 font-bold">{student.representativeName}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Cédula Rep.</span>
+                        <span className="text-sm font-bold text-slate-400 uppercase block">Cédula Rep.</span>
                         <span className="font-mono">{student.representativeCedula}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Teléfono de Enlace</span>
+                        <span className="text-sm font-bold text-slate-400 uppercase block">Teléfono de Enlace</span>
                         <span className="font-mono">{student.representativePhone}</span>
                       </div>
                     </div>
@@ -1176,9 +1176,9 @@ export default function GradeManager({
 
                 {/* Subjects evaluation transcript table */}
                 <div id="boletin-grades-box" className="overflow-x-auto pt-2">
-                  <table className="w-full text-left text-xs border border-slate-300 border-collapse">
+                  <table className="w-full text-left text-sm border border-slate-300 border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 font-bold text-slate-800 border-b border-slate-300 text-[9px] uppercase tracking-wider">
+                      <tr className="bg-slate-50 font-bold text-slate-800 border-b border-slate-300 text-sm uppercase tracking-wider">
                         <th className="p-2 border border-slate-300">Asignatura / Plan de Estudio</th>
                         <th className="p-2 border border-slate-300 text-center w-20">Lapso 1</th>
                         <th className="p-2 border border-slate-300 text-center w-20">Lapso 2</th>
@@ -1204,7 +1204,7 @@ export default function GradeManager({
                         const finalScore = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id);
 
                         return (
-                          <tr id={`bol-sub-${sub.id}`} key={sub.id} className="hover:bg-slate-50/20 text-[11px]">
+                          <tr id={`bol-sub-${sub.id}`} key={sub.id} className="hover:bg-slate-50/20 text-sm">
                             <td className="p-2.5 border border-slate-300 font-bold text-slate-800">{sub.name}</td>
                             <td className="p-2.5 border border-slate-300 text-center font-mono">
                               {l1Avg.raw > 0 ? String(l1Avg.rounded).padStart(2, '0') : '--'}
@@ -1215,15 +1215,15 @@ export default function GradeManager({
                             <td className="p-2.5 border border-slate-300 text-center font-mono">
                               {l3Avg.raw > 0 ? String(l3Avg.rounded).padStart(2, '0') : '--'}
                             </td>
-                            <td className="p-2.5 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-[11px] text-blue-950">
+                            <td className="p-2.5 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-sm text-blue-950">
                               {finalScore.raw > 0 ? String(finalScore.rounded).padStart(2, '0') : '--'}
                             </td>
                             <td className="p-2.5 border border-slate-300 text-center">
                               {finalScore.raw > 0 ? (
                                 finalScore.rounded >= 10 ? (
-                                  <span className="text-green-700 font-bold uppercase text-[9px] bg-green-50 px-1.5 py-0.5 rounded">Aprobado (AP)</span>
+                                  <span className="text-green-700 font-bold uppercase text-sm bg-green-50 px-1.5 py-0.5 rounded">Aprobado (AP)</span>
                                 ) : (
-                                  <span className="text-rose-700 font-bold uppercase text-[9px] bg-rose-50 px-1.5 py-0.5 rounded">Materia Pendiente</span>
+                                  <span className="text-rose-700 font-bold uppercase text-sm bg-rose-50 px-1.5 py-0.5 rounded">Materia Pendiente</span>
                                 )
                               ) : (
                                 <span className="text-slate-400">Cursando</span>
@@ -1237,7 +1237,7 @@ export default function GradeManager({
                 </div>
 
                 {/* Footer notes under LOPNA and MPPE layout */}
-                <div id="boletin-legal-footer" className="bg-slate-50/70 p-3.5 rounded-lg border border-slate-100 text-[10px] text-slate-500 leading-relaxed text-justify space-y-1">
+                <div id="boletin-legal-footer" className="bg-slate-50/70 p-3.5 rounded-lg border border-slate-100 text-xs text-slate-500 leading-relaxed text-justify space-y-1">
                   <strong>Marco Legal Normativo:</strong>
                   <p>
                     De acuerdo con el Artículo 108 del Reglamento General de la Ley Orgánica de Educación (RLOE), las notas de lapso definitivas se expresan en números enteros con redondeo favorable al estudiante a partir de las fracciones iguales o mayores de 0.50. 
@@ -1246,7 +1246,7 @@ export default function GradeManager({
                 </div>
 
                 {/* Sign and stamp blocks */}
-                <div id="boletin-signatures" className="grid grid-cols-3 gap-6 pt-10 text-[9px] text-slate-600 font-semibold text-center uppercase tracking-wide">
+                <div id="boletin-signatures" className="grid grid-cols-3 gap-6 pt-10 text-sm text-slate-600 font-semibold text-center uppercase tracking-wide">
                   <div className="space-y-12">
                     <div className="h-0.5 bg-slate-300 w-28 mx-auto"></div>
                     <div>
@@ -1288,12 +1288,12 @@ export default function GradeManager({
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2">
                 <ScrollText className="h-5 w-5 text-amber-600" />
-                <h3 className="text-sm font-bold text-slate-800">Histórico de Notas Certificadas</h3>
+                <h3 className="text-base font-bold text-slate-800">Histórico de Notas Certificadas</h3>
               </div>
               {['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) && (
                 <button
                   onClick={handleOpenCertLoadModal}
-                  className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+                  className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
                 >
                   <PlusCircle className="w-4 h-4" />
                   Registrar Notas Certificadas
@@ -1304,7 +1304,7 @@ export default function GradeManager({
             <div className="flex flex-wrap gap-4 items-end">
               {/* Student search + selector */}
               <div className="flex flex-col gap-1 flex-1 min-w-[280px]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Seleccionar Estudiante</span>
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-wide">Seleccionar Estudiante</span>
                 <SearchableSelect
                   options={students.map(s => ({ value: s.id, label: `[${s.academicYear}° "${s.section}"] ${s.lastName}, ${s.firstName} — ${s.cedula}` }))}
                   value={certSelectedStudentId}
@@ -1315,11 +1315,11 @@ export default function GradeManager({
 
               {/* Plan selector */}
               <div className="flex flex-col gap-1 min-w-[260px]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Plan de Estudio</span>
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-wide">Plan de Estudio</span>
                 <select
                   value={certPlanCode}
                   onChange={(e) => setCertPlanCode(e.target.value)}
-                  className="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
+                  className="text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold"
                 >
                   <option value="31059">Plan 31059 — EMG Vigente (2017+)</option>
                   <option value="32011">Plan 32011/31018 — Antiguo (pre-2017)</option>
@@ -1330,7 +1330,7 @@ export default function GradeManager({
               <button
                 onClick={handleDownloadCertExcel}
                 disabled={!certSelectedStudentId || certExcelLoading}
-                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 {certExcelLoading ? 'Generando...' : 'Generar Excel Certificado'}
@@ -1352,15 +1352,15 @@ export default function GradeManager({
                   if (!student) return null;
                   return (
                     <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-4 flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-black text-sm">
+                      <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-black text-base">
                         {student.firstName.charAt(0)}{student.lastName.charAt(0)}
                       </div>
                       <div>
-                        <span className="font-bold text-slate-800 text-sm block">{student.lastName}, {student.firstName}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">C.I.: {student.cedula} | {student.academicYear}° Año "{student.section}"</span>
+                        <span className="font-bold text-slate-800 text-base block">{student.lastName}, {student.firstName}</span>
+                        <span className="text-xs text-slate-500 font-mono">C.I.: {student.cedula} | {student.academicYear}° Año "{student.section}"</span>
                       </div>
                       <div className="ml-auto text-right">
-                        <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">
+                        <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">
                           {certHistorico.length} nota(s) certificada(s)
                         </span>
                       </div>
@@ -1375,17 +1375,17 @@ export default function GradeManager({
                     .map(([grado, notas]: [string, any[]]) => (
                       <div key={grado} className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
                         <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
-                          <h4 className="text-xs font-bold text-slate-700">
+                          <h4 className="text-sm font-bold text-slate-700">
                             {grado}° Año de Educación Media
-                            <span className="ml-2 text-[10px] font-normal text-slate-400">
+                            <span className="ml-2 text-xs font-normal text-slate-400">
                               ({notas.length} asignatura{notas.length !== 1 ? 's' : ''})
                             </span>
                           </h4>
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs">
+                          <table className="w-full text-left text-sm">
                             <thead>
-                              <tr className="border-b border-slate-100 text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                              <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wider font-bold">
                                 <th className="px-5 py-3">Asignatura</th>
                                 <th className="px-4 py-3 text-center w-24">Nota</th>
                                 <th className="px-4 py-3 text-center w-24">Tipo</th>
@@ -1410,7 +1410,7 @@ export default function GradeManager({
                                       {asig?.nombre || `Asignatura #${nota.id_asignatura}`}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                      <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-black font-mono ${
+                                      <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black font-mono ${
                                         isCualitativa
                                           ? 'bg-violet-100 text-violet-800 border border-violet-200'
                                           : isAprobada
@@ -1421,7 +1421,7 @@ export default function GradeManager({
                                       </span>
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                      <span className={`text-sm font-bold uppercase px-1.5 py-0.5 rounded ${
                                         isCualitativa
                                           ? 'bg-violet-50 text-violet-600'
                                           : 'bg-blue-50 text-blue-600'
@@ -1429,10 +1429,10 @@ export default function GradeManager({
                                         {isCualitativa ? 'Cualitativa' : 'Cuantitativa'}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-3 text-slate-600 text-[11px]">
+                                    <td className="px-4 py-3 text-slate-600 text-sm">
                                       {nota.periodo?.nombre || `Período #${nota.id_periodo}`}
                                     </td>
-                                    <td className="px-4 py-3 text-slate-500 text-[11px] italic">
+                                    <td className="px-4 py-3 text-slate-500 text-sm italic">
                                       {nota.institucion_origen}
                                     </td>
                                   </tr>
@@ -1446,8 +1446,8 @@ export default function GradeManager({
                 ) : (
                   <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center">
                     <ScrollText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-400">No hay notas certificadas registradas para este estudiante.</p>
-                    <p className="text-xs text-slate-400 mt-1">Use el botón "Registrar Notas Certificadas" para cargar el histórico académico.</p>
+                    <p className="text-base font-semibold text-slate-400">No hay notas certificadas registradas para este estudiante.</p>
+                    <p className="text-sm text-slate-400 mt-1">Use el botón "Registrar Notas Certificadas" para cargar el histórico académico.</p>
                   </div>
                 )}
               </div>
@@ -1455,7 +1455,7 @@ export default function GradeManager({
           ) : (
             <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center">
               <Search className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-400">Seleccione un estudiante para consultar su historial de notas certificadas.</p>
+              <p className="text-base font-semibold text-slate-400">Seleccione un estudiante para consultar su historial de notas certificadas.</p>
             </div>
           )}
         </div>
@@ -1480,12 +1480,12 @@ export default function GradeManager({
 
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               {certLoadError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-sm font-medium">
                   {certLoadError}
                 </div>
               )}
               {certLoadSuccess && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-xs font-medium flex items-center gap-2">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm font-medium flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
                   {certLoadSuccess}
                 </div>
@@ -1494,11 +1494,11 @@ export default function GradeManager({
               {/* Selectors */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Estudiante</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Estudiante</label>
                   <select
                     value={certLoadStudentId}
                     onChange={(e) => setCertLoadStudentId(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
                   >
                     {students.map(s => (
                       <option key={s.id} value={s.id}>{s.lastName}, {s.firstName} — {s.cedula}</option>
@@ -1506,11 +1506,11 @@ export default function GradeManager({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Año / Grado</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Año / Grado</label>
                   <select
                     value={certLoadGrado}
                     onChange={(e) => { setCertLoadGrado(Number(e.target.value)); setCertLoadNotas({}); }}
-                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
                   >
                     {[1,2,3,4,5].map(g => (
                       <option key={g} value={g}>{g}° Año</option>
@@ -1518,11 +1518,11 @@ export default function GradeManager({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Período Escolar</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Período Escolar</label>
                   <select
                     value={certLoadPeriodId}
                     onChange={(e) => setCertLoadPeriodId(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
                   >
                     <option value="">Seleccione un período</option>
                     {periods.map(p => (
@@ -1531,12 +1531,12 @@ export default function GradeManager({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Institución de Origen</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Institución de Origen</label>
                   <input
                     type="text"
                     value={certLoadInstitucion}
                     onChange={(e) => setCertLoadInstitucion(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -1544,13 +1544,13 @@ export default function GradeManager({
               {/* Subjects table for selected grade */}
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200">
-                  <h4 className="text-[11px] font-bold text-slate-700">
+                  <h4 className="text-sm font-bold text-slate-700">
                     Asignaturas del Plan de Estudio — {certLoadGrado}° Año
                   </h4>
                 </div>
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100 text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                    <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wider font-bold">
                       <th className="px-4 py-2.5">Asignatura</th>
                       <th className="px-4 py-2.5 text-center w-32">Tipo</th>
                       <th className="px-4 py-2.5 text-center w-40">Calificación</th>
@@ -1577,11 +1577,11 @@ export default function GradeManager({
                             <td className="px-4 py-3 font-semibold text-slate-800">
                               {planItem.subjectName}
                               {planItem.codigo && (
-                                <span className="ml-1.5 text-[9px] text-slate-400 font-mono">({planItem.codigo})</span>
+                                <span className="ml-1.5 text-sm text-slate-400 font-mono">({planItem.codigo})</span>
                               )}
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                              <span className={`text-sm font-bold uppercase px-1.5 py-0.5 rounded ${
                                 isCualitativa ? 'bg-violet-50 text-violet-600' : 'bg-blue-50 text-blue-600'
                               }`}>
                                 {isCualitativa ? 'Cualitativa' : 'Cuantitativa'}
@@ -1601,7 +1601,7 @@ export default function GradeManager({
                                       }
                                     }));
                                   }}
-                                  className="text-xs p-2 bg-violet-50 border border-violet-200 rounded font-bold text-center w-20 focus:outline-hidden focus:border-violet-500"
+                                  className="text-sm p-2 bg-violet-50 border border-violet-200 rounded font-bold text-center w-20 focus:outline-hidden focus:border-violet-500"
                                 >
                                   <option value="">--</option>
                                   <option value="A">A</option>
@@ -1627,7 +1627,7 @@ export default function GradeManager({
                                     }));
                                   }}
                                   placeholder="1-20"
-                                  className="text-xs p-2 bg-slate-50 border border-slate-200 rounded font-bold text-center w-20 font-mono focus:outline-hidden focus:border-amber-500"
+                                  className="text-sm p-2 bg-slate-50 border border-slate-200 rounded font-bold text-center w-20 font-mono focus:outline-hidden focus:border-amber-500"
                                 />
                               )}
                             </td>
@@ -1643,14 +1643,14 @@ export default function GradeManager({
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
               <button
                 onClick={() => setIsCertLoadModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors pointer-events-auto cursor-pointer"
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors pointer-events-auto cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveCertifiedGrades}
                 disabled={certLoadSaving || !certLoadPeriodId}
-                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
               >
                 {certLoadSaving ? 'Guardando...' : 'Guardar Notas Certificadas'}
               </button>
@@ -1677,28 +1677,28 @@ export default function GradeManager({
             </div>
             
             <div className="p-6 overflow-y-auto">
-              <div className="mb-4 grid grid-cols-2 gap-4 text-sm bg-indigo-50/50 p-4 rounded-lg border border-indigo-100/50">
+              <div className="mb-4 grid grid-cols-2 gap-4 text-base bg-indigo-50/50 p-4 rounded-lg border border-indigo-100/50">
                 <div>
-                  <span className="text-slate-500 text-xs font-semibold block">Asignatura</span>
+                  <span className="text-slate-500 text-sm font-semibold block">Asignatura</span>
                   <span className="font-bold text-slate-800">{selectedAuditLog.valores_nuevos?.asignatura}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-xs font-semibold block">Sección</span>
+                  <span className="text-slate-500 text-sm font-semibold block">Sección</span>
                   <span className="font-bold text-slate-800">{selectedAuditLog.valores_nuevos?.year}° Año "{selectedAuditLog.valores_nuevos?.section}"</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-xs font-semibold block">Período</span>
+                  <span className="text-slate-500 text-sm font-semibold block">Período</span>
                   <span className="font-bold text-slate-800">Lapso {selectedAuditLog.valores_nuevos?.lapso}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-xs font-semibold block">Fecha de Registro</span>
+                  <span className="text-slate-500 text-sm font-semibold block">Fecha de Registro</span>
                   <span className="font-bold text-slate-800">{new Date(selectedAuditLog.fecha_hora).toLocaleString('es-VE')}</span>
                 </div>
               </div>
 
               <div className="border border-slate-200 rounded-lg overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                <table className="w-full text-left text-base whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-sm text-slate-500 font-semibold uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Estudiante</th>
                       {(() => {
@@ -1719,7 +1719,7 @@ export default function GradeManager({
                         })();
                         return evaluations.map((ev: any, i: number) => (
                           <th key={i} className="py-3 px-4 text-center">
-                            {ev.name} <span className="text-[9px] text-slate-400 block mt-0.5">({ev.percentage}%)</span>
+                            {ev.name} <span className="text-sm text-slate-400 block mt-0.5">({ev.percentage}%)</span>
                           </th>
                         ));
                       })()}
@@ -1758,7 +1758,7 @@ export default function GradeManager({
                             return (
                               <td key={i} className="py-2.5 px-4 text-center">
                                 {score !== undefined ? (
-                                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold font-mono ${
+                                  <span className={`inline-block px-2 py-0.5 rounded text-sm font-bold font-mono ${
                                     score >= 10 ? 'bg-blue-100 text-blue-700' : 'bg-rose-100 text-rose-700'
                                   }`}>
                                     {String(score).padStart(2, '0')}
@@ -1780,7 +1780,7 @@ export default function GradeManager({
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
               <button
                 onClick={() => setSelectedAuditLog(null)}
-                className="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-900 transition-colors"
+                className="px-4 py-2 bg-slate-800 text-white text-base font-semibold rounded-lg hover:bg-slate-900 transition-colors"
               >
                 Cerrar Archivo
               </button>

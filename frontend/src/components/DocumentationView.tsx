@@ -14,7 +14,7 @@ export default function DocumentationView() {
           <BookOpen className="h-8 w-8 text-indigo-600" />
           Documentación del Sistema y Arquitectura MPPE
         </h1>
-        <p id="doc-subtitle" className="text-slate-500 mt-2 text-sm leading-relaxed max-w-3xl">
+        <p id="doc-subtitle" className="text-slate-500 mt-2 text-base leading-relaxed max-w-3xl">
           Especificación de arquitectura, diseño de base de datos relacional orientada a la legislación educativa de Venezuela, 
           y diseño detallado de cálculos de calificaciones y boletines oficiales para el nivel de Educación Media General 
           conforme a la Ley Orgánica de Educación y la LOPNA.
@@ -28,7 +28,7 @@ export default function DocumentationView() {
             <Layers className="h-5 w-5 text-indigo-600" />
             1. Arquitectura & Stack Tecnológico Recomendado
           </h2>
-          <div id="tech-content" className="space-y-4 text-xs text-slate-600 leading-relaxed">
+          <div id="tech-content" className="space-y-4 text-sm text-slate-600 leading-relaxed">
             <div>
               <span className="font-semibold text-slate-800 block">Frontend (Capa de Cliente):</span>
               <p className="mt-1">
@@ -59,7 +59,7 @@ export default function DocumentationView() {
             <Calculator className="h-5 w-5 text-emerald-600" />
             2. Lógica de Calificaciones Oficiales (3 Lapsos)
           </h2>
-          <div id="grading-content" className="space-y-3 text-xs text-slate-600 leading-relaxed">
+          <div id="grading-content" className="space-y-3 text-sm text-slate-600 leading-relaxed">
             <p>
               El sistema de evaluación venezolana para Educación Media General se rige bajo la escala del <strong>1 al 20</strong>, siendo <strong>10 la calificación mínima aprobatoria</strong>. El año escolar se divide en <strong>3 Lapsos Académicos</strong>.
             </p>
@@ -69,7 +69,7 @@ export default function DocumentationView() {
                 <li>
                   <strong>Calificación de Lapso:</strong> Es la sumatoria de las evaluaciones parciales ponderadas (e.g., 4 evaluaciones de 25% cada una).
                   <br />
-                  <code className="bg-white px-1 py-0.5 rounded text-indigo-700 border text-[10px]">Nota_Lapso = Suma(Nota_Evaluacion_i * Porcentaje_i / 100)</code>
+                  <code className="bg-white px-1 py-0.5 rounded text-indigo-700 border text-xs">Nota_Lapso = Suma(Nota_Evaluacion_i * Porcentaje_i / 100)</code>
                 </li>
                 <li>
                   <strong>Criterio de Ajuste:</strong> Las calificaciones de Lapso se expresan en números enteros. Las fracciones de <strong>0.50 o más</strong> se redondean al entero inmediato superior (e.g., una nota de <strong>9.50</strong> se convierte en <strong>10</strong> - Aprobado). Las inferiores a 0.50 bajan (e.g., 9.49 a 09).
@@ -77,7 +77,7 @@ export default function DocumentationView() {
                 <li>
                   <strong>Calificación Final de Asignatura:</strong> Es el promedio simple de las calificaciones de los <strong>3 Lapsos ya redondeados</strong>.
                   <br />
-                  <code className="bg-white px-1 py-0.5 rounded text-green-700 border text-[10px]">Nota_Final = Redondear((Nota_Lapso1 + Nota_Lapso2 + Nota_Lapso3) / 3)</code>
+                  <code className="bg-white px-1 py-0.5 rounded text-green-700 border text-xs">Nota_Final = Redondear((Nota_Lapso1 + Nota_Lapso2 + Nota_Lapso3) / 3)</code>
                 </li>
               </ul>
             </div>
@@ -94,15 +94,15 @@ export default function DocumentationView() {
           <Database className="h-5 w-5 text-blue-600" />
           3. Modelo de Datos Relacional de Clases (Drizzle/SQL Schema)
         </h2>
-        <p className="text-xs text-slate-500 mb-4">
+        <p className="text-sm text-slate-500 mb-4">
           La base de datos relacional debe organizarse garantizando la trazabilidad histórica de los boletines oficiales para evitar fraudes en actas académicas.
         </p>
 
-        <div id="schema-tabs" className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
+        <div id="schema-tabs" className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-sm">
           {/* Col 1 */}
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
             <h3 className="font-bold text-indigo-900 mb-2 border-b pb-1">Usuarios & LOPNA</h3>
-            <pre className="font-mono text-[10px] text-slate-700 overflow-x-auto space-y-1">
+            <pre className="font-mono text-xs text-slate-700 overflow-x-auto space-y-1">
 {`-- ENTIDAD: users
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -134,7 +134,7 @@ CREATE TABLE students (
           {/* Col 2 */}
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
             <h3 className="font-bold text-indigo-900 mb-2 border-b pb-1">Malla Curricular & Estructura</h3>
-            <pre className="font-mono text-[10px] text-slate-700 overflow-x-auto space-y-1">
+            <pre className="font-mono text-xs text-slate-700 overflow-x-auto space-y-1">
 {`-- ENTIDAD: subjects
 CREATE TABLE subjects (
   id VARCHAR(10) PRIMARY KEY, -- e.g., 'mat', 'qui'
@@ -165,7 +165,7 @@ CREATE TABLE student_enrollment (
           {/* Col 3 */}
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
             <h3 className="font-bold text-indigo-900 mb-2 border-b pb-1">Evaluaciones & Horarios</h3>
-            <pre className="font-mono text-[10px] text-slate-700 overflow-x-auto space-y-1">
+            <pre className="font-mono text-xs text-slate-700 overflow-x-auto space-y-1">
 {`-- ENTIDAD: evaluations
 CREATE TABLE evaluations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -200,28 +200,28 @@ CREATE TABLE grades (
           4. Fases de Desarrollo Graduales e Hitos del Proyecto
         </h2>
         
-        <div id="roadmap-steps" className="grid grid-cols-1 md:grid-cols-4 gap-6 text-xs text-slate-600 mt-4">
+        <div id="roadmap-steps" className="grid grid-cols-1 md:grid-cols-4 gap-6 text-sm text-slate-600 mt-4">
           <div className="border-l-2 border-indigo-200 pl-4 space-y-2 relative">
             <div className="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-indigo-600"></div>
-            <span className="font-bold text-indigo-900 block text-sm">Fase 1: Configuración</span>
+            <span className="font-bold text-indigo-900 block text-base">Fase 1: Configuración</span>
             <p>Se construye primeramente la base de datos PostgreSQL, esquemas lógicos y autenticación multifactor integrada bajo roles oficiales. Diseño de seguridad para LOPNA.</p>
           </div>
 
           <div className="border-l-2 border-indigo-200 pl-4 space-y-2 relative">
             <div className="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-indigo-600"></div>
-            <span className="font-bold text-indigo-900 block text-sm">Fase 2: Admisión</span>
+            <span className="font-bold text-indigo-900 block text-base">Fase 2: Admisión</span>
             <p>Sistemas de registro y transferencia de alumnos, generación de fichas confidenciales de representantes, matrículas del año en curso con secciones de 1er a 5to año.</p>
           </div>
 
           <div className="border-l-2 border-indigo-200 pl-4 space-y-2 relative">
             <div className="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-emerald-600"></div>
-            <span className="font-bold text-indigo-900 block text-sm">Fase 3: Académico & Notas</span>
+            <span className="font-bold text-indigo-900 block text-base">Fase 3: Académico & Notas</span>
             <p className="font-medium text-slate-800">El núcleo de carga del MPPE. Definición del plan de lapsos, carga de notas del 1-20, actas de recuperación y algoritmo del redondeo de notas oficial.</p>
           </div>
 
           <div className="border-l-2 border-slate-200 pl-4 space-y-2 relative item-active">
             <div className="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-slate-300"></div>
-            <span className="font-bold text-indigo-900 block text-sm">Fase 4: Horarios & Reportes</span>
+            <span className="font-bold text-indigo-900 block text-base">Fase 4: Horarios & Reportes</span>
             <p>Mapeo de aulas con asignación horaria matricial libre de sobreventas. Exportación de plantillas XLS y generación de Boletines oficiales firmables digitales.</p>
           </div>
         </div>
