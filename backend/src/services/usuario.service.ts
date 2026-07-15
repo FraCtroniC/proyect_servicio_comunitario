@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Usuario as UsuarioModel, Rol, Docente } from '../models';
+import { Usuario as UsuarioModel, Rol, Docente, RefreshToken, sequelize } from '../models';
 import { UsuarioDto, CrearUsuarioDto, ActualizarUsuarioDto } from '../types/usuario.types';
 import { NotFoundError, ValidationError } from '../shared/errors';
 
@@ -172,9 +172,19 @@ export const UsuarioService = {
   },
 
   async eliminar(id: number): Promise<void> {
-    const deletedCount = await UsuarioModel.destroy({ where: { id_usuario: id } });
-    if (deletedCount === 0) {
-      throw new NotFoundError(`Usuario con id ${id} no encontrado`);
+    const transaction = await sequelize.transaction();
+    try {
+      await RefreshToken.destroy({ where: { id_usuario: id }, transaction });
+      
+      const deletedCount = await UsuarioModel.destroy({ where: { id_usuario: id }, transaction });
+      if (deletedCount === 0) {
+        throw new NotFoundError(`Usuario con id ${id} no encontrado`);
+      }
+      
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
   },
 };

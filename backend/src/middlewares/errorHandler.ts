@@ -20,6 +20,15 @@ export const errorHandler = (
     return;
   }
 
+  if (err.name === 'SequelizeForeignKeyConstraintError') {
+    res.status(400).json({
+      error: {
+        message: 'No se puede completar la acción porque el registro tiene otros datos asociados en el sistema.',
+      },
+    });
+    return;
+  }
+
   console.error('Error no controlado:', err);
 
   res.status(500).json({
