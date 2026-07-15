@@ -146,7 +146,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
           <div>
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Estudiantes</p>
             <h3 className="text-2xl font-bold text-slate-800 mt-1">{activeStudents}<span className="text-slate-300 text-xs font-normal"> / {totalStudents}</span></h3>
-            <p className="text-[10px] text-green-600 font-medium">Activos en sistema</p>
+            <p className="text-[10px] text-green-600 font-medium">Activo en sistema</p>
           </div>
         </div>
 
