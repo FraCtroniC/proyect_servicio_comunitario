@@ -168,6 +168,21 @@ export default function AttendanceTracker({
     }
   }, [isDocente, selectedYear, selectedSection, docenteSections]);
 
+  const availableSubjects = subjects
+    .filter(s => !s.years || s.years.length === 0 || s.years.includes(selectedYear))
+    .filter(s => !isDocente || (docenteSubjects && docenteSubjects.includes(String(s.id))))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  useEffect(() => {
+    if (availableSubjects.length > 0) {
+      if (!selectedSubject || !availableSubjects.find(s => String(s.id) === selectedSubject)) {
+        setSelectedSubject(String(availableSubjects[0].id));
+      }
+    } else if (availableSubjects.length === 0 && selectedSubject !== '') {
+      setSelectedSubject('');
+    }
+  }, [selectedYear, selectedSection, isDocente, docenteSubjects]); // depend on top level changes to avoid loops
+
   const allowedBlocksForClass = Array.from(new Set(
     scheduleEvents
       .filter(e => 
@@ -379,14 +394,9 @@ export default function AttendanceTracker({
                 onChange={(e) => setSelectedSubject(e.target.value)}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value="">Todas las materias</option>
-                {subjects
-                  .filter(s => !s.years || s.years.length === 0 || s.years.includes(selectedYear))
-                  .filter(s => !isDocente || (docenteSubjects && docenteSubjects.includes(String(s.id))))
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
+                {availableSubjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
               </select>
             </div>
 

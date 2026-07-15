@@ -1276,9 +1276,11 @@ export default function App() {
       const id = Number(evtId.replace(/\D/g, ''));
       if (id) {
         await api.delete(`/api/horarios/${id}`);
+        toast.success('Asignación eliminada con éxito');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error al eliminar horario:', e);
+      toast.error('Error al eliminar asignación: ' + (e.response?.data?.error?.message || e.message || 'Error desconocido'));
     }
   };
 

@@ -14,6 +14,8 @@ export function authorize(...rolesPermitidos: RolPermitido[]) {
       rol === req.user?.idRol || rol === req.user?.rol
     );
 
+    console.log(`[RBAC] User Rol: '${req.user?.rol}', ID: ${req.user?.idRol} | Allowed:`, rolesPermitidos, '| Access:', hasAccess);
+
     if (!hasAccess) {
       return next(new AppError('No tienes permisos para realizar esta acción', 403));
     }
