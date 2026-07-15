@@ -139,7 +139,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
       {/* Main KPI Stats Grid */}
       <div id="kpi-grid" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1 */}
-        <div id="kpi-card-students" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-slate-300 hover:shadow-xs transition-all pointer-events-auto cursor-pointer" onClick={() => onNavigateToTab('academic')}>
+        <div id="kpi-card-students" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-slate-300 hover:shadow-xs transition-all pointer-events-auto cursor-pointer" onClick={() => onNavigateToTab('students')}>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
             <Users className="h-6 w-6" />
           </div>
@@ -151,7 +151,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
         </div>
 
         {/* KPI 2 */}
-        <div id="kpi-card-teachers" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-slate-300 hover:shadow-xs transition-all pointer-events-auto cursor-pointer" onClick={() => onNavigateToTab('users')}>
+        <div id="kpi-card-teachers" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-slate-300 hover:shadow-xs transition-all pointer-events-auto cursor-pointer" onClick={() => onNavigateToTab('docentes')}>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
             <GraduationCap className="h-6 w-6" />
           </div>

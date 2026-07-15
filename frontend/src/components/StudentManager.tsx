@@ -256,28 +256,40 @@ export default function StudentManager({ students, sections, classrooms, current
     setErrors(newErrors);
   };
 
-  const checkCedula = (val: string, type: 'student' | 'rep', natType: string) => {
-    if (!val) return;
-    const newErrors = { ...errors };
-    if (!validateCedula(val)) {
-      newErrors[type === 'student' ? 'cedula' : 'repCedula'] = 'Formato inválido (Solo 7-9 números)';
+  const checkCedula = (val: string, type: 'student' | 'rep', natType: string, isBlur: boolean = false) => {
+    if (!val) {
+      const newErrors = { ...errors };
+      delete newErrors[type === 'student' ? 'cedula' : 'repCedula'];
       setErrors(newErrors);
       return;
     }
     
     let fullCedula = `${natType}-${val.trim()}`;
+    let cleanCedula = val.trim();
+    const newErrors = { ...errors };
     
     if (type === 'student') {
-      const exists = students.some(s => s.cedula === fullCedula);
-      if (exists) newErrors['cedula'] = 'Esta cédula ya está registrada.';
-      else delete newErrors['cedula'];
+      const exists = students.some(s => 
+        (s.cedula === fullCedula || s.cedula === cleanCedula || s.cedula === `V-${cleanCedula}` || s.cedula === `E-${cleanCedula}`) && 
+        (!editingStudentId || s.id !== editingStudentId)
+      );
+      if (exists) {
+        newErrors['cedula'] = 'Esta cédula ya está registrada.';
+        setErrors(newErrors);
+        return;
+      } else {
+        delete newErrors['cedula'];
+      }
     } else {
-      const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
-      const currentRepCedula = currentStudent?.representativeCedula || '';
-      const exists = representatives.some(r => r.cedula_rep === fullCedula && r.cedula_rep !== currentRepCedula);
-      if (exists) newErrors['repCedula'] = 'Esta cédula de representante ya está registrada.';
-      else delete newErrors['repCedula'];
+      delete newErrors['repCedula'];
     }
+
+    if (isBlur && !validateCedula(val)) {
+      newErrors[type === 'student' ? 'cedula' : 'repCedula'] = 'Formato inválido (Solo 7-9 números)';
+      setErrors(newErrors);
+      return;
+    }
+    
     setErrors(newErrors);
   };
 
@@ -289,16 +301,14 @@ export default function StudentManager({ students, sections, classrooms, current
       newErrors['repEmail'] = 'Formato de correo inválido.';
       setErrors(newErrors);
       return;
+    } else if (field === 'correo') {
+      delete newErrors['repEmail'];
     }
 
-    const currentStudent = editingStudentId ? students.find(s => s.id === editingStudentId) : null;
-    const currentRepCedula = currentStudent?.representativeCedula || '';
-    const exists = representatives.some(r => r[field] === value && r.cedula_rep !== currentRepCedula);
-    if (exists) {
-      newErrors[field === 'telefono' ? 'repPhone' : 'repEmail'] = `Este ${field === 'telefono' ? 'teléfono' : 'correo'} ya está registrado.`;
-    } else {
-      delete newErrors[field === 'telefono' ? 'repPhone' : 'repEmail'];
+    if (field === 'telefono') {
+      delete newErrors['repPhone'];
     }
+    
     setErrors(newErrors);
   };
 
@@ -658,7 +668,10 @@ export default function StudentManager({ students, sections, classrooms, current
                 <div className="flex">
                   <select
                     value={cedulaType}
-                    onChange={(e) => setCedulaType(e.target.value)}
+                    onChange={(e) => {
+                      setCedulaType(e.target.value);
+                      if (cedula) checkCedula(cedula, 'student', e.target.value, false);
+                    }}
                     className={`text-base p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
                   >
                     <option value="V">V</option>
@@ -668,8 +681,12 @@ export default function StudentManager({ students, sections, classrooms, current
                     type="text" 
                     placeholder="e.g. 32112443" 
                     value={cedula} 
-                    onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))}
-                    onBlur={(e) => checkCedula(e.target.value, 'student', cedulaType)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setCedula(val);
+                      checkCedula(val, 'student', cedulaType, false);
+                    }}
+                    onBlur={(e) => checkCedula(e.target.value, 'student', cedulaType, true)}
                     className={`w-full text-base p-2 bg-slate-50 border ${errors.cedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
                   />
                 </div>
@@ -804,12 +821,11 @@ export default function StudentManager({ students, sections, classrooms, current
                   onChange={(e) => setEnrollSection(e.target.value)}
                   className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
-                  {sections
-                    .filter(s => s.grade === enrollYear)
-                    .sort((a, b) => a.letter.localeCompare(b.letter))
-                    .map(s => (
-                      <option key={`${s.grade}-${s.letter}`} value={s.letter}>
-                        Sección "{s.letter}"
+                  {Array.from(new Set(sections.filter(s => s.grade === enrollYear).map(s => s.letter)))
+                    .sort((a, b) => a.localeCompare(b))
+                    .map(letter => (
+                      <option key={`${enrollYear}-${letter}`} value={letter}>
+                        Sección "{letter}"
                       </option>
                     ))}
                 </select>
@@ -827,7 +843,10 @@ export default function StudentManager({ students, sections, classrooms, current
                 <div className="flex">
                   <select
                     value={repCedulaType}
-                    onChange={(e) => setRepCedulaType(e.target.value)}
+                    onChange={(e) => {
+                      setRepCedulaType(e.target.value);
+                      if (repCedula) checkCedula(repCedula, 'rep', e.target.value, false);
+                    }}
                     className={`text-base p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-l focus:bg-white focus:outline-hidden font-medium border-r-0`}
                   >
                     <option value="V">V</option>
@@ -837,8 +856,12 @@ export default function StudentManager({ students, sections, classrooms, current
                     type="text" 
                     placeholder="e.g. 12111000" 
                     value={repCedula} 
-                    onChange={(e) => setRepCedula(e.target.value.replace(/\D/g, ''))}
-                    onBlur={(e) => checkCedula(e.target.value, 'rep', repCedulaType)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setRepCedula(val);
+                      checkCedula(val, 'rep', repCedulaType, false);
+                    }}
+                    onBlur={(e) => checkCedula(e.target.value, 'rep', repCedulaType, true)}
                     className={`w-full text-base p-2 bg-slate-50 border ${errors.repCedula ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-r focus:bg-white focus:outline-hidden font-medium font-mono`}
                   />
                 </div>

@@ -173,7 +173,7 @@ export default function AcademicManager({
               <select
                 value={viewGrade}
                 onChange={(e) => setViewGrade(Number(e.target.value))}
-                className="text-xs p-1.5 bg-slate-50 border border-slate-200 rounded font-bold"
+                className="text-base p-2 bg-slate-50 border border-slate-200 rounded font-medium text-slate-800 focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors"
               >
                 <option value={0}>Todos los Años</option>
                 {[1,2,3,4,5].map(g => (
@@ -210,7 +210,14 @@ export default function AcademicManager({
                           className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
                         >
                           <div>
-                            <span className="text-base font-black text-indigo-700">Sección "{s.letter}"</span>
+                            <div className="flex justify-between items-start">
+                              <span className="text-base font-black text-indigo-700">Sección "{s.letter}"</span>
+                              {viewPeriod === 'all' && (
+                                <span className="text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                  {periods.find(p => String(p.id) === String(s.periodId))?.name || 'Desconocido'}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                               <Users className="h-3 w-3" />
                               <span>{ocupados} / {cupos || '?'} cupos</span>
