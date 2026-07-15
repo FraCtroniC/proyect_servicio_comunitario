@@ -1337,7 +1337,7 @@ const handleLogout = async () => {
       />
 
       {/* Top Banner Warning context (Simulated) */}
-      <div id="simulated-header-badge" className="bg-slate-900 text-slate-300 py-3 px-6 text-center font-mono tracking-wider flex items-center justify-between border-b border-slate-800 shadow-md">
+      <div id="simulated-header-badge" className="hidden md:flex bg-slate-900 text-slate-300 py-3 px-6 text-center font-mono tracking-wider items-center justify-between border-b border-slate-800 shadow-md">
         <span className="flex items-center gap-2 mx-auto md:mx-0 text-sm text-slate-300">
           👋 Bienvenido de nuevo, <strong className="text-white font-black px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">{currentUser?.name || 'Usuario'}</strong>
         </span>
@@ -1468,6 +1468,17 @@ const handleLogout = async () => {
 
         {/* MOBILE DRAWER IF OPEN */}
         <AnimatePresence id="mobile-presence">
+          {isMobileMenuOpen && (
+            <motion.div
+              id="mobile-drawer-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
           {isMobileMenuOpen && (
             <motion.div
               id="mobile-menu-drawer"
