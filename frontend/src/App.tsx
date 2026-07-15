@@ -1366,10 +1366,12 @@ const handleLogout = async () => {
             {/* Brand Logo Banner */}
             <div id="mppe-logo-banner" className="px-5 mb-8 flex items-center gap-3 shrink-0 relative mt-2">
               <div className="absolute left-3 top-0 w-10 h-10 bg-blue-500/30 blur-xl rounded-full"></div>
-              <div className="h-11 w-11 bg-white rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-white/10 relative z-10 overflow-hidden">
-                <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-cover" />
+              
+              <div className="h-11 w-11 bg-white rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center border border-white/10 relative z-10 overflow-hidden p-0.5">
+                <img src="/logo_leo.jpg" alt="Logo LEO" className="h-full w-full object-contain rounded-lg" />
               </div>
-              <div className="relative z-10">
+              
+              <div className="relative z-10 min-w-0">
                 <span className="block font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-base tracking-widest uppercase leading-none mb-1">
                   Estilita Orozco
                 </span>
@@ -1443,7 +1445,7 @@ const handleLogout = async () => {
               
               <button
                 onClick={handleLogout}
-                className="w-full py-2 px-3 bg-rose-600/90 hover:bg-rose-500 text-white text-sm font-bold uppercase tracking-wider rounded-lg shadow-sm border border-rose-500/50 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
+                className="w-full py-1.5 px-3 bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-bold uppercase tracking-wide rounded-lg shadow-sm border border-rose-500/50 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
               >
                 <LogOut className="h-3.5 w-3.5" /> Cerrar Sesión
               </button>
@@ -1534,7 +1536,7 @@ const handleLogout = async () => {
                   handleLogout();
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full py-3 text-center text-sm text-white font-black uppercase bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm border border-rose-500 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
+                className="w-full py-2 text-center text-xs text-white font-bold uppercase bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm border border-rose-500 transition-all pointer-events-auto cursor-pointer flex justify-center items-center gap-2"
               >
                 <LogOut className="h-4 w-4" /> Cerrar Sesión
               </button>

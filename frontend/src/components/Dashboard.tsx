@@ -130,7 +130,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
             Estilita Orozco
           </h1>
           <p className="text-blue-100 text-base max-w-2xl leading-relaxed">
-            Plataforma homologada de Control de Estudios para Educación Media General. 
+            Plataforma de Control de Estudios para Educación Media General. 
             Cumplimiento absoluto con la normativa del MPPE (Calificaciones 1-20, Redondeo Oficial Art. 108 del RLOE, y protección LOPNA).
           </p>
         </div>
