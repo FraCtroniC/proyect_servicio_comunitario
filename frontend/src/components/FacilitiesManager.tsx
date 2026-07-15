@@ -41,6 +41,7 @@ export default function FacilitiesManager({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<Classroom | null>(null);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   const openAddModal = () => {
     setName('');
@@ -163,8 +164,8 @@ export default function FacilitiesManager({
             </div>
           </div>
 
-          <div id="room-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-1">
-            {classrooms.map(room => {
+          <div id="room-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {classrooms.slice(0, visibleCount).map(room => {
               const bookingCount = getClassroomOccupancyCount(room.id);
               
               return (
@@ -249,6 +250,18 @@ export default function FacilitiesManager({
               );
             })}
           </div>
+
+          {visibleCount < classrooms.length && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => setVisibleCount(p => p + 8)}
+                className="text-sm font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-6 py-2.5 rounded-xl transition-colors flex items-center gap-2 pointer-events-auto cursor-pointer"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Cargar más aulas
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
