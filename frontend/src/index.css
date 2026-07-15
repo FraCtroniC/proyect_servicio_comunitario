@@ -1,13 +1,42 @@
 @import "tailwindcss";
 
+@layer base {
+  /* Teléfonos (hasta 767px): Interfaz super compacta */
+  html {
+    font-size: 11px;
+  }
+  
+  /* Tablets (768px a 1023px) */
+  @media (min-width: 768px) {
+    html {
+      font-size: 12px;
+    }
+  }
+  
+  /* Laptops comunes (1024px a 1535px) */
+  @media (min-width: 1024px) {
+    html {
+      font-size: 13px; /* Escala reducida para que quepa mucha info */
+    }
+  }
+
+  /* Monitores de escritorio estándar (1080p, 1536px a 2559px) */
+  @media (min-width: 1536px) {
+    html {
+      font-size: 14px; /* Un poco más pequeño que el estándar (16px) para un look de Dashboard denso */
+    }
+  }
+  
+  /* Monitores 2K / 4K (2560px+) */
+  @media (min-width: 2560px) {
+    html {
+      font-size: 15px; /* En 2K la idea es ver MÁS cosas, no verlas gigantes */
+    }
+  }
+}
+
 @theme {
-  /* Aumento global de tamaños de fuente para mejorar legibilidad */
-  --text-xs: 0.875rem;
-  --text-sm: 1rem;
-  --text-base: 1.125rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
+  /* Eliminados los aumentos de texto. Ahora usará los tamaños nativos de Tailwind (text-xs = 0.75rem, text-sm = 0.875rem) */
 }
 
 @layer utilities {
