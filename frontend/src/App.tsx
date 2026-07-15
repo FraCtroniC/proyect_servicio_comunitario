@@ -1419,7 +1419,12 @@ const handleLogout = async () => {
         <span className="flex items-center gap-2 mx-auto md:mx-0 text-base text-slate-300">
           👋 Bienvenido de nuevo, <strong className="text-white font-black px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">{currentUser?.name || 'Usuario'}</strong>
         </span>
-        <span className="hidden md:flex items-center">
+        <span className="hidden md:flex items-center gap-4">
+          {activePeriod && (
+            <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 shadow-sm font-sans tracking-normal">
+              {activePeriod.name}
+            </span>
+          )}
           <VenezuelaClock />
         </span>
       </div>

@@ -224,11 +224,7 @@ export default function AttendanceTracker({
 
           {/* Action buttons */}
           <div className="flex justify-end gap-2 items-center">
-            {activePeriod && (
-              <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold">
-                Período: {activePeriod.name}
-              </span>
-            )}
+
             <button
               onClick={() => {
                 const desde = new Date();

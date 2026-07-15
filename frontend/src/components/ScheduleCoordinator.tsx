@@ -367,11 +367,7 @@ export default function ScheduleCoordinator({
         <h1 id="schedule-title" className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <Calendar className="h-6 w-6 text-indigo-600" />
           Planificación y Distribución Horaria Escolar
-          {activePeriod && (
-            <span className="ml-auto text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-              {activePeriod.name}
-            </span>
-          )}
+
         </h1>
         <p className="text-sm text-slate-500 mt-1">Definición de asignaturas, auditorías de solapamientos para docentes, y designación de planta física.</p>
       </div>
