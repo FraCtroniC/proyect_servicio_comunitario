@@ -41,7 +41,8 @@ import {
   StudyPlanItem,
   SchoolPeriod,
   Section,
-  Docente
+  Docente,
+  SubjectSchedule
 } from './types';
 
 import { api } from './services/api';
@@ -121,6 +122,10 @@ export default function App() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [teacherLogs, setTeacherLogs] = useState<TeacherScheduleLog[]>([]);
   const [matriculasCache, setMatriculasCache] = useState<any[]>([]);
+
+  // Schedule/Horario states for attendance-by-class
+  const [horariosDisponibles, setHorariosDisponibles] = useState<SubjectSchedule[]>([]);
+  const [miHorario, setMiHorario] = useState<SubjectSchedule[]>([]);
 
   // Simulated login/role permission state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -994,7 +999,7 @@ const handleLogout = async () => {
     return matricula ? matricula.id_matricula : null;
   };
 
-  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string) => {
+  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string, horarioId?: string) => {
     try {
       const dbStatus = status === 'P' ? 'Presente' : (status === 'A' ? 'Ausente' : 'Justificado');
 
@@ -1016,6 +1021,9 @@ const handleLogout = async () => {
         fecha: date,
         estatus: dbStatus,
       };
+      if (horarioId) {
+        payload.id_horario = Number(horarioId);
+      }
       if (observacion) {
         payload.observacion = observacion;
       }
@@ -1104,6 +1112,35 @@ const handleLogout = async () => {
       toast.error('Error al eliminar: ' + (e?.response?.data?.error?.message || e.message));
     }
   };
+
+  const fetchMiHorario = useCallback(async (fecha?: string) => {
+    try {
+      const date = fecha || new Date().toISOString().split('T')[0];
+      const resp = await api.get<any>(`/api/horarios/mi-horario?fecha=${date}`);
+      const data = Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      setMiHorario(data.map((h: any) => ({
+        ...h,
+        id_horario: h.id_horario,
+        estudiantes: h.estudiantes || [],
+        asignatura: h.asignatura ? { id: String(h.asignatura.id_asignatura), name: h.asignatura.nombre, shortName: h.asignatura.nombre?.substring(0, 3).toUpperCase(), years: [] } : null,
+      })));
+    } catch (e) {
+      console.error('Error al cargar mi horario:', e);
+    }
+  }, []);
+
+  const fetchHorariosDisponibles = useCallback(async (params?: { id_docente?: string; fecha?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.id_docente) query.set('id_docente', params.id_docente);
+      if (params?.fecha) query.set('fecha', params.fecha);
+      const resp = await api.get<any>(`/api/horarios/disponibles?${query.toString()}`);
+      const data = Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      setHorariosDisponibles(data);
+    } catch (e) {
+      console.error('Error al cargar horarios disponibles:', e);
+    }
+  }, []);
 
   const handleJustifyTeacherAbsence = async (logId: string, motivo: string, soporteDigital?: string) => {
     try {
@@ -1654,18 +1691,25 @@ const handleLogout = async () => {
                   students={students}
                   users={users}
                   docentes={docentes}
+                  subjects={subjects}
                   sections={sectionsForSchedule}
                   periods={periods}
                   attendance={attendance}
                   teacherLogs={teacherLogs}
+                  horariosDisponibles={horariosDisponibles}
+                  bloques={referenceData.bloques}
+                  miHorario={miHorario}
+                  currentUser={currentUser}
                   currentUserRole={currentUserRole}
                   onModifyAttendance={handleModifyAttendance}
                   onAddTeacherLog={handleAddTeacherLog}
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
-                    onDeleteAttendance={handleDeleteAttendance}
+                  onDeleteAttendance={handleDeleteAttendance}
                   onRefreshData={refreshAttendance}
+                  onFetchMiHorario={fetchMiHorario}
+                  onFetchHorarios={fetchHorariosDisponibles}
                 />
               )}
 

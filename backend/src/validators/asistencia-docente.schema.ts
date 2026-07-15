@@ -19,6 +19,16 @@ export const crearAsistenciaDocenteSchema = z.object({
   fecha: z.string({ message: 'fecha es requerida' })
     .refine(isValidDateStr, 'fecha no es una fecha válida')
     .refine(isNotFuture, 'No se puede registrar asistencia en una fecha futura'),
+  id_horario: z.number()
+    .int('id_horario debe ser un entero')
+    .positive('id_horario debe ser positivo')
+    .nullable()
+    .optional(),
+  id_asignatura: z.number()
+    .int('id_asignatura debe ser un entero')
+    .positive('id_asignatura debe ser positivo')
+    .nullable()
+    .optional(),
   hora_entrada: z.string()
     .refine(isValidTime, 'hora_entrada debe tener formato HH:MM')
     .optional(),
@@ -45,6 +55,14 @@ export const actualizarAsistenciaDocenteSchema = z.object({
     .optional(),
   hora_salida: z.string()
     .refine(isValidTime, 'hora_salida debe tener formato HH:MM')
+    .optional(),
+  id_horario: z.number()
+    .int().positive()
+    .nullable()
+    .optional(),
+  id_asignatura: z.number()
+    .int().positive()
+    .nullable()
     .optional(),
   estatus: z.enum(ASISTENCIA_DOCENTE_STATUS as unknown as [string, ...string[]], {
     message: `estatus debe ser: ${ASISTENCIA_DOCENTE_STATUS.join(', ')}`,

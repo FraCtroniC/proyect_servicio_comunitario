@@ -8,6 +8,7 @@ asistenciaEstudianteRoutes.get('/', AsistenciaEstudianteController.listar);
 asistenciaEstudianteRoutes.get('/estadisticas', AsistenciaEstudianteController.estadisticas);
 asistenciaEstudianteRoutes.post('/', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), AsistenciaEstudianteController.crear);
 asistenciaEstudianteRoutes.post('/batch', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), AsistenciaEstudianteController.crearBatch);
+asistenciaEstudianteRoutes.post('/por-horario', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), AsistenciaEstudianteController.porHorario);
 asistenciaEstudianteRoutes.post('/sync-inasistencias', authorize('Administrador', 'Control de Estudios', 'Docente'), AsistenciaEstudianteController.syncInasistencias);
 asistenciaEstudianteRoutes.post('/sync-inasistencias-batch', authorize('Administrador', 'Control de Estudios', 'Docente'), AsistenciaEstudianteController.syncInasistenciasBatch);
 asistenciaEstudianteRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios', 'Coordinador', 'Docente'), AsistenciaEstudianteController.actualizar);

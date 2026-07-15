@@ -20,6 +20,8 @@ export class HorarioDocente extends Model {
     HorarioDocente.belongsTo(models.BloqueHorario, { foreignKey: 'id_bloque', as: 'bloque' });
     HorarioDocente.belongsTo(models.Aula, { foreignKey: 'id_aula', as: 'aula' });
     HorarioDocente.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });
+    HorarioDocente.hasMany(models.AsistenciaEstudiante, { foreignKey: 'id_horario', as: 'asistenciasEstudiantes' });
+    HorarioDocente.hasMany(models.AsistenciaDocente, { foreignKey: 'id_horario', as: 'asistenciasDocentes' });
   }
 }
 

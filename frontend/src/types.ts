@@ -133,7 +133,25 @@ export interface Attendance {
   academicYear: AcademicYear;
   section: string;
   status: 'P' | 'A' | 'J'; // Presente, Ausente, Justificado
-  subjectId?: string;    // If class-by-class, or general daily
+  subjectId?: string;
+  horarioId?: string;    // id_horario from HorarioDocente
+}
+
+export interface SubjectSchedule {
+  id_horario: number;
+  id_docente: number;
+  id_asignatura: number;
+  id_seccion: number;
+  id_dia: number;
+  id_bloque: number;
+  id_aula: number;
+  id_periodo: number;
+  asignatura: Subject;
+  seccion: Section & { grado?: { id_grado: number; nombre: string } };
+  bloque: { id_bloque: number; hora_inicio: string; hora_fin: string; numero_bloque: number };
+  aula: Classroom;
+  docente: Docente;
+  estudiantes?: Array<{ id_matricula: number; id_estudiante: number; nombre: string; cedula: string }>;
 }
 
 export interface TeacherScheduleLog {

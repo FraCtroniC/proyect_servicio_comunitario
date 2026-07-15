@@ -188,6 +188,8 @@ export const generateReporteAsistencia = (
   section: string,
   fechaDesde: string,
   fechaHasta: string,
+  subjectName?: string,
+  blockName?: string,
 ) => {
   const doc = new jsPDF('l', 'pt', 'letter');
 
@@ -204,7 +206,10 @@ export const generateReporteAsistencia = (
   // Filters info
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Año: ${year}°  Sección: "${section}"  Desde: ${fechaDesde}  Hasta: ${fechaHasta}`, doc.internal.pageSize.getWidth() / 2, 130, { align: 'center' });
+  let infoLine = `Año: ${year}°  Sección: "${section}"  Desde: ${fechaDesde}  Hasta: ${fechaHasta}`;
+  if (subjectName) infoLine += `  Materia: ${subjectName}`;
+  if (blockName) infoLine += `  Bloque: ${blockName}`;
+  doc.text(infoLine, doc.internal.pageSize.getWidth() / 2, 130, { align: 'center' });
 
   // Student attendance summary table
   const tableData = students

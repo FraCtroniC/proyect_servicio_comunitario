@@ -6,6 +6,8 @@ export class AsistenciaEstudiante extends Model {
   declare fecha: string;
   declare estatus: string | null;
   declare observacion: string | null;
+  declare id_horario: number | null;
+  declare id_docente_toma: number | null;
   declare id_usuario_crea: number | null;
   declare id_usuario_modifica: number | null;
   declare readonly created_at: Date;
@@ -13,6 +15,8 @@ export class AsistenciaEstudiante extends Model {
 
   static associate(models: any) {
     AsistenciaEstudiante.belongsTo(models.Matricula, { foreignKey: 'id_matricula', as: 'matricula' });
+    AsistenciaEstudiante.belongsTo(models.HorarioDocente, { foreignKey: 'id_horario', as: 'horario' });
+    AsistenciaEstudiante.belongsTo(models.Docente, { foreignKey: 'id_docente_toma', as: 'docenteToma' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_crea', as: 'usuarioCrea' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_modifica', as: 'usuarioModifica' });
     AsistenciaEstudiante.hasMany(models.JustificacionEstudiante, { foreignKey: 'id_asistencia_est', as: 'justificaciones' });
@@ -38,6 +42,22 @@ export function initAsistenciaEstudiante(sequelize: Sequelize): typeof Asistenci
       fecha: {
         type: DataTypes.DATEONLY,
         allowNull: false,
+      },
+      id_horario: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'horario_docente',
+          key: 'id_horario',
+        },
+      },
+      id_docente_toma: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'docentes',
+          key: 'id_docente',
+        },
       },
       estatus: {
         type: DataTypes.STRING(20),
@@ -74,7 +94,7 @@ export function initAsistenciaEstudiante(sequelize: Sequelize): typeof Asistenci
       indexes: [
         {
           unique: true,
-          fields: ['id_matricula', 'fecha']
+          fields: ['id_matricula', 'fecha', 'id_horario']
         }
       ]
     }
