@@ -15,7 +15,7 @@ Backend API REST construido con **Node.js + Express + TypeScript + Sequelize (Po
 | bcrypt | ^6.0 | Hash de contraseñas |
 | Nodemailer | ^9.0 | Envío de correos |
 | Helmet | ^7.1 | Seguridad HTTP |
-| express-rate-limit | ^8.5 | Rate limiting |
+| express-rate-limit | ^8.5 | Rate limiting en rutas de autenticación |
 | Vitest | ^4.1 | Tests unitarios |
 
 ## Requisitos

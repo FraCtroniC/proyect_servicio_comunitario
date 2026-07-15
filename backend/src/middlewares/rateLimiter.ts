@@ -50,15 +50,3 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-export const apiLimiter = rateLimit({
-  windowMs: WINDOW_MS,
-  max: 200,
-  message: {
-    error: {
-      message: 'Límite de solicitudes alcanzado. Intenta de nuevo más tarde.',
-    },
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});

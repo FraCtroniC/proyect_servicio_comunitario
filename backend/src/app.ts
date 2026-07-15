@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import { routes } from './routes';
 import { errorHandler } from './middlewares/errorHandler';
 import { environment } from '../config/environment';
-import { apiLimiter } from './middlewares/rateLimiter';
 
 
 const app = express();
@@ -21,7 +20,7 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
 
-app.use('/api', apiLimiter, routes);
+app.use('/api', routes);
 
 app.use(errorHandler);
 

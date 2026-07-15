@@ -16,10 +16,10 @@ async function main() {
         await connectRedis();
         console.log('Conexión a Redis establecida correctamente.');
       } catch (err) {
-        console.warn('No se pudo conectar a Redis. La caché y rate limiting continuarán sin Redis:', (err as Error).message);
+        console.warn('No se pudo conectar a Redis. La caché continuará sin Redis:', (err as Error).message);
       }
     } else {
-      console.log('REDIS_URL no configurada. La caché y rate limiting no estarán disponibles.');
+      console.log('REDIS_URL no configurada. La caché no estará disponible.');
     }
   } catch (err) {
     console.error('Error al conectar con PostgreSQL mediante Sequelize:', err);
