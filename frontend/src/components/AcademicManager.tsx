@@ -198,7 +198,7 @@ export default function AcademicManager({
                 <div key={grade} className="bg-slate-50/50 rounded-lg p-3">
                   <h4 className="text-sm font-bold text-slate-700 mb-2">{grade}° Año</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                    {secs.map(s => {
+                    {secs.sort((a, b) => a.letter.localeCompare(b.letter)).map(s => {
                       const aula = getClassroom(s.homeClassroomId);
                       const cupos = aula ? aula.capacity : 0;
                       const ocupados = getStudentCount(s.id);

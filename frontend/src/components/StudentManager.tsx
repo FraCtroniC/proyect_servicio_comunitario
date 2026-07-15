@@ -518,12 +518,13 @@ export default function StudentManager({ students, sections, classrooms, current
               className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
             >
               <option value="Todos">Todas las Secciones</option>
-              {sections
+              {Array.from(new Set(sections
                 .filter(s => selectedYear === 0 || s.grade === selectedYear)
-                .sort((a, b) => a.letter.localeCompare(b.letter))
-                .map(s => (
-                  <option key={`${s.grade}-${s.letter}`} value={s.letter}>
-                    Sección "{s.letter}"
+                .map(s => s.letter.trim().toUpperCase())))
+                .sort((a, b) => a.localeCompare(b))
+                .map(letter => (
+                  <option key={`filter-${letter}`} value={letter}>
+                    Sección "{letter}"
                   </option>
                 ))}
             </select>
@@ -818,7 +819,7 @@ export default function StudentManager({ students, sections, classrooms, current
                   onChange={(e) => setEnrollSection(e.target.value)}
                   className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
-                  {Array.from(new Set(sections.filter(s => s.grade === enrollYear).map(s => s.letter)))
+                  {Array.from(new Set(sections.filter(s => s.grade === enrollYear).map(s => s.letter.trim().toUpperCase())))
                     .sort((a, b) => a.localeCompare(b))
                     .map(letter => (
                       <option key={`${enrollYear}-${letter}`} value={letter}>
