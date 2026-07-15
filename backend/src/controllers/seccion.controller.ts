@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Seccion, GradoAno, PeriodoEscolar, Docente, Aula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 const includes = [
   { model: GradoAno, as: 'grado' },
@@ -33,6 +34,7 @@ export const SeccionController = {
     const result = await Seccion.create(req.body);
 
     const completo = await Seccion.findByPk(result.get('id_seccion'), { include: includes });
+    getIO().emit('seccion:create', { data: completo });
     res.status(201).json({ data: completo });
   }),
 
@@ -46,6 +48,7 @@ export const SeccionController = {
     await record.update(req.body);
 
     const completo = await Seccion.findByPk(id, { include: includes });
+    getIO().emit('seccion:update', { data: completo });
     res.json({ data: completo });
   }),
 
@@ -57,6 +60,7 @@ export const SeccionController = {
       return;
     }
     await record.destroy();
+    getIO().emit('seccion:delete', { data: { id_seccion: id } });
     res.status(204).send();
   }),
 };

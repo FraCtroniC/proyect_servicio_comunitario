@@ -248,6 +248,17 @@ export default function App() {
         ...prev,
         dias: prev.dias.filter(d => d.id_dia !== payload.data.id_dia)
       }));
+    } else if (event === 'seccion:create') {
+      setSections(prev => [...prev, mapSeccionToSection(payload.data)]);
+    } else if (event === 'seccion:update') {
+      setSections(prev => prev.map(s =>
+        s.id === String(payload.data.id_seccion)
+          ? mapSeccionToSection(payload.data) : s
+      ));
+    } else if (event === 'seccion:delete') {
+      setSections(prev => prev.filter(s =>
+        s.id !== String(payload.data.id_seccion)
+      ));
     }
   });
 
@@ -760,7 +771,6 @@ const handleLogout = async () => {
       if (homeClassroomId && !newSection.homeClassroomId) {
          newSection.homeClassroomId = homeClassroomId; // inject locally if backend drops it
       }
-      setSections(p => [...p, newSection]);
       return newSection;
     } catch (e: any) {
       console.error('Error al crear sección:', e);
