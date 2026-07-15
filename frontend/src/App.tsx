@@ -1552,9 +1552,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="text-sm text-slate-600 text-center font-mono leading-relaxed px-2">
-              Homologación MPPE Venezuela © 2026. LOPNA compilado.
-            </div>
+
           </div>
         </aside>
 
