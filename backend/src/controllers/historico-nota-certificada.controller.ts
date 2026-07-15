@@ -70,51 +70,42 @@ export const HistoricoNotaCertificadaController = {
       }
     }
 
-    // Check for duplicates in database
-    const duplicateChecks = notas.map((n: any) => ({
-      id_estudiante: n.id_estudiante,
-      id_grado: n.id_grado,
-      id_asignatura: n.id_asignatura,
-      id_periodo: n.id_periodo,
-    }));
-
     const { Op } = require('sequelize');
-    const existing = await HistoricoNotaCertificada.findAll({
-      where: {
-        [Op.or]: duplicateChecks,
-      },
-    });
+    const results = [];
 
-    if (existing.length > 0) {
-      // Get names for better error message
-      const existingWithNames = await Promise.all(
-        existing.map(async (e: any) => {
-          const asig = await Asignatura.findByPk(e.id_asignatura);
-          const grado = await GradoAno.findByPk(e.id_grado);
-          return `${asig?.nombre || 'Asignatura'} (${grado?.numero || e.id_grado}° Año)`;
-        })
-      );
-
-      res.status(409).json({
-        error: {
-          message: `Ya existen notas certificadas para: ${existingWithNames.join(', ')}. Elimine los registros existentes primero o actualícelos individualmente.`,
+    for (const nota of notas) {
+      // Find existing record
+      const existing = await HistoricoNotaCertificada.findOne({
+        where: {
+          id_estudiante: nota.id_estudiante,
+          id_grado: nota.id_grado,
+          id_asignatura: nota.id_asignatura,
+          id_periodo: nota.id_periodo,
         },
       });
-      return;
+
+      if (existing) {
+        // Update existing record
+        await existing.update({
+          id_escala: nota.id_escala,
+          institucion_origen: nota.institucion_origen || 'L.N. Estilita Orozco',
+        });
+        results.push(existing);
+      } else {
+        // Create new record
+        const created = await HistoricoNotaCertificada.create({
+          id_estudiante: nota.id_estudiante,
+          id_grado: nota.id_grado,
+          id_asignatura: nota.id_asignatura,
+          id_periodo: nota.id_periodo,
+          id_escala: nota.id_escala,
+          institucion_origen: nota.institucion_origen || 'L.N. Estilita Orozco',
+        });
+        results.push(created);
+      }
     }
 
-    // Build records with default institution
-    const records = notas.map((n: any) => ({
-      id_estudiante: n.id_estudiante,
-      id_grado: n.id_grado,
-      id_asignatura: n.id_asignatura,
-      id_periodo: n.id_periodo,
-      id_escala: n.id_escala,
-      institucion_origen: n.institucion_origen || 'L.N. Estilita Orozco',
-    }));
-
-    const created = await HistoricoNotaCertificada.bulkCreate(records);
-    res.status(201).json({ data: created });
+    res.status(201).json({ data: results });
   }),
 
   generarExcel: wrapAsync(async (req: Request, res: Response) => {

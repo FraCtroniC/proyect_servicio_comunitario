@@ -197,19 +197,64 @@ export default function GradeManager({
       .filter(p => Number(p.year) === grado)
       .map(p => {
         const sub = subjects.find(s => s.id === p.subjectId);
-        return { ...p, subjectName: sub?.name || p.subjectName, tipoCalificacion: sub ? (sub as any).tipoCalificacion || 'Cuantitativa' : 'Cuantitativa' };
+        return {
+          ...p,
+          subjectName: sub?.name || p.subjectName,
+          tipoCalificacion: p.tipoCalificacion || sub?.tipoCalificacion || 'Cuantitativa'
+        };
       });
   };
 
   // Handle loading notas for cert modal
   const handleOpenCertLoadModal = () => {
-    setCertLoadStudentId(certSelectedStudentId || (students[0]?.id || ''));
-    setCertLoadGrado(1);
-    setCertLoadPeriodId(periods[0]?.id || '');
+    const studentId = certSelectedStudentId || (students[0]?.id || '');
+    const student = students.find(s => s.id === studentId);
+    const activePeriod = periods.find(p => p.status === 'Activo');
+    const grado = student?.academicYear || 1;
+    const section = student?.section || '';
+
+    setCertLoadStudentId(studentId);
+    setCertLoadGrado(grado);
+    setCertLoadPeriodId(activePeriod?.id || '');
     setCertLoadInstitucion('L.N. Estilita Orozco');
-    setCertLoadNotas({});
     setCertLoadError('');
     setCertLoadSuccess('');
+
+    // Pre-fill: first try certified history, then compute from regular grades
+    const existingNotas: Record<string, { id_escala: number; value: string }> = {};
+
+    // 1) Try from certified history
+    certHistorico
+      .filter((n: any) => (n.grado?.numero || n.id_grado) === grado)
+      .forEach((n: any) => {
+        const subId = String(n.id_asignatura);
+        const escala = n.escala;
+        const asig = n.asignatura;
+        const isCualitativa = asig?.tipo_calificacion === 'Cualitativo';
+        existingNotas[subId] = {
+          id_escala: escala?.id_escala || n.id_escala || 0,
+          value: isCualitativa
+            ? (escala?.ponderacion_letra || '')
+            : (escala?.nota_impresa || String(escala?.nota_calculo || ''))
+        };
+      });
+
+    // 2) For subjects without certified grades, compute final grade from regular system
+    const gradeSubs = getSubjectsForGrade(grado);
+    gradeSubs.forEach(planItem => {
+      if (!existingNotas[planItem.subjectId]) {
+        const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, studentId, planItem.subjectId, grado, section);
+        if (finalGrade.raw > 0) {
+          const isCualitativa = planItem.tipoCalificacion === 'Cualitativo';
+          existingNotas[planItem.subjectId] = {
+            id_escala: isCualitativa ? mapLiteralToEscalaId(gradeToLiteral(finalGrade.rounded)) : mapScoreToEscalaId(finalGrade.rounded),
+            value: isCualitativa ? gradeToLiteral(finalGrade.rounded) : String(finalGrade.rounded)
+          };
+        }
+      }
+    });
+
+    setCertLoadNotas(existingNotas);
     setIsCertLoadModalOpen(true);
   };
 
@@ -219,12 +264,11 @@ export default function GradeManager({
     return Math.max(1, Math.min(20, Math.round(score)));
   };
 
-  // Map literal (A/B/C/D) to escala id
+  // Map literal (A/B/C) to escala id
   const mapLiteralToEscalaId = (literal: string): number => {
-    // Convention: A=21, B=22, C=23, D=24 in the escala table
-    // Fallback: use numeric mapping
-    const literalMap: Record<string, number> = { 'A': 21, 'B': 22, 'C': 23, 'D': 24 };
-    return literalMap[literal.toUpperCase()] || 21;
+    // escala_calificaciones: A=15, B=10, C=1
+    const literalMap: Record<string, number> = { 'A': 15, 'B': 10, 'C': 1 };
+    return literalMap[literal.toUpperCase()] || 1;
   };
 
   const handleSaveCertifiedGrades = async () => {
@@ -1422,7 +1466,7 @@ export default function GradeManager({
                               {notas.map((nota: any, idx: number) => {
                                 const asig = nota.asignatura;
                                 const escala = nota.escala;
-                                const isCualitativa = asig?.tipo_calificacion === 'Cualitativa';
+                                const isCualitativa = asig?.tipo_calificacion === 'Cualitativo';
                                 const notaDisplay = isCualitativa
                                   ? (escala?.ponderacion_letra || escala?.nota_impresa || '--')
                                   : (escala?.nota_impresa || escala?.nota_calculo || '--');
@@ -1451,7 +1495,7 @@ export default function GradeManager({
                                           ? 'bg-violet-50 text-violet-600'
                                           : 'bg-blue-50 text-blue-600'
                                       }`}>
-                                        {isCualitativa ? 'Cualitativa' : 'Cuantitativa'}
+                                        {isCualitativa ? 'Cualitativo' : 'Cuantitativo'}
                                       </span>
                                     </td>
                                     <td className="px-4 py-3 text-slate-600 text-sm">
@@ -1522,36 +1566,51 @@ export default function GradeManager({
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Estudiante</label>
                   <select
                     value={certLoadStudentId}
-                    onChange={(e) => setCertLoadStudentId(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCertLoadStudentId(val);
+                      const st = students.find(s => s.id === val);
+                      if (st) {
+                        const newGrado = st.academicYear;
+                        const newSection = st.section;
+                        setCertLoadGrado(newGrado);
+                        // Pre-fill: first try certified history, then compute from regular grades
+                        const existingNotas: Record<string, { id_escala: number; value: string }> = {};
+                        certHistorico
+                          .filter((n: any) => (n.grado?.numero || n.id_grado) === newGrado)
+                          .forEach((n: any) => {
+                            const subId = String(n.id_asignatura);
+                            const escala = n.escala;
+                            const asig = n.asignatura;
+                            const isCualitativa = asig?.tipo_calificacion === 'Cualitativo';
+                            existingNotas[subId] = {
+                              id_escala: escala?.id_escala || n.id_escala || 0,
+                              value: isCualitativa
+                                ? (escala?.ponderacion_letra || '')
+                                : (escala?.nota_impresa || String(escala?.nota_calculo || ''))
+                            };
+                          });
+                        // For subjects without certified grades, compute from regular system
+                        const gradeSubs = getSubjectsForGrade(newGrado);
+                        gradeSubs.forEach(planItem => {
+                          if (!existingNotas[planItem.subjectId]) {
+                            const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, val, planItem.subjectId, newGrado, newSection);
+                            if (finalGrade.raw > 0) {
+                              const isCualitativa = planItem.tipoCalificacion === 'Cualitativo';
+                              existingNotas[planItem.subjectId] = {
+                                id_escala: isCualitativa ? mapLiteralToEscalaId(gradeToLiteral(finalGrade.rounded)) : mapScoreToEscalaId(finalGrade.rounded),
+                                value: isCualitativa ? gradeToLiteral(finalGrade.rounded) : String(finalGrade.rounded)
+                              };
+                            }
+                          }
+                        });
+                        setCertLoadNotas(existingNotas);
+                      }
+                    }}
                     className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
                   >
                     {students.map(s => (
                       <option key={s.id} value={s.id}>{s.lastName}, {s.firstName} — {s.cedula}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Año / Grado</label>
-                  <select
-                    value={certLoadGrado}
-                    onChange={(e) => { setCertLoadGrado(Number(e.target.value)); setCertLoadNotas({}); }}
-                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
-                  >
-                    {[1,2,3,4,5].map(g => (
-                      <option key={g} value={g}>{g}° Año</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Período Escolar</label>
-                  <select
-                    value={certLoadPeriodId}
-                    onChange={(e) => setCertLoadPeriodId(e.target.value)}
-                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-amber-500"
-                  >
-                    <option value="">Seleccione un período</option>
-                    {periods.map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
                     ))}
                   </select>
                 </div>
@@ -1594,7 +1653,7 @@ export default function GradeManager({
                         );
                       }
                       return gradeSubs.map(planItem => {
-                        const isCualitativa = planItem.tipoCalificacion === 'Cualitativa';
+                        const isCualitativa = planItem.tipoCalificacion === 'Cualitativo';
                         const currentVal = certLoadNotas[planItem.subjectId]?.value || '';
 
                         return (
@@ -1609,7 +1668,7 @@ export default function GradeManager({
                               <span className={`text-sm font-bold uppercase px-1.5 py-0.5 rounded ${
                                 isCualitativa ? 'bg-violet-50 text-violet-600' : 'bg-blue-50 text-blue-600'
                               }`}>
-                                {isCualitativa ? 'Cualitativa' : 'Cuantitativa'}
+                                {isCualitativa ? 'Cualitativo' : 'Cuantitativo'}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -1632,7 +1691,6 @@ export default function GradeManager({
                                   <option value="A">A</option>
                                   <option value="B">B</option>
                                   <option value="C">C</option>
-                                  <option value="D">D</option>
                                 </select>
                               ) : (
                                 <input
