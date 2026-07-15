@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Calificacion, PlanEstudio, Asignatura, EscalaCalificacion, Matricula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
+import { getIO } from '../socket';
 
 const ALLOWED_CREATE_FIELDS = ['id_matricula', 'id_plan', 'id_momento', 'id_escala', 'inasistencias_asignatura'];
 const ALLOWED_UPDATE_FIELDS = ['id_escala', 'inasistencias_asignatura'];
@@ -71,6 +72,7 @@ export const CalificacionController = {
       savedRecords.push(fullRecord);
     }
 
+    getIO().emit('calificacion:bulk', { data: savedRecords });
     res.json({ data: savedRecords });
   }),
 
@@ -86,7 +88,15 @@ export const CalificacionController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const result = await Calificacion.create(pick(req.body, ALLOWED_CREATE_FIELDS));
-    res.status(201).json({ data: result });
+    const completo = await Calificacion.findByPk(result.id_calificacion, {
+      include: [
+        { model: PlanEstudio, as: 'plan', include: [{ model: Asignatura, as: 'asignatura' }] },
+        { model: EscalaCalificacion, as: 'escala' },
+        { model: Matricula, as: 'matricula' },
+      ],
+    });
+    getIO().emit('calificacion:create', { data: completo });
+    res.status(201).json({ data: completo });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
@@ -97,7 +107,15 @@ export const CalificacionController = {
       return;
     }
     await record.update(pick(req.body, ALLOWED_UPDATE_FIELDS));
-    res.json({ data: record });
+    const completo = await Calificacion.findByPk(id, {
+      include: [
+        { model: PlanEstudio, as: 'plan', include: [{ model: Asignatura, as: 'asignatura' }] },
+        { model: EscalaCalificacion, as: 'escala' },
+        { model: Matricula, as: 'matricula' },
+      ],
+    });
+    getIO().emit('calificacion:update', { data: completo });
+    res.json({ data: completo });
   }),
 
   eliminar: wrapAsync(async (req: Request, res: Response) => {
@@ -108,6 +126,7 @@ export const CalificacionController = {
       return;
     }
     await record.destroy();
+    getIO().emit('calificacion:delete', { data: { id_calificacion: id } });
     res.status(204).send();
   }),
 };

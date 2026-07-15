@@ -286,6 +286,19 @@ export default function App() {
       setRepresentatives(prev => prev.filter(r =>
         r.id_representante !== payload.data.id_representante
       ));
+    } else if (event === 'calificacion:create') {
+      setGrades(prev => [...prev, mapCalificacionToGrade(payload.data, String(payload.data.id_matricula))]);
+    } else if (event === 'calificacion:update') {
+      setGrades(prev => prev.map(g =>
+        g.studentId === String(payload.data.matricula?.id_estudiante) && g.lapso === payload.data.id_momento
+          ? mapCalificacionToGrade(payload.data, String(payload.data.id_matricula)) : g
+      ));
+    } else if (event === 'calificacion:delete') {
+      refreshGrades();
+    } else if (event === 'calificacion:bulk') {
+      refreshGrades();
+    } else if (event === 'evaluacion:plan-update' || event === 'evaluacion:notas-update') {
+      refreshGrades();
     }
   });
 
