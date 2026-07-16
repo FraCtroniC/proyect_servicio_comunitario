@@ -562,8 +562,11 @@ export default function App() {
       };
       await api.post<any>('/api/usuarios', dto);
     } catch (e: any) {
-      console.error(e);
-      throw new Error(e.response?.data?.error?.message || 'Error al crear usuario en BD');
+      console.error('Error al crear usuario:', e);
+      console.error('Detalles de validación:', e.details);
+      const err = new Error('Error al crear usuario') as any;
+      if (e.details) err.fieldErrors = e.details;
+      throw err;
     }
   };
 

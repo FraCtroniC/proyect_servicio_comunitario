@@ -11,9 +11,9 @@ const crearUsuarioSchema = z.object({
     .max(50, 'El username debe tener máximo 50 caracteres'),
   password: z.string()
     .min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  idRol: z.number().int().optional().nullable(),
-  idDocente: z.number().int().positive().optional().nullable(),
-  idPersona: z.number().int().positive().optional().nullable(),
+  idRol: z.coerce.number().int().optional().nullable(),
+  idDocente: z.coerce.number().int().positive().optional().nullable(),
+  idPersona: z.coerce.number().int().positive().optional().nullable(),
   cedula: z.string().optional().nullable().refine(
     v => !v || CEDULA_REGEX.test(v),
     'La cédula debe tener formato V/E-12345678',
