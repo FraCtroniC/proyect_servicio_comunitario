@@ -15,7 +15,7 @@ export class MateriaPendiente extends Model {
     MateriaPendiente.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante', as: 'estudiante' });
     MateriaPendiente.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura', as: 'asignatura' });
     MateriaPendiente.belongsTo(models.PeriodoEscolar, { foreignKey: 'id_periodo', as: 'periodo' });
-    MateriaPendiente.belongsTo(models.Docente, { foreignKey: 'id_docente_evaluador', as: 'docente_evaluador' });
+    MateriaPendiente.belongsTo(models.Usuario, { foreignKey: 'id_docente_evaluador', as: 'docente_evaluador' });
   }
 }
 
@@ -55,8 +55,8 @@ export function initMateriaPendiente(sequelize: Sequelize): typeof MateriaPendie
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: 'docentes',
-          key: 'id_docente',
+          model: 'usuarios',
+          key: 'id_usuario',
         },
       },
       nota_definitiva: {

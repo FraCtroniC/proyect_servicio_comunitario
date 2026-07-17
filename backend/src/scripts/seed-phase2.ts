@@ -1,4 +1,4 @@
-import { sequelize, PeriodoEscolar, GradoAno, Seccion, Aula, DiaSemana, BloqueHorario, Asignatura, PlanEstudio, Momento, EscalaCalificacion, Estudiante, Matricula, Calificacion, Docente, HorarioDocente } from '../models';
+import { sequelize, PeriodoEscolar, GradoAno, Seccion, Aula, DiaSemana, BloqueHorario, Asignatura, PlanEstudio, Momento, EscalaCalificacion, Estudiante, Matricula, Calificacion, Usuario, HorarioDocente } from '../models';
 
 async function runSeed() {
   try {
@@ -132,7 +132,7 @@ async function runSeed() {
       seccionesDb.push(seccionObj);
     }
 
-    const docentesDb = await Docente.findAll();
+    const docentesDb = await Usuario.findAll({ where: { id_rol: 5 } });
     if (docentesDb.length === 0) {
       console.log('No hay docentes creados. Asegúrate de correr el seed de fase 1 primero.');
       return;
@@ -155,7 +155,7 @@ async function runSeed() {
             id_bloque: bloque.get('id_bloque') 
           },
           defaults: {
-            id_docente: docente.get('id_docente'),
+            id_docente: docente.get('id_usuario'),
             id_asignatura: asig.get('id_asignatura'),
             id_aula: aula.get('id_aula')
           }

@@ -214,7 +214,7 @@ export default function AcademicManager({
           <p className="text-sm text-slate-500 mt-1">Administración de Secciones Activas por Grado y Periodo Escolar.</p>
         </div>
         <div className="flex items-center gap-2 mt-2 md:mt-0 flex-wrap">
-          <span className="text-xs bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded">
+          <span className="text-sm bg-indigo-100 text-indigo-700 font-black font-mono px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm">
             Total: {filteredSections.length} secciones
           </span>
           <button

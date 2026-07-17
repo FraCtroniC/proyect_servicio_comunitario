@@ -16,7 +16,7 @@ export class AsistenciaEstudiante extends Model {
   static associate(models: any) {
     AsistenciaEstudiante.belongsTo(models.Matricula, { foreignKey: 'id_matricula', as: 'matricula' });
     AsistenciaEstudiante.belongsTo(models.HorarioDocente, { foreignKey: 'id_horario', as: 'horario' });
-    AsistenciaEstudiante.belongsTo(models.Docente, { foreignKey: 'id_docente_toma', as: 'docenteToma' });
+    AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_docente_toma', as: 'docenteToma' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_crea', as: 'usuarioCrea' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_modifica', as: 'usuarioModifica' });
     AsistenciaEstudiante.hasMany(models.JustificacionEstudiante, { foreignKey: 'id_asistencia_est', as: 'justificaciones' });
@@ -55,8 +55,8 @@ export function initAsistenciaEstudiante(sequelize: Sequelize): typeof Asistenci
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: 'docentes',
-          key: 'id_docente',
+          model: 'usuarios',
+          key: 'id_usuario',
         },
       },
       estatus: {

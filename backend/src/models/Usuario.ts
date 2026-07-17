@@ -3,8 +3,6 @@ import { Model, DataTypes, Sequelize } from 'sequelize';
 export class Usuario extends Model {
   declare id_usuario: number;
   declare id_rol: number;
-  declare id_docente: number | null;
-  declare id_persona: number | null;
   declare username: string;
   declare password_hash: string;
   declare estatus: string | null;
@@ -12,15 +10,30 @@ export class Usuario extends Model {
   declare locked_until: Date | null;
   declare token_version: number;
   declare ultimo_acceso: Date | null;
+  declare cedula: string | null;
+  declare nombre1: string | null;
+  declare nombre2: string | null;
+  declare apellido1: string | null;
+  declare apellido2: string | null;
+  declare fecha_nac: string | null;
+  declare correo: string | null;
+  declare telefono: string | null;
+  declare id_especialidad: number | null;
+  declare token_qr: string | null;
+  declare estatus_docente: string | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
   declare rol?: any;
-  declare persona?: any;
+  declare especialidad_rel?: any;
 
   static associate(models: any) {
     Usuario.belongsTo(models.Rol, { foreignKey: 'id_rol', as: 'rol' });
-    Usuario.belongsTo(models.Persona, { foreignKey: 'id_persona', as: 'persona' });
-    Usuario.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });
+    Usuario.belongsTo(models.Especialidad, { foreignKey: 'id_especialidad', as: 'especialidad_rel' });
+    Usuario.hasMany(models.HorarioDocente, { foreignKey: 'id_docente', as: 'horarios' });
+    Usuario.hasMany(models.AsistenciaDocente, { foreignKey: 'id_docente', as: 'asistenciasDocente' });
+    Usuario.hasMany(models.AsistenciaEstudiante, { foreignKey: 'id_docente_toma', as: 'asistenciasTomadas' });
+    Usuario.hasMany(models.MateriaPendiente, { foreignKey: 'id_docente_evaluador', as: 'evaluacionesPendientes' });
+    Usuario.hasMany(models.Seccion, { foreignKey: 'id_docente_guia', as: 'seccionesGuia' });
   }
 }
 
@@ -38,22 +51,6 @@ export function initUsuario(sequelize: Sequelize): typeof Usuario {
         references: {
           model: 'roles',
           key: 'id_rol',
-        },
-      },
-      id_docente: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'docentes',
-          key: 'id_docente',
-        },
-      },
-      id_persona: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'personas',
-          key: 'id_persona',
         },
       },
       username: {
@@ -86,6 +83,55 @@ export function initUsuario(sequelize: Sequelize): typeof Usuario {
       },
       ultimo_acceso: {
         type: DataTypes.DATE,
+        allowNull: true,
+      },
+      cedula: {
+        type: DataTypes.STRING(15),
+        allowNull: true,
+      },
+      nombre1: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      nombre2: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      apellido1: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      apellido2: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      fecha_nac: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      correo: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      telefono: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+      id_especialidad: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'especialidades',
+          key: 'id_especialidad',
+        },
+      },
+      token_qr: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+      },
+      estatus_docente: {
+        type: DataTypes.STRING(15),
         allowNull: true,
       },
     },

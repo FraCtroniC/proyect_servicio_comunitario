@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import {
   AsistenciaEstudiante, Matricula, Estudiante, Seccion,
   Calificacion, PeriodoEscolar, HorarioDocente, Asignatura,
-  BloqueHorario, Docente, sequelize
+  BloqueHorario, Usuario, sequelize
 } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -81,7 +81,7 @@ export const AsistenciaEstudianteController = {
         include: [
           { model: Asignatura, as: 'asignatura' },
           { model: BloqueHorario, as: 'bloque' },
-          { model: Docente, as: 'docente' }
+          { model: Usuario, as: 'docente' }
         ]
       });
     }

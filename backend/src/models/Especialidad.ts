@@ -8,7 +8,7 @@ export class Especialidad extends Model {
   declare readonly updated_at: Date | null;
 
   static associate(models: any) {
-    Especialidad.hasMany(models.Docente, { foreignKey: 'id_especialidad', as: 'docentes' });
+    Especialidad.hasMany(models.Usuario, { foreignKey: 'id_especialidad', as: 'usuarios' });
   }
 }
 

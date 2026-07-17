@@ -13,7 +13,7 @@ export class HorarioDocente extends Model {
   declare readonly updated_at: Date | null;
 
   static associate(models: any) {
-    HorarioDocente.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });
+    HorarioDocente.belongsTo(models.Usuario, { foreignKey: 'id_docente', as: 'docente' });
     HorarioDocente.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura', as: 'asignatura' });
     HorarioDocente.belongsTo(models.Seccion, { foreignKey: 'id_seccion', as: 'seccion' });
     HorarioDocente.belongsTo(models.DiaSemana, { foreignKey: 'id_dia', as: 'dia' });
@@ -37,8 +37,8 @@ export function initHorarioDocente(sequelize: Sequelize): typeof HorarioDocente 
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: 'docentes',
-          key: 'id_docente',
+          model: 'usuarios',
+          key: 'id_usuario',
         },
       },
       id_asignatura: {

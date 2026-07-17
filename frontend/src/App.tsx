@@ -378,7 +378,8 @@ export default function App() {
             api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
-            api.get<any[]>('/api/docentes').catch(() => ({ data: [] })),
+            // temporarily empty - we filter docentes from usuariosData below
+            Promise.resolve([]),
             api.get<any[]>('/api/grados').catch(() => ({ data: [] }))
           ]);
 
@@ -392,7 +393,9 @@ export default function App() {
           const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
 
           setUsers(usuariosData.map(mapUsuarioToUser));
-          const parsedDocentes = (Array.isArray(docentesData) ? docentesData : (docentesData as any)?.data || []).map(mapDocenteToDocenteType);
+          const usuariosArray = Array.isArray(usuariosData) ? usuariosData : (usuariosData as any)?.data || [];
+          const docentesApiData = usuariosArray.filter((u: any) => (u.idRol || u.id_rol) === 5);
+          const parsedDocentes = docentesApiData.map(mapDocenteToDocenteType);
           setDocentes(parsedDocentes);
           setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));

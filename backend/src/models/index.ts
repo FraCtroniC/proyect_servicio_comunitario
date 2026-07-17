@@ -2,10 +2,8 @@ import { Sequelize } from 'sequelize';
 import { databaseConfig } from '../../config/database';
 import { environment } from '../../config/environment';
 
-import { initPersona, Persona } from './Persona';
 import { initRol, Rol } from './Rol';
 import { initEspecialidad, Especialidad } from './Especialidad';
-import { initDocente, Docente } from './Docente';
 import { initUsuario, Usuario } from './Usuario';
 import { initPeriodoEscolar, PeriodoEscolar } from './PeriodoEscolar';
 import { initGradoAno, GradoAno } from './GradoAno';
@@ -43,10 +41,8 @@ if (!environment.databaseUrl) {
 
 const sequelize = new Sequelize(environment.databaseUrl, config);
 
-initPersona(sequelize);
 initRol(sequelize);
 initEspecialidad(sequelize);
-initDocente(sequelize);
 initUsuario(sequelize);
 initPeriodoEscolar(sequelize);
 initGradoAno(sequelize);
@@ -76,10 +72,8 @@ initLoginAudit(sequelize);
 initRefreshToken(sequelize);
 
 const models = {
-  Persona,
   Rol,
   Especialidad,
-  Docente,
   Usuario,
   PeriodoEscolar,
   GradoAno,
@@ -118,10 +112,8 @@ Object.values(models).forEach((model: any) => {
 export {
   sequelize,
   Sequelize,
-  Persona,
   Rol,
   Especialidad,
-  Docente,
   Usuario,
   PeriodoEscolar,
   GradoAno,

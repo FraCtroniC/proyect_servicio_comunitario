@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import {
   HorarioDocente, Asignatura, Seccion, GradoAno,
   DiaSemana, BloqueHorario, Aula, PeriodoEscolar,
-  Persona, Usuario, Docente, Matricula, Estudiante
+  Usuario, Matricula, Estudiante
 } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -17,15 +17,10 @@ export const HorarioController = {
   miHorario: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const fecha = String(req.query.fecha || new Date().toISOString().split('T')[0]);
 
-    const usuario = await Usuario.findByPk(req.user!.idUsuario, {
-      include: [
-        { model: Persona, as: 'persona' },
-        { model: Docente, as: 'docente' },
-      ]
-    });
+    const usuario = await Usuario.findByPk(req.user!.idUsuario);
 
-    if (!usuario || !usuario.id_docente) {
-      res.status(400).json({ error: { message: 'El usuario no tiene un docente asociado' } });
+    if (!usuario) {
+      res.status(400).json({ error: { message: 'Usuario no encontrado' } });
       return;
     }
 
@@ -44,7 +39,7 @@ export const HorarioController = {
 
     const horarios = await HorarioDocente.findAll({
       where: {
-        id_docente: usuario.id_docente,
+        id_docente: usuario.id_usuario,
         id_dia: idDia,
         id_periodo: periodoActivo.id_periodo,
       },
@@ -56,7 +51,7 @@ export const HorarioController = {
         },
         { model: BloqueHorario, as: 'bloque' },
         { model: Aula, as: 'aula' },
-        { model: Docente, as: 'docente' },
+        { model: Usuario, as: 'docente' },
       ],
       order: [
         [{ model: BloqueHorario, as: 'bloque' }, 'numero_bloque', 'ASC']
@@ -74,7 +69,6 @@ export const HorarioController = {
             {
               model: Estudiante, as: 'estudiante',
               where: { estatus_estudiante: 'Activo' },
-              include: [{ model: Persona, as: 'persona' }],
             }
           ],
           attributes: ['id_matricula', 'id_estudiante'],
@@ -83,14 +77,14 @@ export const HorarioController = {
         return {
           ...h.toJSON(),
           estudiantes: estudiantes.map((m: any) => {
-            const ep = m.estudiante?.persona;
+            const e = m.estudiante;
             return {
               id_matricula: m.id_matricula,
               id_estudiante: m.id_estudiante,
-              nombre: ep
-                ? `${ep.apellido1 || ''} ${ep.apellido2 || ''}, ${ep.nombre1 || ''} ${ep.nombre2 || ''}`.trim().replace(/^, /, '')
+              nombre: e
+                ? `${e.apellido1 || ''} ${e.apellido2 || ''}, ${e.nombre1 || ''} ${e.nombre2 || ''}`.trim().replace(/^, /, '')
                 : '',
-              cedula: ep?.cedula || '',
+              cedula: e?.cedula_escolar || '',
             };
           }),
         };
@@ -100,7 +94,7 @@ export const HorarioController = {
     res.json({
       data: horariosConEstudiantes,
       meta: {
-        docente: `${(usuario.persona as any)?.nombre1 || ''} ${(usuario.persona as any)?.apellido1 || ''}`.trim(),
+        docente: `${usuario.nombre1 || ''} ${usuario.apellido1 || ''}`.trim(),
         fecha,
         dia: diaSemana,
         total_horarios: horariosConEstudiantes.length,
@@ -128,7 +122,7 @@ export const HorarioController = {
         { model: Seccion, as: 'seccion', include: [{ model: GradoAno, as: 'grado' }] },
         { model: BloqueHorario, as: 'bloque' },
         { model: Aula, as: 'aula' },
-        { model: Docente, as: 'docente' },
+        { model: Usuario, as: 'docente' },
       ],
       order: [
         [{ model: BloqueHorario, as: 'bloque' }, 'numero_bloque', 'ASC']

@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { Seccion, GradoAno, PeriodoEscolar, Docente, Aula } from '../models';
+import { Seccion, GradoAno, PeriodoEscolar, Usuario, Aula } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
 const includes = [
   { model: GradoAno, as: 'grado' },
   { model: PeriodoEscolar, as: 'periodo' },
-  { model: Docente, as: 'docenteGuia' },
+  { model: Usuario, as: 'docenteGuia' },
   { model: Aula, as: 'aula' },
 ];
 

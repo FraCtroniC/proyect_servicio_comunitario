@@ -16,7 +16,7 @@ export class AsistenciaDocente extends Model {
   declare readonly updated_at: Date | null;
 
   static associate(models: any) {
-    AsistenciaDocente.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });
+    AsistenciaDocente.belongsTo(models.Usuario, { foreignKey: 'id_docente', as: 'docente' });
     AsistenciaDocente.belongsTo(models.HorarioDocente, { foreignKey: 'id_horario', as: 'horario' });
     AsistenciaDocente.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura', as: 'asignatura' });
     AsistenciaDocente.hasMany(models.Justificacion, { foreignKey: 'id_asistencia', as: 'justificaciones' });
@@ -37,8 +37,8 @@ export function initAsistenciaDocente(sequelize: Sequelize): typeof AsistenciaDo
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: 'docentes',
-          key: 'id_docente',
+          model: 'usuarios',
+          key: 'id_usuario',
         },
       },
       fecha: {
