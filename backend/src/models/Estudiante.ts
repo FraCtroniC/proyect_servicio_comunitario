@@ -2,7 +2,13 @@ import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class Estudiante extends Model {
   declare id_estudiante: number;
-  declare id_persona: number | null;
+  declare cedula_escolar: string | null;
+  declare nombre1: string | null;
+  declare nombre2: string | null;
+  declare apellido1: string | null;
+  declare apellido2: string | null;
+  declare fecha_nac: string | null;
+  declare genero: string | null;
   declare lugar_nac: string | null;
   declare municipio: string | null;
   declare estado: string | null;
@@ -10,11 +16,9 @@ export class Estudiante extends Model {
   declare estatus_estudiante: string | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
-  declare persona?: any;
   declare representante?: any;
 
   static associate(models: any) {
-    Estudiante.belongsTo(models.Persona, { foreignKey: 'id_persona', as: 'persona' });
     Estudiante.belongsTo(models.Representante, { foreignKey: 'id_representante', as: 'representante' });
     Estudiante.hasMany(models.Matricula, { foreignKey: 'id_estudiante', as: 'matriculas' });
     Estudiante.hasMany(models.HistoricoNotaCertificada, { foreignKey: 'id_estudiante', as: 'historicos' });
@@ -29,13 +33,33 @@ export function initEstudiante(sequelize: Sequelize): typeof Estudiante {
         autoIncrement: true,
         primaryKey: true,
       },
-      id_persona: {
-        type: DataTypes.INTEGER,
+      cedula_escolar: {
+        type: DataTypes.STRING(15),
         allowNull: true,
-        references: {
-          model: 'personas',
-          key: 'id_persona',
-        },
+      },
+      nombre1: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      nombre2: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      apellido1: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      apellido2: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      fecha_nac: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      genero: {
+        type: DataTypes.CHAR(1),
+        allowNull: true,
       },
       lugar_nac: {
         type: DataTypes.STRING(100),

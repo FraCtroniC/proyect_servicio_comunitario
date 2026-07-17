@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
 import { z } from 'zod';
-import { Usuario as UsuarioModel, Persona, Rol, LoginAudit, RefreshToken } from '../models';
+import { Usuario as UsuarioModel, Rol, LoginAudit, RefreshToken } from '../models';
 import { environment } from '../../config/environment';
 import { AppError } from '../shared/errors';
 import { wrapAsync } from '../shared/utils/wrapAsync';
@@ -147,7 +147,7 @@ function clearAuthCookies(res: Response) {
 }
 
 async function sendPasswordChangeNotification(usuario: any, action: string) {
-  const correoDestino = usuario.persona?.correo || null;
+  const correoDestino = usuario.correo || null;
   if (!correoDestino) return;
 
   try {
@@ -230,7 +230,6 @@ export const AuthController = {
       where: { username: usernameKey },
       include: [
         { model: Rol, as: 'rol' },
-        { model: Persona, as: 'persona' }
       ]
     });
 
@@ -251,9 +250,8 @@ export const AuthController = {
     await clearLoginAttemptsDB(usernameKey, ip, userAgent);
 
     let displayName = usuario.username;
-    const p = usuario.persona as any;
-    if (p) {
-      displayName = `${p.nombre1} ${p.apellido1}`;
+    if (usuario.nombre1 && usuario.apellido1) {
+      displayName = `${usuario.nombre1} ${usuario.apellido1}`;
     } else if (usuario.rol) {
       displayName = (usuario.rol as any).nombre;
     }
@@ -339,9 +337,7 @@ export const AuthController = {
     const { correo } = parsed.data;
 
     const usuario = await UsuarioModel.findOne({
-      include: [
-        { model: Persona, as: 'persona', required: true, where: { correo: correo.toLowerCase() } }
-      ]
+      where: { correo: correo.toLowerCase() }
     });
 
     if (!usuario) {
@@ -349,7 +345,7 @@ export const AuthController = {
       throw new AppError('El correo electrónico no se encuentra registrado en el sistema.', 404);
     }
 
-    const correoDestino = (usuario.persona as any)?.correo;
+    const correoDestino = usuario.correo;
 
     if (!correoDestino) {
       console.log(`[Auth] Usuario ${usuario.username} encontrado pero no tiene un correo válido definido.`);
@@ -430,9 +426,7 @@ export const AuthController = {
         throw new AppError('Token inválido para esta operación', 400);
       }
 
-      const usuario = await UsuarioModel.findByPk(decoded.idUsuario, {
-        include: [{ model: Persona, as: 'persona', required: false }],
-      });
+      const usuario = await UsuarioModel.findByPk(decoded.idUsuario);
       if (!usuario) {
         throw new AppError('Usuario no encontrado', 404);
       }
@@ -464,7 +458,6 @@ export const AuthController = {
     const usuario = await UsuarioModel.findByPk(idUsuario, {
       include: [
         { model: Rol, as: 'rol' },
-        { model: Persona, as: 'persona' }
       ]
     });
 
@@ -472,15 +465,14 @@ export const AuthController = {
       throw new AppError('Usuario no encontrado', 404);
     }
 
-    const persona = usuario.persona as any;
     const rol = usuario.rol as any;
 
     res.json({
       data: {
-        nombre1: persona?.nombre1 ?? null,
-        nombre2: persona?.nombre2 ?? null,
-        apellido1: persona?.apellido1 ?? null,
-        apellido2: persona?.apellido2 ?? null,
+        nombre1: usuario.nombre1 ?? null,
+        nombre2: usuario.nombre2 ?? null,
+        apellido1: usuario.apellido1 ?? null,
+        apellido2: usuario.apellido2 ?? null,
         username: usuario.username,
         rol: rol?.nombre ?? null,
       }
@@ -501,9 +493,7 @@ export const AuthController = {
 
     const { currentPassword, newPassword } = parsed.data;
 
-    const usuario = await UsuarioModel.findByPk(idUsuario, {
-      include: [{ model: Persona, as: 'persona', required: false }],
-    });
+    const usuario = await UsuarioModel.findByPk(idUsuario);
     if (!usuario) {
       throw new AppError('Usuario no encontrado', 404);
     }

@@ -135,7 +135,9 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>('super_admin'); // SuperAdmin by default so everything is unlocked
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('mppe_active_tab') || 'dashboard';
+  });
   const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
   const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -161,6 +163,11 @@ export default function App() {
       console.error('Error al restaurar sesión:', e);
     }
   }, []);
+
+  // Persistir pestaña activa en localStorage al recargar la página
+  useEffect(() => {
+    localStorage.setItem('mppe_active_tab', activeTab);
+  }, [activeTab]);
 
   // WebSocket: escuchar cambios en periodos escolares y usuarios
   useSocket(isLoggedIn, (event, payload) => {
@@ -378,7 +385,8 @@ export default function App() {
             api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
-            api.get<any[]>('/api/docentes').catch(() => ({ data: [] })),
+            // temporarily empty - we filter docentes from usuariosData below
+            Promise.resolve([]),
             api.get<any[]>('/api/grados').catch(() => ({ data: [] }))
           ]);
 
@@ -392,7 +400,9 @@ export default function App() {
           const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
 
           setUsers(usuariosData.map(mapUsuarioToUser));
-          const parsedDocentes = (Array.isArray(docentesData) ? docentesData : (docentesData as any)?.data || []).map(mapDocenteToDocenteType);
+          const usuariosArray = Array.isArray(usuariosData) ? usuariosData : (usuariosData as any)?.data || [];
+          const docentesApiData = usuariosArray.filter((u: any) => (u.idRol || u.id_rol) === 5);
+          const parsedDocentes = docentesApiData.map(mapDocenteToDocenteType);
           setDocentes(parsedDocentes);
           setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));
@@ -773,11 +783,39 @@ export default function App() {
       const created = await api.post<any>('/api/secciones', payload);
       const newSection = mapSeccionToSection(created);
       if (homeClassroomId && !newSection.homeClassroomId) {
-        newSection.homeClassroomId = homeClassroomId; // inject locally if backend drops it
+        newSection.homeClassroomId = homeClassroomId;
       }
       return newSection;
     } catch (e: any) {
       console.error('Error al crear sección:', e);
+      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
+      throw new Error(msg);
+    }
+  };
+
+  const handleUpdateSection = async (sectionId: string, data: { periodId?: string; grade?: number; letter?: string; teacherGuideId?: string; homeClassroomId?: string; capacityMax?: number }) => {
+    try {
+      const payload: any = {};
+      if (data.periodId) payload.id_periodo = Number(data.periodId);
+      if (data.grade !== undefined) payload.id_grado = data.grade;
+      if (data.letter) payload.letra = data.letter;
+      if (data.teacherGuideId) payload.id_docente_guia = Number(data.teacherGuideId.replace(/\D/g, '')) || 1;
+      if (data.homeClassroomId !== undefined) payload.id_aula = Number(data.homeClassroomId.replace(/\D/g, '')) || null;
+      if (data.capacityMax !== undefined) payload.capacidad_maxima = data.capacityMax || null;
+
+      await api.patch(`/api/secciones/${sectionId}`, payload);
+    } catch (e: any) {
+      console.error('Error al actualizar sección:', e);
+      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
+      throw new Error(msg);
+    }
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    try {
+      await api.delete(`/api/secciones/${sectionId}`);
+    } catch (e: any) {
+      console.error('Error al eliminar sección:', e);
       const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
       throw new Error(msg);
     }
@@ -1645,6 +1683,8 @@ export default function App() {
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
                   onCreateSection={handleCreateSection}
+                  onUpdateSection={handleUpdateSection}
+                  onDeleteSection={handleDeleteSection}
                 />
               )}
 

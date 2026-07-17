@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Student, Grade, Subject, EvaluationPlan, Attendance, AcademicYear } from '../types';
+import { Student, Grade, Subject, EvaluationPlan, Attendance, AcademicYear, Section, SchoolPeriod, Docente, Classroom } from '../types';
 import { calculateSubjectFinalGrade, gradeToLiteral } from './gradeCalculations';
 
 export const generateBoletinPDF = (
@@ -267,4 +267,66 @@ export const generateReporteAsistencia = (
   doc.text('Director(a) de la Institución', doc.internal.pageSize.getWidth() / 2, finalY + 75, { align: 'center' });
 
   doc.save(`Reporte_Asistencia_${year}°_${section}_${fechaDesde}.pdf`);
+};
+
+export const generateSectionsPDF = (
+  sections: Section[],
+  students: Student[],
+  periods: SchoolPeriod[],
+  docentes: Docente[],
+  classrooms: Classroom[]
+) => {
+  const doc = new jsPDF('l', 'pt', 'letter');
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('REPÚBLICA BOLIVARIANA DE VENEZUELA', pageWidth / 2, 40, { align: 'center' });
+  doc.text('MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN', pageWidth / 2, 58, { align: 'center' });
+  doc.text('LICEO ESTILITA OROZCO', pageWidth / 2, 76, { align: 'center' });
+
+  doc.setFontSize(13);
+  doc.text('REPORTE DE SECCIONES', pageWidth / 2, 110, { align: 'center' });
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Total de secciones: ${sections.length}  |  Generado: ${new Date().toLocaleDateString('es-ES')}`, pageWidth / 2, 130, { align: 'center' });
+
+  const tableData = sections.map(s => {
+    const periodo = periods.find(p => String(p.id) === String(s.periodId));
+    const docente = docentes.find(d => d.id === s.teacherGuideId);
+    const aula = classrooms.find(c => c.id === s.homeClassroomId);
+    const maxCupos = s.capacityMax || (aula ? aula.capacity : 0);
+    const ocupados = students.filter(st => st.academicYear === s.grade && st.section === s.letter).length;
+
+    return [
+      `${s.grade}° ${s.letter}`,
+      periodo?.name || 'N/A',
+      docente ? `${docente.firstName} ${docente.lastName}` : 'N/A',
+      aula?.name || 'N/A',
+      String(s.capacityMax || aula?.capacity || '?'),
+      String(ocupados),
+      `${maxCupos > 0 ? Math.round((ocupados / maxCupos) * 100) : 0}%`
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 150,
+    head: [['Sección', 'Periodo', 'Docente Guía', 'Aula', 'Cap. Máx.', 'Ocupados', 'Ocupación']],
+    body: tableData,
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 70, halign: 'center' },
+      1: { cellWidth: 120 },
+      2: { cellWidth: 140 },
+      3: { cellWidth: 100 },
+      4: { cellWidth: 65, halign: 'center' },
+      5: { cellWidth: 65, halign: 'center' },
+      6: { cellWidth: 65, halign: 'center' }
+    }
+  });
+
+  doc.save(`Reporte_Secciones_${new Date().toISOString().split('T')[0]}.pdf`);
 };

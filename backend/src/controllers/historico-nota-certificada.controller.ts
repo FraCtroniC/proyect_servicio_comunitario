@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { HistoricoNotaCertificada } from '../models/HistoricoNotaCertificada';
-import { Persona, Estudiante } from '../models';
+import { Estudiante } from '../models';
 import { Asignatura } from '../models/Asignatura';
 import { GradoAno } from '../models/GradoAno';
 import { PeriodoEscolar } from '../models/PeriodoEscolar';
@@ -25,14 +25,11 @@ export const HistoricoNotaCertificadaController = {
   listarPorEstudiante: wrapAsync(async (req: Request, res: Response) => {
     const estudianteId = Number(req.params.estudianteId);
 
-    const estudiante = await Estudiante.findByPk(estudianteId, {
-      include: [{ model: Persona, as: 'persona' }],
-    });
+    const estudiante = await Estudiante.findByPk(estudianteId);
     if (!estudiante) {
       res.status(404).json({ error: { message: 'Estudiante no encontrado' } });
       return;
     }
-    const p = (estudiante as any).persona;
 
     const notas = await HistoricoNotaCertificada.findAll({
       where: { id_estudiante: estudianteId },
@@ -49,8 +46,8 @@ export const HistoricoNotaCertificadaController = {
       data: notas,
       estudiante: {
         id_estudiante: estudiante.id_estudiante,
-        cedula: p?.cedula || '',
-        nombre: p ? `${p.nombre1}${p.nombre2 ? ' ' + p.nombre2 : ''} ${p.apellido1}${p.apellido2 ? ' ' + p.apellido2 : ''}` : '',
+        cedula: estudiante.cedula_escolar || '',
+        nombre: `${estudiante.apellido1 || ''}${estudiante.apellido2 ? ' ' + estudiante.apellido2 : ''} ${estudiante.nombre1 || ''}${estudiante.nombre2 ? ' ' + estudiante.nombre2 : ''}`,
       },
     });
   }),
@@ -115,14 +112,11 @@ export const HistoricoNotaCertificadaController = {
     const estudianteId = Number(req.params.id);
     const planCode = (req.query.plan as string) || '31059';
 
-    const estudiante = await Estudiante.findByPk(estudianteId, {
-      include: [{ model: Persona, as: 'persona' }],
-    });
+    const estudiante = await Estudiante.findByPk(estudianteId);
     if (!estudiante) {
       res.status(404).json({ error: { message: 'Estudiante no encontrado' } });
       return;
     }
-    const p = (estudiante as any).persona;
 
     // Select template based on plan code
     const templateName = planCode === '31059'
@@ -170,15 +164,15 @@ export const HistoricoNotaCertificadaController = {
           const val = cell.value?.toString() || '';
           // Replace placeholder patterns
           if (val.includes('APELLIDOS Y NOMBRES') || val.includes('NOMBRE DEL ESTUDIANTE')) {
-            const n1 = p?.nombre1 || ''; const n2 = p?.nombre2 ? ' ' + p.nombre2 : '';
-            const a1 = p?.apellido1 || ''; const a2 = p?.apellido2 ? ' ' + p.apellido2 : '';
+            const n1 = estudiante.nombre1 || ''; const n2 = estudiante.nombre2 ? ' ' + estudiante.nombre2 : '';
+            const a1 = estudiante.apellido1 || ''; const a2 = estudiante.apellido2 ? ' ' + estudiante.apellido2 : '';
             cell.value = `${a1}${a2}, ${n1}${n2}`;
           }
           if (val.includes('CEDULA') || val.includes('C.I.') || val.includes('CÉDULA')) {
-            cell.value = p?.cedula || '';
+            cell.value = estudiante.cedula_escolar || '';
           }
           if (val.includes('FECHA DE NACIMIENTO') || val.includes('FECHA NAC')) {
-            cell.value = p?.fecha_nac ? new Date(p.fecha_nac).toLocaleDateString('es-VE') : '';
+            cell.value = estudiante.fecha_nac ? new Date(estudiante.fecha_nac).toLocaleDateString('es-VE') : '';
           }
           if (val.includes('LUGAR DE NACIMIENTO') || val.includes('LUGAR NAC')) {
             cell.value = estudiante.lugar_nac || '';
@@ -194,7 +188,7 @@ export const HistoricoNotaCertificadaController = {
     }
 
     // Set response headers for Excel download
-    const safeCedula = (p?.cedula || 'sin_cedula').replace(/[^a-zA-Z0-9]/g, '_');
+    const safeCedula = (estudiante.cedula_escolar || 'sin_cedula').replace(/[^a-zA-Z0-9]/g, '_');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=Notas_Certificadas_${safeCedula}_Plan_${planCode}.xlsx`);
 

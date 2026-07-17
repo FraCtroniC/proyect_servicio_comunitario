@@ -3,7 +3,6 @@ import { MateriaPendiente } from '../models/MateriaPendiente';
 import { Asignatura } from '../models/Asignatura';
 import { Estudiante } from '../models/Estudiante';
 import { PeriodoEscolar } from '../models/PeriodoEscolar';
-import { Docente } from '../models/Docente';
 import { Usuario } from '../models/Usuario';
 import { Calificacion } from '../models/Calificacion';
 import { Matricula } from '../models/Matricula';
@@ -16,7 +15,7 @@ const FULL_INCLUDES = [
   { model: Asignatura, as: 'asignatura' },
   { model: Estudiante, as: 'estudiante' },
   { model: PeriodoEscolar, as: 'periodo' },
-  { model: Docente, as: 'docente_evaluador' },
+  { model: Usuario, as: 'docente_evaluador' },
 ];
 
 async function findCompleta(id: number) {
@@ -24,8 +23,8 @@ async function findCompleta(id: number) {
 }
 
 async function resolveDocenteId(idUsuario: number): Promise<number | null> {
-  const usuario = await Usuario.findByPk(idUsuario, { attributes: ['id_docente'] });
-  return usuario?.id_docente ?? null;
+  const usuario = await Usuario.findByPk(idUsuario, { attributes: ['id_usuario'] });
+  return usuario?.id_usuario ?? null;
 }
 
 export const MateriaPendienteController = {

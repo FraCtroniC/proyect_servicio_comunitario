@@ -4,10 +4,13 @@
  */
 
 import React, { useState } from 'react';
-import { Layers, ShieldAlert, Users, BookOpen, ChevronRight, X, GraduationCap, MapPin, UserCheck } from 'lucide-react';
+import { Layers, ShieldAlert, Users, BookOpen, ChevronRight, X, GraduationCap, MapPin, UserCheck, FileText, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Student, AcademicYear, UserRole, Section, SchoolPeriod, User, Classroom, Docente } from '../types';
 import { Modal } from './Modal';
 import { SearchableSelect } from './SearchableSelect';
+import { generateSectionsPDF } from '../utils/pdfGenerator';
+import { exportSectionsToExcel } from '../utils/excelGenerator';
 
 interface AcademicManagerProps {
   students: Student[];
@@ -19,20 +22,27 @@ interface AcademicManagerProps {
   onAddStudent: (std: Student) => void;
   onUpdateStudentStatus: (studentId: string, status: 'Activo' | 'Inactivo' | 'Retirado') => void;
   onCreateSection: (periodId: string, grade: number, letter: string, teacherGuideId: string, homeClassroomId: string) => Promise<Section>;
+  onUpdateSection?: (sectionId: string, data: { periodId?: string; grade?: number; letter?: string; teacherGuideId?: string; homeClassroomId?: string; capacityMax?: number }) => Promise<void>;
+  onDeleteSection?: (sectionId: string) => Promise<void>;
   classrooms: Classroom[];
 }
 
 export default function AcademicManager({
   students, sections, periods, users, docentes, classrooms, currentUserRole,
-  onAddStudent, onUpdateStudentStatus, onCreateSection
+  onAddStudent, onUpdateStudentStatus, onCreateSection, onUpdateSection, onDeleteSection
 }: AcademicManagerProps) {
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
 
   const [secPeriodo, setSecPeriodo] = useState<string>('');
   const [secGrado, setSecGrado] = useState<number>(1);
   const [secLetra, setSecLetra] = useState<string>('A');
   const [secDocente, setSecDocente] = useState<string>('');
   const [secAula, setSecAula] = useState<string>('');
+  const [secCapacidad, setSecCapacidad] = useState<number>(30);
   const [secError, setSecError] = useState('');
   const [secSuccess, setSecSuccess] = useState('');
   const [secLoading, setSecLoading] = useState(false);
@@ -82,7 +92,8 @@ export default function AcademicManager({
 
   const checkDuplicate = (grado: number, letra: string, periodo: string) => {
     if (!periodo) { setSecGradoError(''); setSecLetraError(''); return; }
-    const exists = sections.some(
+    const otherSections = editingSection ? sections.filter(s => s.id !== editingSection.id) : sections;
+    const exists = otherSections.some(
       s => s.grade === grado && s.letter === letra && s.periodId === periodo
     );
     if (exists) {
@@ -94,7 +105,41 @@ export default function AcademicManager({
     }
   };
 
-  const handleCreateSection = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setSecPeriodo('');
+    setSecGrado(1);
+    setSecLetra('A');
+    setSecDocente('');
+    setSecAula('');
+    setSecCapacidad(30);
+    setSecError('');
+    setSecSuccess('');
+    setSecGradoError('');
+    setSecLetraError('');
+  };
+
+  const openCreateModal = () => {
+    setEditingSection(null);
+    resetForm();
+    setIsSectionModalOpen(true);
+  };
+
+  const openEditModal = (section: Section) => {
+    setEditingSection(section);
+    setSecPeriodo(section.periodId);
+    setSecGrado(section.grade);
+    setSecLetra(section.letter);
+    setSecDocente(section.teacherGuideId);
+    setSecAula(section.homeClassroomId);
+    setSecCapacidad(section.capacityMax || 30);
+    setSecError('');
+    setSecSuccess('');
+    setSecGradoError('');
+    setSecLetraError('');
+    setIsSectionModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSecError('');
     setSecSuccess('');
@@ -108,27 +153,49 @@ export default function AcademicManager({
     if (secGradoError || secLetraError) { setSecLoading(false); return; }
 
     try {
-      await onCreateSection(secPeriodo, secGrado, secLetra, secDocente, secAula);
-      setSecSuccess(`Sección ${secGrado}° "${secLetra}" creada exitosamente.`);
-      setTimeout(() => { setIsSectionModalOpen(false); setSecSuccess(''); }, 2000);
+      if (editingSection && onUpdateSection) {
+        await onUpdateSection(editingSection.id, {
+          periodId: secPeriodo,
+          grade: secGrado,
+          letter: secLetra,
+          teacherGuideId: secDocente,
+          homeClassroomId: secAula,
+          capacityMax: secCapacidad,
+        });
+        setSecSuccess(`Sección ${secGrado}° "${secLetra}" actualizada exitosamente.`);
+        toast.success('Sección actualizada correctamente');
+      } else {
+        await onCreateSection(secPeriodo, secGrado, secLetra, secDocente, secAula);
+        setSecSuccess(`Sección ${secGrado}° "${secLetra}" creada exitosamente.`);
+      }
+      setTimeout(() => { setIsSectionModalOpen(false); setSecSuccess(''); setEditingSection(null); }, 2000);
     } catch (e: any) {
-      setSecError(e.message || 'Error al crear sección');
+      setSecError(e.message || 'Error al guardar sección');
     } finally {
       setSecLoading(false);
     }
   };
 
-  const openCreateModal = () => {
-    setSecPeriodo('');
-    setSecGrado(1);
-    setSecLetra('A');
-    setSecDocente('');
-    setSecAula('');
-    setSecError('');
-    setSecSuccess('');
-    setSecGradoError('');
-    setSecLetraError('');
-    setIsSectionModalOpen(true);
+  const handleConfirmDelete = async () => {
+    if (!sectionToDelete || !onDeleteSection) return;
+    try {
+      await onDeleteSection(sectionToDelete.id);
+      toast.success(`Sección ${sectionToDelete.grade}° "${sectionToDelete.letter}" eliminada correctamente`);
+      setIsDeleteModalOpen(false);
+      setSectionToDelete(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Error al eliminar sección');
+    }
+  };
+
+  const handleGeneratePDF = () => {
+    generateSectionsPDF(filteredSections, students, periods, docentes, classrooms);
+    toast.success('PDF generado correctamente');
+  };
+
+  const handleGenerateExcel = async () => {
+    await exportSectionsToExcel(filteredSections, students, periods, docentes, classrooms);
+    toast.success('Excel generado correctamente');
   };
 
   const inputBase = "w-full text-sm p-2.5 bg-slate-50 border rounded-lg focus:outline-hidden transition-colors";
@@ -146,9 +213,25 @@ export default function AcademicManager({
           </h1>
           <p className="text-sm text-slate-500 mt-1">Administración de Secciones Activas por Grado y Periodo Escolar.</p>
         </div>
-        <span className="text-xs bg-slate-100 text-slate-500 font-bold font-mono px-2 py-0.5 rounded mt-2 md:mt-0">
-          Total: {filteredSections.length} secciones
-        </span>
+        <div className="flex items-center gap-2 mt-2 md:mt-0 flex-wrap">
+          <span className="text-sm bg-indigo-100 text-indigo-700 font-black font-mono px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm">
+            Total: {filteredSections.length} secciones
+          </span>
+          <button
+            onClick={handleGeneratePDF}
+            className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1.5 rounded-lg text-xs font-bold transition-colors border border-rose-200"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            PDF
+          </button>
+          <button
+            onClick={handleGenerateExcel}
+            className="flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1.5 rounded-lg text-xs font-bold transition-colors border border-emerald-200"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            Excel
+          </button>
+        </div>
       </div>
 
       <div id="academic-grid" className="grid grid-cols-1 gap-6">
@@ -200,16 +283,19 @@ export default function AcademicManager({
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                     {secs.sort((a, b) => a.letter.localeCompare(b.letter)).map(s => {
                       const aula = getClassroom(s.homeClassroomId);
-                      const cupos = aula ? aula.capacity : 0;
+                      const maxCupos = s.capacityMax || (aula ? aula.capacity : 0);
                       const ocupados = getStudentCount(s.id);
-                      const isFull = cupos > 0 && ocupados >= cupos;
+                      const isFull = maxCupos > 0 && ocupados >= maxCupos;
+                      const canEdit = ['super_admin', 'control_estudios'].includes(currentUserRole);
                       return (
                         <div
                           key={s.id}
-                          onClick={() => setSelectedSection(s)}
-                          className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+                          className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col justify-between hover:border-indigo-300 hover:shadow-md transition-all"
                         >
-                          <div>
+                          <div
+                            onClick={() => setSelectedSection(s)}
+                            className="cursor-pointer"
+                          >
                             <div className="flex justify-between items-start">
                               <span className="text-base font-black text-indigo-700">Sección "{s.letter}"</span>
                               {viewPeriod === 'all' && (
@@ -220,7 +306,7 @@ export default function AcademicManager({
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                               <Users className="h-3 w-3" />
-                              <span>{ocupados} / {cupos || '?'} cupos</span>
+                              <span>{ocupados} / {maxCupos || '?'} cupos</span>
                               <ChevronRight className="h-3 w-3" />
                               <span>{getTeacherName(s.teacherGuideId)}</span>
                             </div>
@@ -231,6 +317,24 @@ export default function AcademicManager({
                                </div>
                             )}
                           </div>
+                          {canEdit && (
+                            <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-slate-100">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); openEditModal(s); }}
+                                className="p-1 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                                title="Editar sección"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSectionToDelete(s); setIsDeleteModalOpen(true); }}
+                                className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Eliminar sección"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -248,8 +352,8 @@ export default function AcademicManager({
         </div>
       </div>
 
-      <Modal isOpen={isSectionModalOpen} onClose={() => setIsSectionModalOpen(false)} title="Aperturar Nueva Sección">
-        <form onSubmit={handleCreateSection} className="space-y-4">
+      <Modal isOpen={isSectionModalOpen} onClose={() => { setIsSectionModalOpen(false); setEditingSection(null); }} title={editingSection ? "Editar Sección" : "Aperturar Nueva Sección"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {secError && (
             <div className="p-2.5 bg-rose-50 border border-rose-200 font-medium rounded-lg text-rose-800 text-sm">{secError}</div>
           )}
@@ -327,7 +431,7 @@ export default function AcademicManager({
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
               <SearchableSelect
                 options={(classrooms || []).filter(c => c.type === 'Teórica').map(c => {
-                  const isTaken = sections.some(s => s.homeClassroomId === c.id);
+                  const isTaken = sections.some(s => s.homeClassroomId === c.id && s.id !== editingSection?.id);
                   return {
                     value: c.id,
                     label: `${c.name} (${c.capacity} cap.) ${isTaken ? '- Ya asignada' : ''}`,
@@ -341,12 +445,26 @@ export default function AcademicManager({
             </div>
           </div>
 
+          <div className="space-y-0.5">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Capacidad Máxima de Estudiantes</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={secCapacidad}
+              onChange={(e) => setSecCapacidad(Number(e.target.value))}
+              className={inputNormal}
+              placeholder="Ej: 30"
+            />
+            <p className="text-xs text-slate-400 mt-0.5">Número máximo de estudiantes permitidos en esta sección.</p>
+          </div>
+
           <button
             type="submit"
             disabled={secLoading}
             className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
           >
-            {secLoading ? 'Creando...' : 'Aperturar Sección'}
+            {secLoading ? (editingSection ? 'Guardando...' : 'Creando...') : (editingSection ? 'Guardar Cambios' : 'Aperturar Sección')}
           </button>
         </form>
       </Modal>
@@ -357,9 +475,9 @@ export default function AcademicManager({
             const aula = getClassroom(selectedSection.homeClassroomId);
             const teacher = getTeacher(selectedSection.teacherGuideId);
             const period = getPeriod(selectedSection.periodId);
+            const maxCupos = selectedSection.capacityMax || (aula ? aula.capacity : 0);
             const ocupados = getStudentCount(selectedSection.id);
-            const cupos = aula ? aula.capacity : 0;
-            const isFull = cupos > 0 && ocupados >= cupos;
+            const isFull = maxCupos > 0 && ocupados >= maxCupos;
 
             return (
               <div className="space-y-4">
@@ -407,7 +525,7 @@ export default function AcademicManager({
                     </div>
                     <p className="text-sm font-bold text-slate-800">{aula?.name || 'No asignada'}</p>
                     {aula && (
-                      <p className="text-xs text-slate-500 mt-0.5">Capacidad: {aula.capacity}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Capacidad del aula: {aula.capacity}</p>
                     )}
                   </div>
 
@@ -416,15 +534,18 @@ export default function AcademicManager({
                       <Users className="h-3 w-3 text-slate-400" />
                       <span className="text-xs font-bold text-slate-500 uppercase">Estudiantes</span>
                     </div>
-                    <p className="text-sm font-bold text-slate-800">{ocupados} / {cupos || '?'} cupos</p>
+                    <p className="text-sm font-bold text-slate-800">{ocupados} / {maxCupos || '?'} cupos</p>
+                    {selectedSection.capacityMax && (
+                      <p className="text-xs text-slate-500 mt-0.5">Cap. máxima definida: {selectedSection.capacityMax}</p>
+                    )}
                     {isFull && (
                       <span className="text-sm text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">LLENO</span>
                     )}
-                    {cupos > 0 && !isFull && (
+                    {maxCupos > 0 && !isFull && (
                       <div className="mt-1.5 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${ocupados / cupos > 0.8 ? 'bg-amber-400' : 'bg-indigo-400'}`}
-                          style={{ width: `${Math.min((ocupados / cupos) * 100, 100)}%` }}
+                          className={`h-full rounded-full transition-all ${ocupados / maxCupos > 0.8 ? 'bg-amber-400' : 'bg-indigo-400'}`}
+                          style={{ width: `${Math.min((ocupados / maxCupos) * 100, 100)}%` }}
                         />
                       </div>
                     )}
@@ -442,6 +563,26 @@ export default function AcademicManager({
           })()}
         </Modal>
       )}
+
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación">
+        <div className="space-y-4">
+          <p className="text-base text-slate-600 leading-relaxed">
+            ¿Está seguro de eliminar la sección <span className="font-bold text-slate-800">{sectionToDelete?.grade}° Año "{sectionToDelete?.letter}"</span>?
+          </p>
+          <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
+            Esta acción no se puede deshacer. Los estudiantes matriculados en esta sección no serán eliminados.
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button 
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 text-base font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </Modal>
 
     </div>
   );

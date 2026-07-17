@@ -12,8 +12,6 @@ const crearUsuarioSchema = z.object({
   password: z.string()
     .min(6, 'La contraseña debe tener al menos 6 caracteres'),
   idRol: z.coerce.number().int().optional().nullable(),
-  idDocente: z.coerce.number().int().positive().optional().nullable(),
-  idPersona: z.coerce.number().int().positive().optional().nullable(),
   cedula: z.string().optional().nullable().refine(
     v => !v || CEDULA_REGEX.test(v),
     'La cédula debe tener formato V/E-12345678',
@@ -59,35 +57,33 @@ const crearUsuarioSchema = z.object({
     });
   }
 
-  if (!data.idPersona && !data.idDocente) {
-    if (!data.cedula) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['cedula'],
-        message: 'La cédula es requerida para crear un nuevo usuario',
-      });
-    }
-    if (!data.nombre1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['nombre1'],
-        message: 'El nombre es requerido para crear un nuevo usuario',
-      });
-    }
-    if (!data.apellido1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['apellido1'],
-        message: 'El apellido es requerido para crear un nuevo usuario',
-      });
-    }
-    if (data.idRol === 5 && !data.fecha_nac) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['fecha_nac'],
-        message: 'La fecha de nacimiento es requerida para docentes',
-      });
-    }
+  if (!data.cedula) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['cedula'],
+      message: 'La cédula es requerida',
+    });
+  }
+  if (!data.nombre1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['nombre1'],
+      message: 'El nombre es requerido',
+    });
+  }
+  if (!data.apellido1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['apellido1'],
+      message: 'El apellido es requerido',
+    });
+  }
+  if (data.idRol === 5 && !data.fecha_nac) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['fecha_nac'],
+      message: 'La fecha de nacimiento es requerida para docentes',
+    });
   }
 });
 

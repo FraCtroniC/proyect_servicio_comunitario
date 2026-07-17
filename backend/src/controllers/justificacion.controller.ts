@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Justificacion, AsistenciaDocente, Docente, sequelize } from '../models';
+import { Justificacion, AsistenciaDocente, Usuario, sequelize } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import {
   crearJustificacionSchema,
@@ -13,7 +13,7 @@ export const JustificacionController = {
         {
           model: AsistenciaDocente,
           as: 'asistencia',
-          include: [{ model: Docente, as: 'docente' }]
+          include: [{ model: Usuario, as: 'docente' }]
         }
       ],
       order: [['created_at', 'DESC']]
@@ -28,7 +28,7 @@ export const JustificacionController = {
         {
           model: AsistenciaDocente,
           as: 'asistencia',
-          include: [{ model: Docente, as: 'docente' }]
+          include: [{ model: Usuario, as: 'docente' }]
         }
       ]
     });

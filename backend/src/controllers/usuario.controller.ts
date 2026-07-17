@@ -4,12 +4,12 @@ import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
 const ALLOWED_CREATE_FIELDS = [
-  'idRol', 'idDocente', 'idPersona', 'username', 'password',
+  'idRol', 'username', 'password',
   'cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'correo', 'telefono',
   'fecha_nac', 'id_especialidad',
 ];
 const ALLOWED_UPDATE_FIELDS = [
-  'idRol', 'idDocente', 'idPersona', 'username', 'password', 'estatus',
+  'idRol', 'username', 'password', 'estatus',
   'cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'correo', 'telefono',
   'fecha_nac', 'id_especialidad',
 ];

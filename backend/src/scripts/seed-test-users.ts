@@ -18,6 +18,7 @@ async function seedTestUsers() {
 
     const adminRol = await Rol.findOne({ where: { nombre: 'Administrador' } });
     const docenteRol = await Rol.findOne({ where: { nombre: 'Docente' } });
+    const coordinadorRol = await Rol.findOne({ where: { nombre: 'Coordinador' } });
 
     if (!adminRol || !docenteRol) {
       console.error('Roles Administrador y Docente deben existir. Ejecuta seed.ts primero.');
@@ -26,6 +27,7 @@ async function seedTestUsers() {
 
     const adminRolId = adminRol.getDataValue('id_rol');
     const docenteRolId = docenteRol.getDataValue('id_rol');
+    const coordinadorRolId = coordinadorRol ? coordinadorRol.getDataValue('id_rol') : 7;
 
     const passwordHash = await bcrypt.hash('1234', 10);
 
@@ -68,9 +70,23 @@ async function seedTestUsers() {
       console.log('Usuario "docente" ya existe.');
     }
 
+    const coordinadorExists = await Usuario.findOne({ where: { username: 'coord' } });
+    if (!coordinadorExists) {
+      await Usuario.create({
+        id_rol: coordinadorRolId,
+        username: 'coord',
+        password_hash: passwordHash,
+        estatus: 'Activo',
+      });
+      console.log('Usuario "coord" creado (rol: Coordinador, clave: 1234).');
+    } else {
+      console.log('Usuario "coord" ya existe.');
+    }
+
     console.log('\n--- USUARIOS DE PRUEBA ---');
     console.log('admin   | clave: 1234 | Rol: Administrador    -> super_admin');
     console.log('control | clave: 1234 | Rol: Control Estudios -> control_estudios');
+    console.log('coord   | clave: 1234 | Rol: Coordinador      -> coordinador');
     console.log('docente | clave: 1234 | Rol: Docente          -> docente');
     console.log('arturo  | clave: 1234 | Rol: Administrador    -> super_admin (seed original)');
 

@@ -5,7 +5,6 @@ import { authRoutes } from './auth.routes';
 import { chatbotRoutes } from './chatbot.routes';
 import { usuarioRoutes } from './usuario.routes';
 import { rolRoutes } from './rol.routes';
-import { docenteRoutes } from './docente.routes';
 import { periodoEscolarRoutes } from './periodo-escolar.routes';
 import { gradoAnoRoutes } from './grado-ano.routes';
 import { seccionRoutes } from './seccion.routes';
@@ -41,15 +40,7 @@ routes.use('/auth', authRoutes);
 routes.use('/chatbot', chatbotRoutes);
 
 
-routes.get('/test-docentes', async (req, res) => {
-  try {
-    const { Docente } = require('../models/Docente');
-    const result = await Docente.findAll();
-    res.json({ data: result });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message, stack: e.stack });
-  }
-});
+
 
 // CSRF protection + authentication for all non-public routes
 routes.use(csrfProtection);
@@ -57,7 +48,6 @@ routes.use(authMiddleware);
 
 routes.use('/usuarios', usuarioRoutes);
 routes.use('/roles', rolRoutes);
-routes.use('/docentes', docenteRoutes);
 routes.use('/periodos', periodoEscolarRoutes);
 routes.use('/grados', gradoAnoRoutes);
 routes.use('/secciones', seccionRoutes);

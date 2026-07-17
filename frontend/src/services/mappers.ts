@@ -9,42 +9,40 @@ export function mapRole(idRol: number): UserRole {
 }
 
 export function mapUsuarioToUser(dbUser: any): User {
-  const p = dbUser.persona;
   return {
     id: String(dbUser.id || dbUser.id_usuario),
-    name: p
-      ? `${p.nombre1} ${p.apellido1}`
+    name: dbUser.nombre1
+      ? `${dbUser.nombre1} ${dbUser.apellido1 || ''}`.trim()
       : (dbUser.username || `Usuario ${dbUser.id}`),
-    email: p?.correo || `${dbUser.username}@local.liceo`,
+    email: dbUser.correo || `${dbUser.username}@local.liceo`,
     role: mapRole(dbUser.idRol || dbUser.id_rol),
     active: dbUser.estatus === 'Activo',
-    cedula: p?.cedula || undefined,
-    phone: p?.telefono || undefined,
+    cedula: dbUser.cedula || undefined,
+    phone: dbUser.telefono || undefined,
     username: dbUser.username || undefined,
-    teacherId: dbUser.id_docente ? String(dbUser.id_docente) : undefined,
-    firstName: p?.nombre1 || undefined,
-    secondName: p?.nombre2 || undefined,
-    lastName: p?.apellido1 || undefined,
-    secondLastName: p?.apellido2 || undefined,
-    dateOfBirth: p?.fechaNac || p?.fecha_nac || undefined,
+    teacherId: dbUser.id ? String(dbUser.id) : undefined,
+    firstName: dbUser.nombre1 || undefined,
+    secondName: dbUser.nombre2 || undefined,
+    lastName: dbUser.apellido1 || undefined,
+    secondLastName: dbUser.apellido2 || undefined,
+    dateOfBirth: dbUser.fechaNac || dbUser.fecha_nac || undefined,
     id_especialidad: dbUser.idEspecialidad || undefined,
   };
 }
 
 export function mapDocenteToDocenteType(dbDocente: any): Docente {
-  const p = dbDocente.persona;
   return {
-    id: String(dbDocente.id_docente || dbDocente.idDocente || dbDocente.id),
-    cedula: p?.cedula || dbDocente.cedula_docente || dbDocente.cedulaDocente,
-    firstName: p?.nombre1 || dbDocente.nombre1,
-    secondName: p?.nombre2 || dbDocente.nombre2 || undefined,
-    lastName: p?.apellido1 || dbDocente.apellido1,
-    secondLastName: p?.apellido2 || dbDocente.apellido2 || undefined,
+    id: String(dbDocente.id || dbDocente.id_usuario || dbDocente.id_docente || dbDocente.idDocente || dbDocente.id),
+    cedula: dbDocente.cedula,
+    firstName: dbDocente.nombre1,
+    secondName: dbDocente.nombre2 || undefined,
+    lastName: dbDocente.apellido1,
+    secondLastName: dbDocente.apellido2 || undefined,
     id_especialidad: dbDocente.id_especialidad || dbDocente.idEspecialidad || undefined,
-    dateOfBirth: p?.fecha_nac || p?.fechaNac || dbDocente.fecha_nac || dbDocente.fechaNac || undefined,
-    phone: p?.telefono || dbDocente.telefono || undefined,
-    email: p?.correo || dbDocente.correo || undefined,
-    status: dbDocente.estatus || 'Activo',
+    dateOfBirth: dbDocente.fecha_nac || dbDocente.fechaNac || undefined,
+    phone: dbDocente.telefono || undefined,
+    email: dbDocente.correo || undefined,
+    status: dbDocente.estatus_docente || dbDocente.estatus || 'Activo',
   };
 }
 
@@ -77,36 +75,33 @@ export function mapEstudianteToStudent(dbStudent: any, matriculas?: any[], secci
     }
   }
 
-  const p = dbStudent.persona;
-  const repP = dbStudent.representante?.persona;
+  const repP = dbStudent.representante;
 
   return {
     id: String(dbStudent.id_estudiante),
-    firstName: p ? (p.nombre1 + (p.nombre2 ? ` ${p.nombre2}` : '')) : (dbStudent.nombre1 + (dbStudent.nombre2 ? ` ${dbStudent.nombre2}` : '')),
-    lastName: p ? (p.apellido1 + (p.apellido2 ? ` ${p.apellido2}` : '')) : (dbStudent.apellido1 + (dbStudent.apellido2 ? ` ${dbStudent.apellido2}` : '')),
-    cedula: p?.cedula || dbStudent.cedula_escolar,
+    firstName: dbStudent.nombre1 + (dbStudent.nombre2 ? ` ${dbStudent.nombre2}` : ''),
+    lastName: dbStudent.apellido1 + (dbStudent.apellido2 ? ` ${dbStudent.apellido2}` : ''),
+    cedula: dbStudent.cedula_escolar,
     academicYear: academicYear as AcademicYear,
     section,
     status: dbStudent.estatus_estudiante === 'Inactivo' ? 'Inactivo' : 
             dbStudent.estatus_estudiante === 'Retirado' ? 'Retirado' : 'Activo',
     representativeName: repP 
       ? `${repP.nombre1} ${repP.apellido1}` 
-      : (dbStudent.representante 
-        ? `${dbStudent.representante.nombre1} ${dbStudent.representante.apellido1}` 
-        : 'No asignado'),
-    representativeCedula: repP?.cedula || dbStudent.representante?.cedula_rep || '',
-    representativePhone: dbStudent.representante?.telefono || '',
-    dateOfBirth: p?.fecha_nac || dbStudent.fecha_nac,
-    gender: p?.genero || dbStudent.genero || 'M',
+      : 'No asignado',
+    representativeCedula: repP?.cedula_rep || '',
+    representativePhone: repP?.telefono || '',
+    dateOfBirth: dbStudent.fecha_nac,
+    gender: dbStudent.genero || 'M',
     birthPlace: dbStudent.lugar_nac || undefined,
     municipality: dbStudent.municipio || undefined,
     state: dbStudent.estado || undefined,
-    representativeEmail: repP?.correo || dbStudent.representante?.correo || undefined,
-    representativeAddress: dbStudent.representante?.direccion || undefined,
-    repFirstName: repP?.nombre1 || dbStudent.representante?.nombre1 || undefined,
-    repSecondName: repP?.nombre2 || dbStudent.representante?.nombre2 || undefined,
-    repLastName: repP?.apellido1 || dbStudent.representante?.apellido1 || undefined,
-    repSecondLastName: repP?.apellido2 || dbStudent.representante?.apellido2 || undefined,
+    representativeEmail: repP?.correo || undefined,
+    representativeAddress: repP?.direccion || undefined,
+    repFirstName: repP?.nombre1 || undefined,
+    repSecondName: repP?.nombre2 || undefined,
+    repLastName: repP?.apellido1 || undefined,
+    repSecondLastName: repP?.apellido2 || undefined,
   };
 }
 
@@ -231,18 +226,18 @@ export function mapSeccionToSection(dbSeccion: any): Section {
     grade: dbSeccion.grado?.numero || dbSeccion.id_grado || 1,
     letter: dbSeccion.letra,
     periodId: String(dbSeccion.periodo?.id_periodo || dbSeccion.id_periodo),
-    teacherGuideId: String(dbSeccion.docenteGuia?.id_docente || dbSeccion.id_docente_guia),
+    teacherGuideId: String(dbSeccion.docenteGuia?.id_usuario || dbSeccion.docenteGuia?.id || dbSeccion.id_docente_guia),
     homeClassroomId: String(dbSeccion.aula?.id_aula || dbSeccion.id_aula || ''),
+    capacityMax: dbSeccion.capacidad_maxima || undefined,
   };
 }
 
 export function mapRepresentanteToRepresentative(dbRep: any): Representative {
-  const p = dbRep.persona;
   return {
     id: String(dbRep.id_representante),
-    cedula: p?.cedula || dbRep.cedula_rep,
-    firstName: p ? (p.nombre1 + (p.nombre2 ? ` ${p.nombre2}` : '')) : (dbRep.nombre1 + (dbRep.nombre2 ? ` ${dbRep.nombre2}` : '')),
-    lastName: p ? (p.apellido1 + (p.apellido2 ? ` ${p.apellido2}` : '')) : (dbRep.apellido1 + (dbRep.apellido2 ? ` ${dbRep.apellido2}` : '')),
+    cedula: dbRep.cedula_rep,
+    firstName: dbRep.nombre1 + (dbRep.nombre2 ? ` ${dbRep.nombre2}` : ''),
+    lastName: dbRep.apellido1 + (dbRep.apellido2 ? ` ${dbRep.apellido2}` : ''),
     phone: dbRep.telefono || '',
   };
 }

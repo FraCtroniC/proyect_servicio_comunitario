@@ -1,19 +1,16 @@
-import { sequelize, Docente } from '../models';
+import { sequelize, Usuario } from '../models';
 
-async function syncDocente() {
+async function sync() {
   try {
-    console.log('Conectando a la base de datos...');
     await sequelize.authenticate();
-
-    console.log('Sincronizando modelo Docente para agregar fecha_nac...');
-    await Docente.sync({ alter: true });
-
-    console.log('Migración completada.');
-    process.exit(0);
+    console.log('Sincronizando modelo Usuario para campos de docente...');
+    await Usuario.sync({ alter: true });
+    console.log('Usuario sincronizado exitosamente.');
   } catch (error) {
-    console.error('Error durante la migración:', error);
-    process.exit(1);
+    console.error('Error:', error);
+  } finally {
+    await sequelize.close();
   }
 }
 
-syncDocente();
+sync();

@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { Response } from 'express';
-import { AsistenciaDocente, Justificacion, Docente, sequelize } from '../models';
+import { AsistenciaDocente, Justificacion, Usuario, sequelize } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { HORA_LIMITE_PUNTUAL } from '../shared/constants';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -37,7 +37,7 @@ export const AsistenciaDocenteController = {
       where,
       include: [
         { model: Justificacion, as: 'justificaciones' },
-        { model: Docente, as: 'docente' }
+        { model: Usuario, as: 'docente' }
       ],
       limit,
       offset,
@@ -51,7 +51,7 @@ export const AsistenciaDocenteController = {
     const result = await AsistenciaDocente.findByPk(id, {
       include: [
         { model: Justificacion, as: 'justificaciones' },
-        { model: Docente, as: 'docente' }
+        { model: Usuario, as: 'docente' }
       ]
     });
     if (!result || result.fecha_anulacion) {
@@ -169,26 +169,26 @@ export const AsistenciaDocenteController = {
 
     const query = `
       SELECT
-        d.id_docente,
-        d.nombre,
-        d.apellido,
-        d.cedula,
+        u.id_usuario AS id_docente,
+        u.apellido1 AS apellido,
+        u.nombre1 AS nombre,
+        u.cedula,
         SUM(CASE WHEN ad.estatus = 'Puntual' THEN 1 ELSE 0 END) AS puntual,
         SUM(CASE WHEN ad.estatus = 'Retardo' THEN 1 ELSE 0 END) AS retardo,
         SUM(CASE WHEN ad.estatus = 'Ausente' THEN 1 ELSE 0 END) AS ausente,
         COUNT(*) AS total
       FROM asistencia_docente ad
-      INNER JOIN docentes d ON d.id_docente = ad.id_docente
+      INNER JOIN usuarios u ON u.id_usuario = ad.id_docente
       ${whereClause}
-      GROUP BY d.id_docente, d.nombre, d.apellido, d.cedula
-      ORDER BY d.apellido, d.nombre
+      GROUP BY u.id_usuario, u.apellido1, u.nombre1, u.cedula
+      ORDER BY u.apellido1, u.nombre1
     `;
 
     const [results]: any = await sequelize.query(query, { replacements });
 
     const stats = results.map((s: any) => ({
       id_docente: s.id_docente,
-      nombre: `${s.apellido}, ${s.nombre}`,
+      nombre: `${s.nombre}, ${s.apellido}`,
       cedula: s.cedula,
       puntual: Number(s.puntual),
       retardo: Number(s.retardo),

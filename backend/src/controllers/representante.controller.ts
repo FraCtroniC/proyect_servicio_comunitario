@@ -1,10 +1,14 @@
 import { Request, Response } from 'express';
-import { Persona, Representante } from '../models';
+import { Representante } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
-function personaPick(body: any): any {
-  const fields = ['cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'telefono', 'correo'];
+const ALLOWED_REP_FIELDS = [
+  'cedula_rep', 'nombre1', 'nombre2', 'apellido1', 'apellido2',
+  'correo', 'telefono', 'direccion',
+];
+
+function pick(body: any, fields: string[]): any {
   const result: any = {};
   for (const field of fields) {
     if (body[field] !== undefined) result[field] = body[field];
@@ -12,23 +16,15 @@ function personaPick(body: any): any {
   return result;
 }
 
-async function findCompleto(id: number) {
-  return await Representante.findByPk(id, {
-    include: [{ model: Persona, as: 'persona' }],
-  });
-}
-
 export const RepresentanteController = {
   listar: wrapAsync(async (_req: Request, res: Response) => {
-    const result = await Representante.findAll({
-      include: [{ model: Persona, as: 'persona' }],
-    });
+    const result = await Representante.findAll();
     res.json({ data: result });
   }),
 
   obtenerPorId: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const result = await findCompleto(id);
+    const result = await Representante.findByPk(id);
     if (!result) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
@@ -38,44 +34,25 @@ export const RepresentanteController = {
 
   crear: wrapAsync(async (req: Request, res: Response) => {
     const now = new Date();
-    const persona = await Persona.create({
-      ...personaPick(req.body),
-      created_at: now,
-      updated_at: now,
-    });
     const result = await Representante.create({
-      id_persona: persona.id_persona,
-      telefono: req.body.telefono ?? null,
-      direccion: req.body.direccion ?? null,
+      ...pick(req.body, ALLOWED_REP_FIELDS),
       created_at: now,
       updated_at: now,
     });
-    const completo = await findCompleto(result.get('id_representante') as number);
+    const completo = await Representante.findByPk(result.get('id_representante') as number);
     getIO().emit('representante:create', { data: completo });
     res.status(201).json({ data: completo });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const record = await Representante.findByPk(id, {
-      include: [{ model: Persona, as: 'persona' }],
-    });
+    const record = await Representante.findByPk(id);
     if (!record) {
       res.status(404).json({ error: { message: 'Recurso no encontrado' } });
       return;
     }
-    const personaData = personaPick(req.body);
-    const persona = (record as any).persona;
-    if (persona && Object.keys(personaData).length > 0) {
-      await persona.update(personaData);
-    }
-    const repUpdate: any = {};
-    if (req.body.telefono !== undefined) repUpdate.telefono = req.body.telefono;
-    if (req.body.direccion !== undefined) repUpdate.direccion = req.body.direccion;
-    if (Object.keys(repUpdate).length > 0) {
-      await record.update(repUpdate);
-    }
-    const completo = await findCompleto(id);
+    await record.update(pick(req.body, ALLOWED_REP_FIELDS));
+    const completo = await Representante.findByPk(id);
     getIO().emit('representante:update', { data: completo });
     res.json({ data: completo });
   }),

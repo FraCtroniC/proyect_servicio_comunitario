@@ -1,4 +1,4 @@
-import { sequelize, Rol, Persona, Docente, Usuario, Representante, Estudiante, EscalaCalificacion } from '../models';
+import { sequelize, Rol, Usuario, Representante, Estudiante, EscalaCalificacion } from '../models';
 import bcrypt from 'bcrypt';
 
 async function seed() {
@@ -15,6 +15,7 @@ async function seed() {
       { id_rol: 4, nombre: 'Administrador', descripcion: 'Administrador del sistema' },
       { id_rol: 8, nombre: 'Control de Estudios', descripcion: 'Gestión academica' },
       { id_rol: 5, nombre: 'Docente', descripcion: 'Profesor de asignatura' },
+      { id_rol: 7, nombre: 'Coordinador', descripcion: 'Supervisión académica y de personal' },
     ];
 
     for (const r of roles) {
@@ -64,14 +65,6 @@ async function seed() {
 
     for (let i = 0; i < docentesData.length; i++) {
       const d = docentesData[i];
-      const persona = await Persona.create({
-        cedula: d.cedula, nombre1: d.nombre1, apellido1: d.apellido1,
-        telefono: d.telefono, correo: d.correo,
-      });
-
-      const docente = await Docente.create({
-        id_persona: persona.id_persona, estatus: 'Activo',
-      });
 
       let idRol = idDoc;
       if (i === 0) idRol = idDir;
@@ -80,11 +73,15 @@ async function seed() {
       const username = `${d.nombre1.toLowerCase()}.${d.apellido1.toLowerCase()}`;
       await Usuario.create({
         id_rol: idRol,
-        id_docente: docente.id_docente,
-        id_persona: persona.id_persona,
         username,
         password_hash: passwordHash,
         estatus: 'Activo',
+        cedula: d.cedula,
+        nombre1: d.nombre1,
+        apellido1: d.apellido1,
+        telefono: d.telefono,
+        correo: d.correo,
+        estatus_docente: 'Activo',
       });
     }
     console.log('Docentes y usuarios insertados (Clave: Liceo2026).');
@@ -104,11 +101,9 @@ async function seed() {
     ];
 
     for (const r of representantesData) {
-      const persona = await Persona.create({
-        cedula: r.cedula, nombre1: r.nombre1, apellido1: r.apellido1,
-      });
       await Representante.create({
-        id_persona: persona.id_persona, telefono: r.telefono, direccion: r.direccion,
+        cedula_rep: r.cedula, nombre1: r.nombre1, apellido1: r.apellido1,
+        telefono: r.telefono, direccion: r.direccion,
       });
     }
     console.log('Representantes insertados.');
@@ -136,12 +131,9 @@ async function seed() {
     for (let i = 0; i < estudiantesData.length; i++) {
       const e = estudiantesData[i];
       const rep = representantes[i % representantes.length];
-      const persona = await Persona.create({
-        cedula: e.cedula, nombre1: e.nombre1, apellido1: e.apellido1,
-        fecha_nac: e.fecha_nac, genero: (e.nombre1.endsWith('a') ? 'F' : 'M'),
-      });
       await Estudiante.create({
-        id_persona: persona.id_persona,
+        cedula_escolar: e.cedula, nombre1: e.nombre1, apellido1: e.apellido1,
+        fecha_nac: e.fecha_nac, genero: (e.nombre1.endsWith('a') ? 'F' : 'M'),
         lugar_nac: e.lugar_nac,
         id_representante: rep.get('id_representante') as number,
         estatus_estudiante: 'Activo',
