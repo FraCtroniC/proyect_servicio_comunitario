@@ -22,6 +22,7 @@ export interface UsuarioDto {
   updatedAt: Date | null;
   role?: { idRol: number; nombre: string };
   persona?: PersonaInfoDto;
+  idEspecialidad?: number;
 }
 
 export interface CrearUsuarioDto {
@@ -38,6 +39,8 @@ export interface CrearUsuarioDto {
   apellido2?: string;
   correo?: string;
   telefono?: string;
+  fecha_nac?: string;
+  id_especialidad?: number;
 }
 
 export interface ActualizarUsuarioDto {
@@ -54,4 +57,6 @@ export interface ActualizarUsuarioDto {
   apellido2?: string;
   correo?: string;
   telefono?: string;
+  fecha_nac?: string;
+  id_especialidad?: number;
 }

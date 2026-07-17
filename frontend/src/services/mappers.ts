@@ -26,6 +26,8 @@ export function mapUsuarioToUser(dbUser: any): User {
     secondName: p?.nombre2 || undefined,
     lastName: p?.apellido1 || undefined,
     secondLastName: p?.apellido2 || undefined,
+    dateOfBirth: p?.fechaNac || p?.fecha_nac || undefined,
+    id_especialidad: dbUser.idEspecialidad || undefined,
   };
 }
 

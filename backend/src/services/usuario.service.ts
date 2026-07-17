@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Usuario as UsuarioModel, Persona, Rol, RefreshToken, sequelize } from '../models';
+import { Usuario as UsuarioModel, Persona, Docente, Rol, RefreshToken, sequelize } from '../models';
 import { UsuarioDto, CrearUsuarioDto, ActualizarUsuarioDto } from '../types/usuario.types';
 import { NotFoundError, ValidationError } from '../shared/errors';
 
@@ -7,6 +7,7 @@ const SALT_ROUNDS = 10;
 
 function mapModelToDto(model: UsuarioModel): UsuarioDto {
   const persona = (model as any).persona;
+  const docente = (model as any).docente;
   return {
     id: model.id_usuario,
     idRol: model.id_rol,
@@ -18,6 +19,7 @@ function mapModelToDto(model: UsuarioModel): UsuarioDto {
     createdAt: model.created_at,
     updatedAt: model.updated_at,
     role: model.rol ? { idRol: model.rol.id_rol, nombre: model.rol.nombre } : undefined,
+    idEspecialidad: docente?.id_especialidad ?? undefined,
     persona: persona ? {
       idPersona: persona.id_persona,
       cedula: persona.cedula,
@@ -40,6 +42,7 @@ export const UsuarioService = {
       include: [
         { model: Rol, as: 'rol' },
         { model: Persona, as: 'persona' },
+        { model: Docente, as: 'docente' },
       ],
     });
     return usuarios.map(mapModelToDto);
@@ -51,6 +54,7 @@ export const UsuarioService = {
       include: [
         { model: Rol, as: 'rol' },
         { model: Persona, as: 'persona' },
+        { model: Docente, as: 'docente' },
       ],
     });
     if (!usuario) {
@@ -91,6 +95,7 @@ export const UsuarioService = {
             nombre2: dto.nombre2 ?? null,
             apellido1: dto.apellido1 ?? '',
             apellido2: dto.apellido2 ?? null,
+            fecha_nac: dto.fecha_nac ?? null,
             correo: dto.correo ?? null,
             telefono: dto.telefono ?? null,
           },
@@ -99,9 +104,22 @@ export const UsuarioService = {
         idPersona = persona.id_persona;
       }
 
+      let idDocente = dto.idDocente ?? null;
+
+      if (dto.idRol === 5 && idPersona && !idDocente) {
+        const docente = await Docente.create({
+          id_persona: idPersona,
+          id_especialidad: dto.id_especialidad ?? null,
+          estatus: 'Activo',
+          created_at: new Date(),
+          updated_at: new Date(),
+        }, { transaction });
+        idDocente = docente.id_docente;
+      }
+
       const usuario = await UsuarioModel.create({
         id_rol: dto.idRol,
-        id_docente: dto.idDocente ?? null,
+        id_docente: idDocente,
         id_persona: idPersona,
         username: dto.username,
         password_hash: passwordHash,
@@ -115,6 +133,7 @@ export const UsuarioService = {
         include: [
           { model: Rol, as: 'rol' },
           { model: Persona, as: 'persona' },
+          { model: Docente, as: 'docente' },
         ],
       });
 
@@ -212,6 +231,7 @@ export const UsuarioService = {
       include: [
         { model: Rol, as: 'rol' },
         { model: Persona, as: 'persona' },
+        { model: Docente, as: 'docente' },
       ],
     });
     return mapModelToDto(updated!);

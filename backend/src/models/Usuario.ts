@@ -20,6 +20,7 @@ export class Usuario extends Model {
   static associate(models: any) {
     Usuario.belongsTo(models.Rol, { foreignKey: 'id_rol', as: 'rol' });
     Usuario.belongsTo(models.Persona, { foreignKey: 'id_persona', as: 'persona' });
+    Usuario.belongsTo(models.Docente, { foreignKey: 'id_docente', as: 'docente' });
   }
 }
 

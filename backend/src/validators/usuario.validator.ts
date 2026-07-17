@@ -38,6 +38,8 @@ const crearUsuarioSchema = z.object({
     v => !v || PHONE_REGEX.test(v),
     'El teléfono debe tener formato xxxx-xxxxxxx',
   ),
+  fecha_nac: z.string().optional().nullable(),
+  id_especialidad: z.coerce.number().int().positive().optional().nullable(),
   estatus: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.idRol === undefined || data.idRol === null) {
@@ -77,6 +79,13 @@ const crearUsuarioSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ['apellido1'],
         message: 'El apellido es requerido para crear un nuevo usuario',
+      });
+    }
+    if (data.idRol === 5 && !data.fecha_nac) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['fecha_nac'],
+        message: 'La fecha de nacimiento es requerida para docentes',
       });
     }
   }

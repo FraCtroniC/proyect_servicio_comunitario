@@ -21,6 +21,8 @@ export interface User {
   secondLastName?: string;
   rol?: string;
   username?: string;
+  dateOfBirth?: string;
+  id_especialidad?: number;
 }
 
 export interface Docente {

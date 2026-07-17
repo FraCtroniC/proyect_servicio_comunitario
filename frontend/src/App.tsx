@@ -24,7 +24,6 @@ import {
   ClipboardCheck,
   Book,
   CalendarDays,
-  Briefcase
 } from 'lucide-react';
 
 import {
@@ -54,8 +53,6 @@ import Dashboard from './components/Dashboard';
 import UserManager from './components/UserManager';
 import AcademicManager from './components/AcademicManager';
 import StudentManager from './components/StudentManager';
-import StaffManager from './components/StaffManager';
-import DocenteManager from './components/DocenteManager';
 import GradeManager from './components/GradeManager';
 import AttendanceTracker from './components/AttendanceTracker';
 import ScheduleCoordinator from './components/ScheduleCoordinator';
@@ -471,106 +468,34 @@ export default function App() {
   }, [activeTab, isLoggedIn]);
 
   // --- PERSISTENCE ACTIONS PASSED DOWN ---
-  const handleAddDocente = async (newDocente: Omit<Docente, 'id'>) => {
+  const handleAddUser = async (newUser: Partial<User> & { password?: string; lastName?: string; username?: string; secondName?: string; secondLastName?: string; dateOfBirth?: string; id_especialidad?: number }) => {
     try {
-      const payload = {
-        cedula_docente: newDocente.cedula,
-        nombre1: newDocente.firstName,
-        nombre2: newDocente.secondName,
-        apellido1: newDocente.lastName,
-        apellido2: newDocente.secondLastName,
-        id_especialidad: newDocente.id_especialidad,
-        fecha_nac: newDocente.dateOfBirth,
-        telefono: newDocente.phone,
-        correo: newDocente.email
-      };
-      const response = await api.post<any>('/api/docentes', payload);
-      const passwordTemporal = response.password_temporal;
-      // State updates via WebSocket
-      return passwordTemporal;
-    } catch (e: any) {
-      console.error(e);
-      throw new Error(e.response?.data?.error?.message || 'Error al crear docente en BD');
-    }
-  };
-
-  const handleUpdateDocente = async (id: string, updatedDocente: Omit<Docente, 'id'>) => {
-    try {
-      const payload = {
-        cedula_docente: updatedDocente.cedula.replace('V-', '').replace('E-', ''),
-        nombre1: updatedDocente.firstName,
-        nombre2: updatedDocente.secondName,
-        apellido1: updatedDocente.lastName,
-        apellido2: updatedDocente.secondLastName,
-        id_especialidad: updatedDocente.id_especialidad,
-        fecha_nac: updatedDocente.dateOfBirth,
-        telefono: updatedDocente.phone,
-        correo: updatedDocente.email
-      };
-      await api.patch<any>(`/api/docentes/${stripId(id)}`, payload);
-      // State updates via WebSocket
-
-    } catch (e: any) {
-      console.error(e);
-      throw new Error(e.response?.data?.error?.message || 'Error al actualizar docente en BD');
-    }
-  };
-
-  const handleDeleteDocente = async (id: string) => {
-    try {
-      await api.delete(`/api/docentes/${stripId(id)}`);
-      // State updates via WebSocket
-    } catch (e: any) {
-      console.error(e);
-      throw new Error(e.response?.data?.error?.message || 'Error al eliminar docente, asegúrese de que no tenga horarios asignados.');
-    }
-  };
-
-  const handleToggleDocenteActive = async (docenteId: string) => {
-    try {
-      const docente = docentes.find(d => d.id === docenteId);
-      if (docente) {
-        const newStatus = docente.status === 'Activo' ? 'Inactivo' : 'Activo';
-        await api.patch(`/api/docentes/${stripId(docenteId)}`, { estatus: newStatus });
-        // State updates via WebSocket
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleAddUser = async (newUser: Partial<User> & { password?: string; lastName?: string; username?: string }) => {
-    try {
-      const tempPassword = newUser.password || 'Temp' + Math.random().toString(36).slice(2, 8) + '1!';
       const cleanCedula = (newUser.cedula || '').replace(/^[VE]-/, '');
-      const docente = docentes.find(d => 
-        d.cedula === cleanCedula || 
-        d.cedula === `V-${cleanCedula}` || 
-        d.cedula === `E-${cleanCedula}`
-      );
 
       const dto: any = {
         username: newUser.username || cleanCedula || newUser.email?.split('@')[0] || 'User',
-        password: tempPassword,
+        password: newUser.password || 'TempPass1!',
         idRol: newUser.role === 'super_admin' ? 4 : newUser.role === 'control_estudios' ? 8 : newUser.role === 'coordinador' ? 7 : 5,
-        idDocente: (newUser.role === 'docente' && docente) ? stripId(docente.id) : null,
         cedula: newUser.cedula || undefined,
         nombre1: newUser.name || undefined,
+        nombre2: newUser.secondName || undefined,
         apellido1: newUser.lastName || undefined,
+        apellido2: newUser.secondLastName || undefined,
         correo: newUser.email || undefined,
         telefono: newUser.phone || undefined,
+        fecha_nac: newUser.dateOfBirth || undefined,
+        id_especialidad: newUser.id_especialidad || undefined,
       };
       await api.post<any>('/api/usuarios', dto);
     } catch (e: any) {
       console.error('Error al crear usuario:', e);
-      console.error('Detalles de validación:', e.details);
       const err = new Error('Error al crear usuario') as any;
       if (e.details) err.fieldErrors = e.details;
       throw err;
     }
   };
 
-  const handleEditUser = async (userId: string, data: Partial<User> & { password?: string; lastName?: string; username?: string }) => {
+  const handleEditUser = async (userId: string, data: Partial<User> & { password?: string; lastName?: string; username?: string; secondName?: string; secondLastName?: string; dateOfBirth?: string; id_especialidad?: number }) => {
     try {
       const dto: any = {};
       if (data.username) dto.username = data.username;
@@ -579,23 +504,12 @@ export default function App() {
       if (data.phone) dto.telefono = data.phone;
       if (data.cedula) dto.cedula = data.cedula;
       if (data.name) dto.nombre1 = data.name;
+      if (data.secondName) dto.nombre2 = data.secondName;
       if (data.lastName) dto.apellido1 = data.lastName;
+      if (data.secondLastName) dto.apellido2 = data.secondLastName;
       if (data.role) dto.idRol = data.role === 'super_admin' ? 4 : data.role === 'control_estudios' ? 8 : data.role === 'coordinador' ? 7 : 5;
-
-      const roleStr = data.role || users.find(u => u.id === userId)?.role;
-      const cedulaStr = data.cedula || users.find(u => u.id === userId)?.cedula || '';
-      
-      if (roleStr === 'docente') {
-        const cleanCedula = cedulaStr.replace(/^[VE]-/, '');
-        const docente = docentes.find(d => 
-          d.cedula === cleanCedula || 
-          d.cedula === `V-${cleanCedula}` || 
-          d.cedula === `E-${cleanCedula}`
-        );
-        dto.idDocente = docente ? stripId(docente.id) : null;
-      } else {
-        dto.idDocente = null;
-      }
+      if (data.dateOfBirth) dto.fecha_nac = data.dateOfBirth;
+      if (data.id_especialidad !== undefined) dto.id_especialidad = data.id_especialidad;
 
       await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
     } catch (e: any) {
@@ -1382,7 +1296,6 @@ export default function App() {
       group: 'Planificación Académica',
       items: [
         { id: 'subjects', label: 'Plan de Estudio', icon: Book, allowedRoles: ['super_admin', 'control_estudios'] },
-        { id: 'docentes', label: 'Personal Docente', icon: Briefcase, allowedRoles: ['super_admin', 'control_estudios'] },
         { id: 'schedule', label: 'Programacion Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'docente'] }
       ]
     },
@@ -1832,18 +1745,6 @@ export default function App() {
                   onAddClassroom={handleAddClassroom}
                   onEditClassroom={handleEditClassroom}
                   onRemoveClassroom={handleRemoveClassroom}
-                />
-              )}
-
-              {activeTab === 'docentes' && (
-                <DocenteManager
-                  docentes={docentes}
-                  users={users}
-                  currentUserRole={currentUserRole}
-                  onAddDocente={handleAddDocente}
-                  onUpdateDocente={handleUpdateDocente}
-                  onDeleteDocente={handleDeleteDocente}
-                  onToggleDocenteActive={handleToggleDocenteActive}
                 />
               )}
 
