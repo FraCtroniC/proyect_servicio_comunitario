@@ -805,11 +805,13 @@ export default function App() {
     }
   };
 
-  const handleAddPeriod = async (name: string, status: 'Activo' | 'Planificación') => {
+  const handleAddPeriod = async (name: string, status: 'Activo' | 'Planificación', fecha_inicio?: string | null, fecha_fin?: string | null) => {
     try {
       const resp = await api.post<any>('/api/periodos', {
         nombre: name,
-        estatus: status
+        estatus: status,
+        fecha_inicio: fecha_inicio || null,
+        fecha_fin: fecha_fin || null,
       });
     } catch (e: any) {
       console.error(e);
@@ -824,6 +826,16 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al actualizar periodo escolar');
+      throw e;
+    }
+  };
+
+  const handleEditPeriod = async (id: string, data: { nombre?: string; estatus?: string; fecha_inicio?: string | null; fecha_fin?: string | null }) => {
+    try {
+      await api.patch(`/api/periodos/${stripId(id)}`, data);
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al editar periodo escolar');
       throw e;
     }
   };
@@ -1729,6 +1741,7 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onAddPeriod={handleAddPeriod}
                   onUpdatePeriodStatus={handleUpdatePeriodStatus}
+                  onEditPeriod={handleEditPeriod}
                 />
               )}
 

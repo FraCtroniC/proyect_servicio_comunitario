@@ -4,6 +4,8 @@ export class PeriodoEscolar extends Model {
   declare id_periodo: number;
   declare nombre: string;
   declare estatus: string;
+  declare fecha_inicio: Date | null;
+  declare fecha_fin: Date | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
 
@@ -30,6 +32,14 @@ export function initPeriodoEscolar(sequelize: Sequelize): typeof PeriodoEscolar 
       estatus: {
         type: DataTypes.STRING(20),
         allowNull: false,
+      },
+      fecha_inicio: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      fecha_fin: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
       },
     },
     {

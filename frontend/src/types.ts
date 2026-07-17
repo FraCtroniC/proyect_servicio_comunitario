@@ -57,6 +57,8 @@ export interface SchoolPeriod {
   id: string;
   name: string;
   status: 'Activo' | 'Cerrado' | 'Planificación';
+  fecha_inicio?: string | null;
+  fecha_fin?: string | null;
 }
 
 export interface Especialidad {

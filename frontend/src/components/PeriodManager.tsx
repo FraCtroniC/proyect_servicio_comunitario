@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CalendarDays, Plus, Lock, CheckCircle2, Clock } from 'lucide-react';
+import { CalendarDays, Plus, Lock, CheckCircle2, Clock, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SchoolPeriod, UserRole } from '../types';
 import { Modal } from './Modal';
@@ -7,11 +7,12 @@ import { Modal } from './Modal';
 interface PeriodManagerProps {
   periods: SchoolPeriod[];
   currentUserRole: UserRole;
-  onAddPeriod: (name: string, status: 'Activo' | 'Planificación') => Promise<void>;
+  onAddPeriod: (name: string, status: 'Activo' | 'Planificación', fecha_inicio?: string | null, fecha_fin?: string | null) => Promise<void>;
   onUpdatePeriodStatus: (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => Promise<void>;
+  onEditPeriod: (id: string, data: { nombre?: string; estatus?: string; fecha_inicio?: string | null; fecha_fin?: string | null }) => Promise<void>;
 }
 
-export default function PeriodManager({ periods, currentUserRole, onAddPeriod, onUpdatePeriodStatus }: PeriodManagerProps) {
+export default function PeriodManager({ periods, currentUserRole, onAddPeriod, onUpdatePeriodStatus, onEditPeriod }: PeriodManagerProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
@@ -34,12 +35,23 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
   const generatedName = `${startYear}-${Number(startYear) + 1}`;
 
   const [newStatus, setNewStatus] = useState<'Activo' | 'Planificación'>('Planificación');
+  const [fechaInicio, setFechaInicio] = useState<string>('');
+  const [fechaFin, setFechaFin] = useState<string>('');
 
   const [confirmText, setConfirmText] = useState('');
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editPeriodId, setEditPeriodId] = useState<string>('');
+  const [editStartYear, setEditStartYear] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<string>('');
+  const [editFechaInicio, setEditFechaInicio] = useState<string>('');
+  const [editFechaFin, setEditFechaFin] = useState<string>('');
 
   const openAddModal = () => {
     setStartYear(String(currentYear));
     setNewStatus('Planificación');
+    setFechaInicio(`${currentYear}-09-01`);
+    setFechaFin(`${currentYear + 1}-08-31`);
     setIsAddModalOpen(true);
   };
 
@@ -57,7 +69,7 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
       }
     }
     try {
-      await onAddPeriod(generatedName, newStatus);
+      await onAddPeriod(generatedName, newStatus, fechaInicio || null, fechaFin || null);
       toast.success('Periodo creado exitosamente.');
       setIsAddModalOpen(false);
     } catch (error) {
@@ -111,6 +123,50 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
     }
   };
 
+  const openEditModal = (period: SchoolPeriod) => {
+    const yearStart = period.name.split('-')[0];
+    setEditPeriodId(period.id);
+    setEditStartYear(yearStart);
+    setEditStatus(period.status);
+    setEditFechaInicio(period.fecha_inicio || '');
+    setEditFechaFin(period.fecha_fin || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newName = `${editStartYear}-${Number(editStartYear) + 1}`;
+    const payload: any = {};
+    const original = periods.find(p => p.id === editPeriodId);
+    if (!original) return;
+    if (newName !== original.name) {
+      const existing = periods.find(p => p.name === newName);
+      if (existing) {
+        toast.error(`Ya existe un período escolar con el nombre ${newName}.`);
+        return;
+      }
+      payload.nombre = newName;
+    }
+    if (editStatus !== original.status) {
+      payload.estatus = editStatus;
+    }
+    const newFechaInicio = editFechaInicio || null;
+    const newFechaFin = editFechaFin || null;
+    if (newFechaInicio !== original.fecha_inicio) payload.fecha_inicio = newFechaInicio;
+    if (newFechaFin !== original.fecha_fin) payload.fecha_fin = newFechaFin;
+    if (Object.keys(payload).length === 0) {
+      toast.error('No hay cambios para guardar.');
+      return;
+    }
+    try {
+      await onEditPeriod(editPeriodId, payload);
+      toast.success('Periodo actualizado exitosamente.');
+      setIsEditModalOpen(false);
+    } catch {
+      // handled in App.tsx
+    }
+  };
+
   const canEdit = ['super_admin', 'control_estudios'].includes(currentUserRole);
   const isAdmin = currentUserRole === 'super_admin';
 
@@ -139,8 +195,31 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
           </h1>
           <p className="text-sm text-slate-500 mt-1">Gestión de Años Académicos y Bloqueo de Históricos.</p>
         </div>
-        {canEdit && (
-          <div className="mt-4 md:mt-0">
+        <div className="flex items-center gap-3 mt-4 md:mt-0">
+          {(() => {
+            const active = periods.find(p => p.status === 'Activo');
+            if (active) {
+              return (
+                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 shadow-xs">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <div className="text-xs leading-tight">
+                    <p className="font-bold text-emerald-800">Periodo Activo</p>
+                    <p className="font-black text-emerald-700 text-sm">{active.name}</p>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 shadow-xs">
+                <Clock className="w-5 h-5 text-amber-600" />
+                <div className="text-xs leading-tight">
+                  <p className="font-bold text-amber-800">Sin Periodo Activo</p>
+                  <p className="text-amber-700 text-xs">Ningún periodo está activo actualmente</p>
+                </div>
+              </div>
+            );
+          })()}
+          {canEdit && (
             <button
               onClick={openAddModal}
               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
@@ -148,8 +227,8 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
               <Plus className="w-4 h-4" />
               Aperturar Nuevo Periodo
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Main layout */}
@@ -168,7 +247,9 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
                   <th className="p-3 font-bold w-20 text-center">ID</th>
                   <th className="p-3 font-bold">AÑO ESCOLAR</th>
                   <th className="p-3 font-bold text-center">ESTATUS</th>
-                  {canEdit && <th className="p-3 font-bold text-center w-48">ACCIONES</th>}
+                  <th className="p-3 font-bold text-center">INICIO</th>
+                  <th className="p-3 font-bold text-center">FIN</th>
+                  {canEdit && <th className="p-3 font-bold text-center w-72">ACCIONES</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -179,8 +260,21 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
                     <td className="p-3 text-center">
                       {getStatusBadge(per.status)}
                     </td>
+                    <td className="p-3 text-center text-slate-600 font-medium text-xs">
+                      {per.fecha_inicio ? new Date(per.fecha_inicio + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : <span className="text-slate-300">—</span>}
+                    </td>
+                    <td className="p-3 text-center text-slate-600 font-medium text-xs">
+                      {per.fecha_fin ? new Date(per.fecha_fin + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : <span className="text-slate-300">—</span>}
+                    </td>
                     {canEdit && (
                       <td className="p-3 text-center flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEditModal(per)}
+                          className="bg-sky-50 text-sky-600 hover:bg-sky-100 hover:text-sky-700 px-3 py-1.5 rounded text-xs font-bold transition-colors pointer-events-auto cursor-pointer flex items-center gap-1"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Editar
+                        </button>
                         {(per.status === 'Planificación' || (per.status === 'Cerrado' && isAdmin)) && (
                           <button
                             onClick={() => openActivateModal(per)}
@@ -216,7 +310,12 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Año de Inicio</label>
             <select
               value={startYear}
-              onChange={(e) => setStartYear(e.target.value)}
+              onChange={(e) => {
+                const year = Number(e.target.value);
+                setStartYear(e.target.value);
+                setFechaInicio(`${year}-09-01`);
+                setFechaFin(`${year + 1}-08-31`);
+              }}
               className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
             >
               {yearOptions.map(y => {
@@ -245,6 +344,27 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
               <option value="Planificación">En Planificación (Solo configuraciones previas)</option>
               <option value="Activo">Activo (Permitir inscripciones de inmediato)</option>
             </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Fecha de Inicio</label>
+              <input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Fecha de Fin</label>
+              <input
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              />
+            </div>
           </div>
 
           <div className="pt-2">
@@ -307,6 +427,77 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
             >
               Sí, Activar Periodo
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Editar Periodo */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Periodo Escolar">
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Año de Inicio</label>
+            <select
+              value={editStartYear}
+              onChange={(e) => {
+                const year = Number(e.target.value);
+                setEditStartYear(e.target.value);
+                setEditFechaInicio(`${year}-09-01`);
+                setEditFechaFin(`${year + 1}-08-31`);
+              }}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-medium"
+            >
+              {yearOptions.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-between">
+            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide">Año Escolar</span>
+            <span className="text-base font-black text-indigo-700 tracking-wider">{editStartYear}-{Number(editStartYear) + 1}</span>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Estatus</label>
+            <select
+              value={editStatus}
+              onChange={(e) => setEditStatus(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+            >
+              <option value="Planificación">En Planificación</option>
+              <option value="Activo">Activo</option>
+              <option value="Cerrado">Cerrado</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Fecha de Inicio</label>
+              <input
+                type="date"
+                value={editFechaInicio}
+                onChange={(e) => setEditFechaInicio(e.target.value)}
+                className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Fecha de Fin</label>
+              <input
+                type="date"
+                value={editFechaFin}
+                onChange={(e) => setEditFechaFin(e.target.value)}
+                className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
+            >
+              Guardar Cambios
             </button>
           </div>
         </form>

@@ -50,7 +50,9 @@ export function mapPeriodoToSchoolPeriod(dbPeriodo: any): SchoolPeriod {
   return {
     id: String(dbPeriodo.id_periodo),
     name: dbPeriodo.nombre,
-    status: dbPeriodo.estatus as any
+    status: dbPeriodo.estatus as any,
+    fecha_inicio: dbPeriodo.fecha_inicio || null,
+    fecha_fin: dbPeriodo.fecha_fin || null,
   };
 }
 
