@@ -45,6 +45,14 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const [isEspecialidadModalOpen, setIsEspecialidadModalOpen] = useState(false);
+
+  useEffect(() => {
+    const initialFilter = sessionStorage.getItem('initialUserFilter');
+    if (initialFilter) {
+      setFilterRole(initialFilter as UserRole);
+      sessionStorage.removeItem('initialUserFilter');
+    }
+  }, []);
   const [newEspecialidadName, setNewEspecialidadName] = useState('');
   const [especialidadErrorMsg, setEspecialidadErrorMsg] = useState('');
 

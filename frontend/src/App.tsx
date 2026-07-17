@@ -24,6 +24,8 @@ import {
   ClipboardCheck,
   Book,
   CalendarDays,
+  Sparkles,
+  Clock,
 } from 'lucide-react';
 
 import {
@@ -83,14 +85,19 @@ const VenezuelaClock = () => {
   const dateFormatter = new Intl.DateTimeFormat('es-VE', {
     timeZone: 'America/Caracas',
     day: 'numeric',
-    month: 'numeric',
+    month: 'short',
     year: 'numeric'
   });
 
   return (
-    <div className="flex flex-col items-end justify-center leading-tight ml-2 text-white font-sans">
-      <span className="text-[14px] font-semibold">{timeFormatter.format(time)}</span>
-      <span className="text-[14px] text-slate-300">{dateFormatter.format(time)}</span>
+    <div className="flex items-center gap-3 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl px-3 py-2 ml-2 shadow-sm transition-all hover:bg-slate-800/60">
+      <div className="hidden sm:flex flex-col items-end leading-none">
+        <span className="text-[13px] font-bold text-slate-200 tracking-wide">{timeFormatter.format(time).toUpperCase()}</span>
+        <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest mt-1">{dateFormatter.format(time).replace('.', '')}</span>
+      </div>
+      <div className="h-8 w-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+        <Clock className="h-4.5 w-4.5" />
+      </div>
     </div>
   );
 };
@@ -1377,16 +1384,19 @@ export default function App() {
         }}
       />
 
-      {/* Top Banner Warning context (Simulated) */}
-      <div id="simulated-header-badge" className="hidden md:flex bg-slate-900 text-slate-300 py-3 px-6 text-center font-mono tracking-wider items-center justify-between border-b border-slate-800 shadow-md">
-        <span className="flex items-center gap-2 mx-auto md:mx-0 text-base text-slate-300">
-          👋 Bienvenido de nuevo, <strong className="text-white font-black px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50">{currentUser?.name || 'Usuario'}</strong>
-        </span>
+      <div id="simulated-header-badge" className="hidden md:flex bg-slate-900 text-slate-300 py-3 px-6 text-center font-sans items-center justify-between border-b border-slate-800 shadow-sm z-10">
+        <div className="flex items-center gap-2 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl px-4 py-2 mx-auto md:mx-0 shadow-sm transition-all hover:bg-slate-800/60">
+          <span className="text-lg drop-shadow-sm">👋</span> 
+          <span className="text-sm font-medium text-slate-300">
+            Bienvenido de nuevo, <strong className="text-slate-100 font-bold capitalize tracking-wide">{currentUser?.name?.replace(/usuario/i, '').trim() || 'Usuario'}</strong>
+          </span>
+        </div>
         <span className="hidden md:flex items-center gap-4">
           {activePeriod && (
-            <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 shadow-sm font-sans tracking-normal">
-              {activePeriod.name}
-            </span>
+            <div className="inline-flex items-center gap-2 bg-slate-800/80 backdrop-blur-md border border-slate-700/50 px-3 py-1.5 rounded-full text-sm font-bold tracking-wider uppercase shadow-sm font-sans">
+              <Sparkles className="w-4.5 h-4.5 text-blue-400" />
+              <span className="text-blue-50">Año Escolar Activo: {activePeriod.name}</span>
+            </div>
           )}
           <VenezuelaClock />
         </span>
