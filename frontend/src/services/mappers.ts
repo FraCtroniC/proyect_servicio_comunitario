@@ -233,6 +233,7 @@ export function mapSeccionToSection(dbSeccion: any): Section {
     periodId: String(dbSeccion.periodo?.id_periodo || dbSeccion.id_periodo),
     teacherGuideId: String(dbSeccion.docenteGuia?.id_docente || dbSeccion.id_docente_guia),
     homeClassroomId: String(dbSeccion.aula?.id_aula || dbSeccion.id_aula || ''),
+    capacityMax: dbSeccion.capacidad_maxima || undefined,
   };
 }
 

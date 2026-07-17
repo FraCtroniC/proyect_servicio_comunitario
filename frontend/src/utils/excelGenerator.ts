@@ -1,5 +1,5 @@
 import * as ExcelJS from 'exceljs';
-import { Student, Grade, Subject, EvaluationPlan } from '../types';
+import { Student, Grade, Subject, EvaluationPlan, Section, SchoolPeriod, Docente, Classroom } from '../types';
 import { calculateSubjectFinalGrade, gradeToLiteral } from './gradeCalculations';
 
 const downloadExcel = async (workbook: ExcelJS.Workbook, filename: string) => {
@@ -110,4 +110,55 @@ export const exportGradesToExcel = async (
   worksheet.getRow(1).font = { bold: true };
 
   await downloadExcel(workbook, `Sabana_Notas_${year}_${section}.xlsx`);
+};
+
+export const exportSectionsToExcel = async (
+  sections: Section[],
+  students: Student[],
+  periods: SchoolPeriod[],
+  docentes: Docente[],
+  classrooms: Classroom[]
+) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Secciones');
+
+  worksheet.columns = [
+    { header: 'Sección', key: 'seccion', width: 12 },
+    { header: 'Grado', key: 'grado', width: 10 },
+    { header: 'Letra', key: 'letra', width: 8 },
+    { header: 'Periodo', key: 'periodo', width: 20 },
+    { header: 'Docente Guía', key: 'docente', width: 30 },
+    { header: 'Aula Base', key: 'aula', width: 18 },
+    { header: 'Cap. Máxima', key: 'capMax', width: 14 },
+    { header: 'Est. Matriculados', key: 'ocupados', width: 18 },
+    { header: '% Ocupación', key: 'ocupacion', width: 14 },
+    { header: 'Estado', key: 'estado', width: 12 }
+  ];
+
+  sections.forEach(s => {
+    const periodo = periods.find(p => String(p.id) === String(s.periodId));
+    const docente = docentes.find(d => d.id === s.teacherGuideId);
+    const aula = classrooms.find(c => c.id === s.homeClassroomId);
+    const maxCupos = s.capacityMax || (aula ? aula.capacity : 0);
+    const ocupados = students.filter(st => st.academicYear === s.grade && st.section === s.letter).length;
+    const porcentaje = maxCupos > 0 ? Math.round((ocupados / maxCupos) * 100) : 0;
+    const estado = maxCupos > 0 && ocupados >= maxCupos ? 'LLENO' : 'Disponible';
+
+    worksheet.addRow({
+      seccion: `${s.grade}° ${s.letter}`,
+      grado: s.grade,
+      letra: s.letter,
+      periodo: periodo?.name || 'N/A',
+      docente: docente ? `${docente.firstName} ${docente.lastName}` : 'N/A',
+      aula: aula?.name || 'N/A',
+      capMax: s.capacityMax || aula?.capacity || 0,
+      ocupados,
+      ocupacion: `${porcentaje}%`,
+      estado,
+    });
+  });
+
+  worksheet.getRow(1).font = { bold: true };
+
+  await downloadExcel(workbook, `Reporte_Secciones_${new Date().toISOString().split('T')[0]}.xlsx`);
 };

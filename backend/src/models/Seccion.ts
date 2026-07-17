@@ -6,6 +6,7 @@ export class Seccion extends Model {
   declare letra: string;
   declare id_docente_guia: number;
   declare id_aula: number | null;
+  declare capacidad_maxima: number | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
 
@@ -64,6 +65,11 @@ export function initSeccion(sequelize: Sequelize): typeof Seccion {
           model: 'aulas',
           key: 'id_aula',
         },
+      },
+      capacidad_maxima: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 30,
       },
     },
     {

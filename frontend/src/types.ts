@@ -195,6 +195,7 @@ export interface Section {
   periodId: string;
   teacherGuideId: string;
   homeClassroomId: string;
+  capacityMax?: number;
 }
 
 export interface Representative {

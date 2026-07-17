@@ -773,11 +773,39 @@ export default function App() {
       const created = await api.post<any>('/api/secciones', payload);
       const newSection = mapSeccionToSection(created);
       if (homeClassroomId && !newSection.homeClassroomId) {
-        newSection.homeClassroomId = homeClassroomId; // inject locally if backend drops it
+        newSection.homeClassroomId = homeClassroomId;
       }
       return newSection;
     } catch (e: any) {
       console.error('Error al crear sección:', e);
+      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
+      throw new Error(msg);
+    }
+  };
+
+  const handleUpdateSection = async (sectionId: string, data: { periodId?: string; grade?: number; letter?: string; teacherGuideId?: string; homeClassroomId?: string; capacityMax?: number }) => {
+    try {
+      const payload: any = {};
+      if (data.periodId) payload.id_periodo = Number(data.periodId);
+      if (data.grade !== undefined) payload.id_grado = data.grade;
+      if (data.letter) payload.letra = data.letter;
+      if (data.teacherGuideId) payload.id_docente_guia = Number(data.teacherGuideId.replace(/\D/g, '')) || 1;
+      if (data.homeClassroomId !== undefined) payload.id_aula = Number(data.homeClassroomId.replace(/\D/g, '')) || null;
+      if (data.capacityMax !== undefined) payload.capacidad_maxima = data.capacityMax || null;
+
+      await api.patch(`/api/secciones/${sectionId}`, payload);
+    } catch (e: any) {
+      console.error('Error al actualizar sección:', e);
+      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
+      throw new Error(msg);
+    }
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    try {
+      await api.delete(`/api/secciones/${sectionId}`);
+    } catch (e: any) {
+      console.error('Error al eliminar sección:', e);
       const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
       throw new Error(msg);
     }
@@ -1642,6 +1670,8 @@ export default function App() {
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
                   onCreateSection={handleCreateSection}
+                  onUpdateSection={handleUpdateSection}
+                  onDeleteSection={handleDeleteSection}
                 />
               )}
 
