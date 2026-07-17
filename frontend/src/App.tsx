@@ -128,7 +128,9 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>('super_admin'); // SuperAdmin by default so everything is unlocked
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('mppe_active_tab') || 'dashboard';
+  });
   const [viewPendingStudentId, setViewPendingStudentId] = useState<string>('');
   const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -154,6 +156,11 @@ export default function App() {
       console.error('Error al restaurar sesión:', e);
     }
   }, []);
+
+  // Persistir pestaña activa en localStorage al recargar la página
+  useEffect(() => {
+    localStorage.setItem('mppe_active_tab', activeTab);
+  }, [activeTab]);
 
   // WebSocket: escuchar cambios en periodos escolares y usuarios
   useSocket(isLoggedIn, (event, payload) => {

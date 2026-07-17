@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -97,6 +97,31 @@ export default function ScheduleCoordinator({
     }
   }, []);
 
+  // Auto-select first section when data becomes available (handles page reload)
+  useEffect(() => {
+    if (filterYear === 0 && referenceData.grados.length > 0 && sections.length > 0) {
+      const firstGrade = referenceData.grados[0];
+      setFilterYear(firstGrade.numero);
+      const firstSections = sections
+        .filter(s => s.grade === firstGrade.numero)
+        .sort((a, b) => a.letter.localeCompare(b.letter));
+      if (firstSections.length > 0) {
+        setFilterSection(firstSections[0].letter);
+        // Sync form with the auto-selected section
+        setFormYear(firstGrade.numero);
+        setFormSection(firstSections[0].letter);
+      }
+    }
+  }, [sections, referenceData.grados]);
+
+  // Sync calendar filter with form year/section
+  useEffect(() => {
+    if (filterType === 'section' && formYear && formSection) {
+      setFilterYear(formYear);
+      setFilterSection(formSection);
+    }
+  }, [formYear, formSection]);
+
   // Editing state
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,6 +133,55 @@ export default function ScheduleCoordinator({
     return doc ? `${doc.firstName} ${doc.lastName}` : id;
   };
   const getClassroomName = (id: string) => classrooms.find(c => c.id === id)?.name || id;
+
+  // Conflict preview: compute in real-time based on form fields
+  const formConflictPreview = useMemo(() => {
+    if (!formDay || !formBlock) return [];
+
+    const otherEvents = scheduleEvents.filter(e => e.id !== editingEvent);
+    const conflicts: { type: string; message: string }[] = [];
+
+    // Section conflict
+    if (formYear && formSection) {
+      const sectionConflict = otherEvents.find(
+        e => e.day === formDay && e.timeBlock === formBlock && e.year === formYear && e.section === formSection
+      );
+      if (sectionConflict) {
+        conflicts.push({
+          type: 'section',
+          message: `Sección: Los estudiantes de ${formYear}° Año "${formSection}" ya tienen asignada la clase de [${getSubjectName(sectionConflict.subjectId)}] en este bloque.`
+        });
+      }
+    }
+
+    // Teacher conflict
+    if (formTeacherId) {
+      const teacherConflict = otherEvents.find(
+        e => e.day === formDay && e.timeBlock === formBlock && e.teacherId === formTeacherId
+      );
+      if (teacherConflict) {
+        conflicts.push({
+          type: 'teacher',
+          message: `Docente: ${getTeacherName(formTeacherId)} ya se encuentra asignado a ${teacherConflict.year}° Año "${teacherConflict.section}" en este bloque.`
+        });
+      }
+    }
+
+    // Classroom conflict
+    if (formClassroomId) {
+      const classroomConflict = otherEvents.find(
+        e => e.day === formDay && e.timeBlock === formBlock && e.classroomId === formClassroomId
+      );
+      if (classroomConflict) {
+        conflicts.push({
+          type: 'classroom',
+          message: `Aula: ${getClassroomName(formClassroomId)} ya ha sido reservado para ${classroomConflict.year}° Año "${classroomConflict.section}" en este bloque.`
+        });
+      }
+    }
+
+    return conflicts;
+  }, [formDay, formBlock, formYear, formSection, formTeacherId, formClassroomId, scheduleEvents, editingEvent]);
 
   const handleEditClick = (evt: ScheduleEvent) => {
     setFormDay(evt.day);
@@ -216,6 +290,18 @@ export default function ScheduleCoordinator({
       onAddScheduleEvent(newEvent);
       setScheduleSuccess(`Bloque asignado con éxito: ${getSubjectName(formSubjectId)} planificado el día ${formDay} (${formBlock}).`);
     }
+
+    // Auto-switch calendar filter to the section just assigned
+    setFilterType('section');
+    setFilterYear(formYear);
+    setFilterSection(formSection);
+
+    // Reset form fields so conflict preview clears
+    setFormBlock('');
+    setFormSubjectId('');
+    setFormTeacherId('');
+    setFormClassroomId('');
+    setScheduleError('');
   };
 
   // Filter events based on active visual mode selection
@@ -519,6 +605,31 @@ export default function ScheduleCoordinator({
                 />
               </div>
 
+              {/* Conflict Preview Indicator */}
+              {formDay && formBlock && formSection && (
+                <div className={`p-2.5 rounded-lg text-xs font-semibold leading-relaxed ${
+                  formConflictPreview.length > 0
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}>
+                  {formConflictPreview.length > 0 ? (
+                    <ul className="list-none space-y-1">
+                      {formConflictPreview.map((c, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <span>{c.message}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                      Bloque disponible para asignar
+                    </span>
+                  )}
+                </div>
+              )}
+
               <button
                 type="submit"
                 className={`w-full py-2.5 ${editingEvent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-700 hover:bg-indigo-800'} text-white font-bold text-sm rounded-lg transition-colors pointer-events-auto cursor-pointer flex items-center justify-center gap-1`}
@@ -676,8 +787,18 @@ export default function ScheduleCoordinator({
                           e => e.day === day && e.timeBlock === block.time
                         );
 
+                        // Highlight cell matching the form's day+block
+                        const isFormCell = day === formDay && block.time === formBlock && formDay && formBlock;
+                        const hasFormConflict = isFormCell && formConflictPreview.length > 0;
+
                         return (
-                          <td id={`cal-cell-${day}-${idx}`} key={day} className="p-2 border align-middle min-w-[140px] max-w-[180px] h-20 text-center">
+                          <td id={`cal-cell-${day}-${idx}`} key={day} className={`p-2 border align-middle min-w-[140px] max-w-[180px] h-20 text-center transition-all ${
+                            isFormCell
+                              ? hasFormConflict
+                                ? 'ring-2 ring-rose-400 bg-rose-50/30'
+                                : 'ring-2 ring-emerald-400 bg-emerald-50/30'
+                              : ''
+                          }`}>
                             {activeEvent ? (
                               <div className="relative group h-full flex flex-col justify-center">
                                 
