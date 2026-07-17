@@ -541,15 +541,6 @@ export default function App() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await api.delete(`/api/usuarios/${stripId(userId)}`);
-    } catch (e: any) {
-      console.error(e);
-      throw new Error(e.response?.data?.error?.message || 'Error al eliminar usuario');
-    }
-  };
-
   const stripId = (id: string) => id.replace(/^[a-zA-Z]+-/, '');
 
   const handleToggleUserActive = async (userId: string) => {
@@ -1804,7 +1795,6 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onAddUser={handleAddUser}
                   onEditUser={handleEditUser}
-                  onDeleteUser={handleDeleteUser}
                   onToggleUserActive={handleToggleUserActive}
                 />
               )}

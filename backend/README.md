@@ -62,7 +62,6 @@ SMTP_FROM=tu_correo@gmail.com
 | `npm run lint` | Ejecuta ESLint |
 | `npm run typecheck` | Verifica tipos con TypeScript |
 | `npm run seed` | Ejecuta seed fase 1 (usuarios, docentes, estudiantes) |
-| `npm run seed:phase2` | Ejecuta seed fase 2 (periodos, materias, horarios, calificaciones) |
 
 ## Estructura del proyecto
 

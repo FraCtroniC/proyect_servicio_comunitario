@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import { Op } from 'sequelize';
 import { Usuario as UsuarioModel, Rol, RefreshToken, sequelize, Especialidad } from '../models';
 import { UsuarioDto, CrearUsuarioDto, ActualizarUsuarioDto } from '../types/usuario.types';
 import { NotFoundError, ValidationError } from '../shared/errors';
@@ -74,6 +75,15 @@ export const UsuarioService = {
       });
     }
 
+    if (dto.idRol === 4) {
+      const adminCount = await UsuarioModel.count({ where: { id_rol: 4, estatus: 'Activo' } });
+      if (adminCount >= 2) {
+        throw new ValidationError({
+          idRol: ['Límite alcanzado: solo se permiten 2 administradores simultáneamente'],
+        });
+      }
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
 
     const usuario = await UsuarioModel.create({
@@ -103,7 +113,7 @@ export const UsuarioService = {
     return mapModelToDto(created!);
   },
 
-  async actualizar(id: number, dto: ActualizarUsuarioDto): Promise<UsuarioDto> {
+  async actualizar(id: number, dto: ActualizarUsuarioDto, currentUserId?: number): Promise<UsuarioDto> {
     const usuario = await UsuarioModel.findByPk(id);
     if (!usuario) {
       throw new NotFoundError(`Usuario con id ${id} no encontrado`);
@@ -122,7 +132,35 @@ export const UsuarioService = {
     }
 
     if (dto.idRol !== undefined) usuario.id_rol = dto.idRol;
-    if (dto.estatus !== undefined) usuario.estatus = dto.estatus;
+
+    if (dto.estatus !== undefined) {
+      if (dto.estatus === 'Inactivo' && usuario.id_rol === 4) {
+        if (currentUserId && currentUserId === usuario.id_usuario) {
+          throw new ValidationError({
+            estatus: ['No puedes desactivar tu propia cuenta de administrador'],
+          });
+        }
+        const activeAdmins = await UsuarioModel.count({
+          where: { id_rol: 4, estatus: 'Activo', id_usuario: { [Op.ne]: usuario.id_usuario } },
+        });
+        if (activeAdmins === 0) {
+          throw new ValidationError({
+            estatus: ['No se puede desactivar al único administrador del sistema. Debe haber al menos 1 administrador activo.'],
+          });
+        }
+      }
+      if (dto.estatus === 'Activo' && usuario.id_rol === 4 && usuario.estatus !== 'Activo') {
+        const activeAdmins = await UsuarioModel.count({
+          where: { id_rol: 4, estatus: 'Activo' },
+        });
+        if (activeAdmins >= 2) {
+          throw new ValidationError({
+            estatus: ['Límite alcanzado: solo se permiten 2 administradores simultáneamente.'],
+          });
+        }
+      }
+      usuario.estatus = dto.estatus;
+    }
     if (dto.cedula !== undefined) usuario.cedula = dto.cedula ?? null;
     if (dto.nombre1 !== undefined) usuario.nombre1 = dto.nombre1 ?? null;
     if (dto.nombre2 !== undefined) usuario.nombre2 = dto.nombre2 ?? null;

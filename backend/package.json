@@ -12,9 +12,6 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx src/scripts/seed.ts",
-    "seed:phase2": "tsx src/scripts/seed-phase2.ts",
-    "seed:grados": "tsx seed-grados.ts",
     "migrate": "tsx scripts/run-migrations.ts"
   },
   "dependencies": {

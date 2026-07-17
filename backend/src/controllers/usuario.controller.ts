@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UsuarioService } from '../services/usuario.service';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 const ALLOWED_CREATE_FIELDS = [
   'idRol', 'username', 'password',
@@ -43,9 +44,10 @@ export const UsuarioController = {
     res.status(201).json({ data: usuario });
   }),
 
-  actualizar: wrapAsync(async (req: Request, res: Response) => {
+  actualizar: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const id = Number(req.params.id);
-    const usuario = await UsuarioService.actualizar(id, pick(req.body, ALLOWED_UPDATE_FIELDS));
+    const currentUserId = req.user?.idUsuario;
+    const usuario = await UsuarioService.actualizar(id, pick(req.body, ALLOWED_UPDATE_FIELDS), currentUserId);
     getIO().emit('usuario:update', { data: usuario });
     res.json({ data: usuario });
   }),

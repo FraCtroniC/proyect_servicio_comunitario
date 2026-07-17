@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock, Database, School, Sparkles } from 'lucide-react';
+import { Users, GraduationCap, Calendar, Award, AlertTriangle, CheckCircle, Clock, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, User, Attendance, Grade, Subject, EvaluationPlan, UserRole } from '../types';
 import { calculateEvaluationAverage } from '../utils/gradeCalculations';
@@ -31,17 +31,17 @@ export default function Dashboard({ students, users, attendance, grades, subject
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === 'Activo').length;
   const totalTeachers = users.filter(u => u.role === 'docente').length;
-
+  
   // Calculate attendance rate (Present 'P' / Total records in attendance)
   const totalAttRecords = attendance.filter(a => a.status === 'P' || a.status === 'A');
   const presentRecords = attendance.filter(a => a.status === 'P');
-  const attendanceRate = totalAttRecords.length > 0
-    ? Math.round((presentRecords.length / totalAttRecords.length) * 100)
+  const attendanceRate = totalAttRecords.length > 0 
+    ? Math.round((presentRecords.length / totalAttRecords.length) * 100) 
     : 0;
 
   // School General Average Grade (calculating currently available fully graded / partially graded Lapsos)
   const allGrades = grades.map(g => g.score);
-  const averageSchoolGrade = allGrades.length > 0
+  const averageSchoolGrade = allGrades.length > 0 
     ? Number((allGrades.reduce((sum, current) => sum + current, 0) / allGrades.length).toFixed(1))
     : 0;
 
@@ -49,10 +49,10 @@ export default function Dashboard({ students, users, attendance, grades, subject
   const averageGradeByYear = (year: number): number => {
     const yearStudents = students.filter(s => s.academicYear === year && s.status === 'Activo').map(s => s.id);
     if (yearStudents.length === 0) return 0;
-
+    
     const yearGrades = grades.filter(g => yearStudents.includes(g.studentId)).map(g => g.score);
     if (yearGrades.length === 0) return 0;
-
+    
     return Number((yearGrades.reduce((sum, curr) => sum + curr, 0) / yearGrades.length).toFixed(1));
   };
 
@@ -80,10 +80,8 @@ export default function Dashboard({ students, users, attendance, grades, subject
     let aplazados = 0;
     yearStudents.forEach(s => {
       const g = grades.filter(gr => gr.studentId === s.id).map(gr => gr.score);
-      if (g.length > 0) {
-        const avg = g.reduce((a, b) => a + b, 0) / g.length;
-        if (avg >= 10) aprobados++; else aplazados++;
-      }
+      const avg = g.length > 0 ? (g.reduce((a,b)=>a+b,0)/g.length) : 0;
+      if (g.length > 0 && avg >= 10) aprobados++; else if (g.length > 0) aplazados++;
     });
     return { name: `${year}° Año`, Aprobados: aprobados, Aplazados: aplazados };
   });
@@ -98,7 +96,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Fallo al respaldar');
-
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -116,61 +114,25 @@ export default function Dashboard({ students, users, attendance, grades, subject
     }
   };
 
-  // Top 5 Estudiantes (Cuadro de Honor)
-  const topStudents = students.filter(s => s.status === 'Activo').map(student => {
-    const studentGrades = grades.filter(g => String(g.studentId) === String(student.id)).map(g => g.score);
-    const avg = studentGrades.length > 0 ? Number((studentGrades.reduce((sum, curr) => sum + curr, 0) / studentGrades.length).toFixed(1)) : 0;
-    return { ...student, average: avg };
-  }).filter(s => s.average >= 10)
-    .sort((a, b) => b.average - a.average)
-    .slice(0, 5);
-
-  // Materias Críticas (Mayor índice de aplazados)
-  const criticalSubjects = subjects.map(subject => {
-    const subjectGrades = grades.filter(g => String(g.subjectId) === String(subject.id));
-    const total = subjectGrades.length;
-    const failed = subjectGrades.filter(g => g.score > 0 && g.score < 10).length;
-    const failRate = total > 0 ? Math.round((failed / total) * 100) : 0;
-    return { ...subject, failRate, total, failed };
-  }).filter(s => s.total > 0 && s.failRate > 0)
-    .sort((a, b) => b.failRate - a.failRate)
-    .slice(0, 4);
-
   return (
     <div id="dashboard-container" className="space-y-6 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-blue-100 selection:text-blue-900">
       
       {/* Welcome Banner */}
-      <div id="welcome-banner" className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-800 rounded-3xl p-8 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden border border-white/10">
-        {/* Decorative background elements */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-          <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[150%] bg-white/10 rotate-12 transform-gpu blur-3xl rounded-full"></div>
-          <div className="absolute top-[20%] -left-[10%] w-[30%] h-[80%] bg-indigo-400/20 rotate-45 transform-gpu blur-2xl rounded-full"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-40"></div>
-        </div>
-
-        <div id="banner-content" className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-4 flex-1">
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-sm flex items-center gap-3">
-              <School className="w-10 h-10 md:w-12 md:h-12 text-blue-200 opacity-90 hidden sm:block" />
-              L.N. Estilita Orozco
-            </h1>
-            
-            <p className="text-blue-100 text-base md:text-lg max-w-3xl leading-relaxed font-medium">
-              Sistema web integral para los procesos de gestión académica, control de calificaciones y asistencia del personal para su optimización en San Cristóbal, Estado Táchira.
-            </p>
-          </div>
-          
-          <div className="hidden lg:flex flex-col items-center justify-center p-6 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner min-w-[170px] relative overflow-hidden group">
-             <div className="absolute inset-0 bg-emerald-500/10 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-in-out"></div>
-             <div className="relative flex items-center justify-center h-14 w-14 rounded-full bg-emerald-500/20 mb-3 border border-emerald-500/30 shadow-[0_0_15px_rgba(52,211,153,0.15)] z-10">
-                <div className="absolute inset-0 rounded-full border-2 border-emerald-400/50 animate-ping opacity-75"></div>
-                <div className="h-4.5 w-4.5 bg-emerald-400 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.9)]"></div>
-             </div>
-             <div className="text-center z-10">
-                <div className="text-lg font-black text-white tracking-wide">PLATAFORMA</div>
-                <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-widest mt-1">100% Operativa</div>
-             </div>
-          </div>
+      <div id="welcome-banner" className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
+        <div id="banner-decoration" className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-blue-600/30 blur-xl"></div>
+        <div id="banner-decoration-2" className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-blue-500/20 blur-xl"></div>
+        
+        <div id="banner-content" className="relative z-10 space-y-2">
+          <span className="bg-blue-500/30 border border-blue-400/30 px-3 py-1 rounded-full text-sm font-semibold tracking-wider uppercase">
+            Año Escolar Activo: 2025 - 2026
+          </span>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Estilita Orozco
+          </h1>
+          <p className="text-blue-100 text-base max-w-2xl leading-relaxed">
+            Plataforma de Control de Estudios para Educación Media General. 
+            Cumplimiento absoluto con la normativa del MPPE (Calificaciones 1-20, Redondeo Oficial Art. 108 del RLOE, y protección LOPNA).
+          </p>
         </div>
       </div>
 
@@ -189,7 +151,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
         </div>
 
         {/* KPI 2 */}
-        <div id="kpi-card-teachers" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-slate-300 hover:shadow-xs transition-all pointer-events-auto cursor-pointer" onClick={() => { sessionStorage.setItem('initialUserFilter', 'docente'); onNavigateToTab('users'); }}>
+        <div id="kpi-card-teachers" className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-slate-300 hover:shadow-xs transition-all pointer-events-auto cursor-pointer" onClick={() => onNavigateToTab('docentes')}>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
             <GraduationCap className="h-6 w-6" />
           </div>
@@ -240,10 +202,10 @@ export default function Dashboard({ students, users, attendance, grades, subject
           <div id="performance-chart" className="h-[250px] w-full">
             <ResponsiveContainer width="99%" height="100%">
               <BarChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <XAxis dataKey="name" tick={{fontSize: 10}} />
+                <YAxis tick={{fontSize: 10}} />
+                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Legend wrapperStyle={{fontSize: '11px'}} />
                 <Bar dataKey="Aprobados" fill="#10b981" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Aplazados" fill="#f43f5e" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -261,42 +223,42 @@ export default function Dashboard({ students, users, attendance, grades, subject
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Tooltip contentStyle={{fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Legend wrapperStyle={{fontSize: '11px'}} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
-
+            
             <div id="year-bars" className="space-y-3">
               <h3 className="text-base font-bold text-slate-800 tracking-tight mb-2">Promedios Oficiales</h3>
               {[1, 2, 3, 4, 5].map(yr => {
-                const yearAvg = averageGradeByYear(yr);
-                // Percentage represented on 1-20 scale (e.g. 15 is 75%)
-                const barPercent = Math.round((yearAvg / 20) * 100);
+              const yearAvg = averageGradeByYear(yr);
+              // Percentage represented on 1-20 scale (e.g. 15 is 75%)
+              const barPercent = Math.round((yearAvg / 20) * 100);
+              
+              const getBarColor = (score: number) => {
+                if (score >= 15) return 'bg-emerald-500';
+                if (score >= 10) return 'bg-blue-600';
+                return 'bg-rose-500';
+              };
 
-                const getBarColor = (score: number) => {
-                  if (score >= 15) return 'bg-emerald-500';
-                  if (score >= 10) return 'bg-blue-600';
-                  return 'bg-rose-500';
-                };
-
-                return (
-                  <div id={`year-row-${yr}`} key={yr} className="space-y-1.5">
-                    <div id={`year-row-info-${yr}`} className="flex justify-between text-sm">
-                      <span className="font-semibold text-slate-700">{yr}° Año - Educación Media</span>
-                      <span className="font-mono font-bold text-slate-800">{yearAvg} pts</span>
-                    </div>
-                    <div id={`year-row-bar-bg-${yr}`} className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
-                      <div
-                        id={`year-row-bar-val-${yr}`}
-                        className={`h-full rounded-full transition-all duration-1000 ${getBarColor(yearAvg)}`}
-                        style={{ width: `${barPercent}%` }}
-                      ></div>
-                    </div>
+              return (
+                <div id={`year-row-${yr}`} key={yr} className="space-y-1.5">
+                  <div id={`year-row-info-${yr}`} className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-700">{yr}° Año - Educación Media</span>
+                    <span className="font-mono font-bold text-slate-800">{yearAvg} pts</span>
                   </div>
-                );
-              })}
+                  <div id={`year-row-bar-bg-${yr}`} className="h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
+                    <div 
+                      id={`year-row-bar-val-${yr}`}
+                      className={`h-full rounded-full transition-all duration-1000 ${getBarColor(yearAvg)}`}
+                      style={{ width: `${barPercent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
             </div>
           </div>
 
@@ -353,7 +315,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
             {/* Timetable audit checklist */}
             <div id="operational-checklist" className="space-y-3">
               <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider block">Bitácora de Periodo Actual</span>
-
+              
               <div id="checklist-item-1" className="flex gap-2 text-sm">
                 <Clock className="h-4.5 w-4.5 text-blue-500 shrink-0" />
                 <div>
@@ -384,10 +346,11 @@ export default function Dashboard({ students, users, attendance, grades, subject
                 <button
                   onClick={handleBackup}
                   disabled={isBackingUp}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ${isBackingUp
-                      ? 'bg-slate-400 cursor-not-allowed text-white'
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                    isBackingUp 
+                      ? 'bg-slate-400 cursor-not-allowed text-white' 
                       : 'bg-slate-800 hover:bg-slate-900 text-white'
-                    }`}
+                  }`}
                 >
                   {isBackingUp ? (
                     <>
@@ -408,67 +371,6 @@ export default function Dashboard({ students, users, attendance, grades, subject
 
       </div>
 
-      {/* Secondary Grid Content: Top Students & Critical Subjects */}
-      <div id="dashboard-secondary-grid" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Top Estudiantes (Cuadro de Honor) */}
-        <div id="top-students-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">
-              <Award className="h-5 w-5 text-amber-500" />
-              Cuadro de Honor (Top 5)
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {topStudents.length > 0 ? topStudents.map((student, index) => (
-              <div key={student.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-lg hover:bg-slate-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-slate-400' : index === 2 ? 'bg-amber-700' : 'bg-blue-600'}`}>
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">{student.firstName} {student.lastName}</p>
-                    <p className="text-xs text-slate-500">{student.academicYear}° Año "{student.section}"</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-black text-indigo-600">{student.average} <span className="text-xs text-slate-400 font-normal">pts</span></p>
-                </div>
-              </div>
-            )) : (
-              <p className="text-sm text-slate-500 text-center py-4">No hay datos suficientes de calificaciones.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Materias Críticas */}
-        <div id="critical-subjects-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-rose-500" />
-              Materias Críticas (Más Aplazados)
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {criticalSubjects.length > 0 ? criticalSubjects.map((subject, index) => (
-              <div key={subject.id} className="flex flex-col p-3 bg-rose-50/50 border border-rose-100 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-bold text-slate-800">{subject.name}</p>
-                  <p className="text-sm font-black text-rose-600">{subject.failRate}% Aplazados</p>
-                </div>
-                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-500 rounded-full" style={{ width: `${subject.failRate}%` }}></div>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1.5 text-right font-medium uppercase tracking-wider">{subject.failed} reprobados de {subject.total} totales</p>
-              </div>
-            )) : (
-              <p className="text-sm text-slate-500 text-center py-4">No hay materias críticas actualmente.</p>
-            )}
-          </div>
-        </div>
-
-      </div>
-
       <Modal isOpen={!!alertingStudent} onClose={() => setAlertingStudent(null)} title="Confirmar Envío de Alerta">
         <div className="space-y-4">
           <p className="text-base text-slate-600 leading-relaxed">
@@ -476,7 +378,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button onClick={() => setAlertingStudent(null)} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
-            <button
+            <button 
               onClick={async () => {
                 if (!alertingStudent) return;
                 try {

@@ -227,7 +227,7 @@ export const AuthController = {
     }
 
     const usuario = await UsuarioModel.findOne({
-      where: { username: usernameKey },
+      where: { username: { [Op.iLike]: usernameKey } },
       include: [
         { model: Rol, as: 'rol' },
       ]

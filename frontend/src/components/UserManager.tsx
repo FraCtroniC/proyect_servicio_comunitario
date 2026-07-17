@@ -10,11 +10,10 @@ interface UserManagerProps {
   currentUserRole: UserRole;
   onAddUser: (user: Partial<User> & { password?: string; lastName?: string; username?: string; secondName?: string; secondLastName?: string; dateOfBirth?: string; id_especialidad?: number }) => Promise<void>;
   onEditUser: (userId: string, data: Partial<User> & { password?: string; lastName?: string; username?: string; secondName?: string; secondLastName?: string; dateOfBirth?: string; id_especialidad?: number }) => Promise<void>;
-  onDeleteUser: (userId: string) => Promise<void>;
   onToggleUserActive: (userId: string) => Promise<void>;
 }
 
-export default function UserManager({ users, currentUserRole, onAddUser, onEditUser, onDeleteUser, onToggleUserActive }: UserManagerProps) {
+export default function UserManager({ users, currentUserRole, onAddUser, onEditUser, onToggleUserActive }: UserManagerProps) {
   const [firstName, setFirstName] = useState('');
   const [secondName, setSecondName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -40,9 +39,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
 
   const [filterName, setFilterName] = useState('');
   const [filterRole, setFilterRole] = useState<UserRole | ''>('');
-
-  const [deletingUser, setDeletingUser] = useState<User | null>(null);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'active' | 'inactive'>('active');
 
   const [isEspecialidadModalOpen, setIsEspecialidadModalOpen] = useState(false);
 
@@ -248,22 +245,6 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
     }
   };
 
-  const triggerDelete = (u: User) => {
-    setDeletingUser(u);
-    setDeleteConfirmText('');
-  };
-
-  const confirmDelete = async () => {
-    if (!deletingUser) return;
-    try {
-      await onDeleteUser(deletingUser.id);
-      setSuccessMsg('Usuario eliminado con éxito.');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al eliminar el usuario.');
-    }
-    setDeletingUser(null);
-  };
-
   const handleCreateEspecialidad = async (e: React.FormEvent) => {
     e.preventDefault();
     setEspecialidadErrorMsg('');
@@ -287,6 +268,9 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
   const canManage = ['super_admin', 'control_estudios'].includes(currentUserRole);
   const canCreate = currentUserRole === 'super_admin';
 
+  const adminCount = users.filter(u => u.role === 'super_admin' && u.active).length;
+  const canAddAdmin = adminCount < 2;
+
   const especialidadNombre = (id: number | undefined) => {
     if (!id) return '';
     const esp = especialidades.find(e => e.id_especialidad === id);
@@ -304,13 +288,20 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
         </div>
       )}
 
+      {errorMsg && (
+        <div className="p-3 bg-red-50 text-red-800 text-sm rounded-lg flex items-center gap-2 border border-red-100">
+          <AlertCircle className="h-4 bg-transparent text-red-600 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {/* Role Statistics Cards */}
       {(() => {
-        const totalUsuarios = users.length;
-        const docentes = users.filter(u => u.role === 'docente').length;
-        const administradores = users.filter(u => u.role === 'super_admin').length;
-        const controlEstudios = users.filter(u => u.role === 'control_estudios').length;
-        const coordinadores = users.filter(u => u.role === 'coordinador').length;
+        const totalUsuarios = users.filter(u => u.active).length;
+        const docentes = users.filter(u => u.role === 'docente' && u.active).length;
+        const administradores = users.filter(u => u.role === 'super_admin' && u.active).length;
+        const controlEstudios = users.filter(u => u.role === 'control_estudios' && u.active).length;
+        const coordinadores = users.filter(u => u.role === 'coordinador' && u.active).length;
 
         const stats = [
           {
@@ -338,7 +329,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           {
             label: 'ADMINISTRADORES',
             value: administradores,
-            sub: 'Con acceso',
+            sub: `Activos (máx. 2)`,
             icon: <Shield className="h-6 w-6" />,
             bg: 'bg-amber-50',
             iconColor: 'text-amber-600',
@@ -445,14 +436,37 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
               </select>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Estado:</span>
+            {[
+              { value: 'active' as const, label: 'Activos', count: users.filter(u => u.active).length, bg: 'bg-green-50', activeBg: 'bg-green-600', activeText: 'text-white' },
+              { value: 'inactive' as const, label: 'Inactivos', count: users.filter(u => !u.active).length, bg: 'bg-red-50', activeBg: 'bg-red-500', activeText: 'text-white' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFilterStatus(opt.value)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                  filterStatus === opt.value
+                    ? `${opt.activeBg} ${opt.activeText} border-transparent shadow-sm`
+                    : `${opt.bg} text-slate-600 border-slate-200 hover:border-slate-300`
+                }`}
+              >
+                {opt.label} ({opt.count})
+              </button>
+            ))}
+          </div>
 
           {(() => {
-            const filteredUsers = users.filter(u => {
-              const searchLower = filterName.toLowerCase();
-              const matchName = `${u.name} ${u.cedula} ${u.email} ${u.username}`.toLowerCase().includes(searchLower);
-              const matchRole = filterRole ? u.role === filterRole : true;
-              return matchName && matchRole;
-            });
+            const filteredUsers = users
+              .filter(u => {
+                const searchLower = filterName.toLowerCase();
+                const matchName = `${u.name} ${u.cedula} ${u.email} ${u.username}`.toLowerCase().includes(searchLower);
+                const matchRole = filterRole ? u.role === filterRole : true;
+                const matchStatus = filterStatus === 'active' ? u.active : !u.active;
+                return matchName && matchRole && matchStatus;
+              })
+              .sort((a, b) => (a.active === b.active ? 0 : a.active ? -1 : 1));
 
             return (
               <>
@@ -496,6 +510,20 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
                         <div className="flex items-center shrink-0">
                           <button
                             onClick={async () => {
+                              if (u.role === 'super_admin' && u.active) {
+                                const otherAdmins = users.filter(x => x.role === 'super_admin' && x.active && x.id !== u.id);
+                                if (otherAdmins.length === 0) {
+                                  setErrorMsg('No se puede desactivar al único administrador del sistema. Debe haber al menos 1 administrador activo.');
+                                  return;
+                                }
+                              }
+                              if (u.role === 'super_admin' && !u.active) {
+                                const activeAdmins = users.filter(x => x.role === 'super_admin' && x.active);
+                                if (activeAdmins.length >= 2) {
+                                  setErrorMsg(`Límite alcanzado: solo se permiten 2 administradores simultáneamente. Actualmente hay ${activeAdmins.length} activos.`);
+                                  return;
+                                }
+                              }
                               try {
                                 await onToggleUserActive(u.id);
                                 setSuccessMsg(`Usuario ${u.name} ${u.active ? 'desactivado' : 'activado'} con éxito.`);
@@ -516,7 +544,6 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
                           {canCreate && (
                             <div className="flex items-center gap-2 ml-2">
                               <button onClick={() => openEditModal(u)} className="text-sm text-blue-600 hover:underline cursor-pointer">Editar</button>
-                              <button onClick={() => triggerDelete(u)} className="text-sm text-red-600 hover:underline cursor-pointer">Eliminar</button>
                             </div>
                           )}
                         </div>
@@ -587,7 +614,9 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
                   <option value="docente">Docente</option>
                   <option value="control_estudios">Control de Estudios</option>
                   <option value="coordinador">Coordinador</option>
-                  <option value="super_admin">Administrador</option>
+                  <option value="super_admin" disabled={!canAddAdmin && !(editingUserId && users.find(u => u.id === editingUserId)?.role === 'super_admin')}>
+                    Administrador{!canAddAdmin ? ' (máximo alcanzado)' : ''}
+                  </option>
                 </select>
               </div>
             </div>
@@ -689,22 +718,6 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
             <button type="submit" className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg cursor-pointer">Guardar</button>
           </div>
         </form>
-      </Modal>
-
-      {/* Delete Modal */}
-      <Modal isOpen={!!deletingUser} onClose={() => setDeletingUser(null)} title="Confirmar Eliminación">
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Esta acción es irreversible. Para confirmar que deseas eliminar al usuario <strong className="text-slate-800">{deletingUser?.name}</strong>, por favor escribe su nombre exactamente en el campo de abajo.
-          </p>
-          <input type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
-            className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder={`Escribe: ${deletingUser?.name}`} />
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button type="button" onClick={() => setDeletingUser(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
-            <button type="button" onClick={confirmDelete} disabled={deleteConfirmText !== deletingUser?.name}
-              className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 cursor-pointer">Eliminar Permanentemente</button>
-          </div>
-        </div>
       </Modal>
 
       {/* Especialidad Modal */}
