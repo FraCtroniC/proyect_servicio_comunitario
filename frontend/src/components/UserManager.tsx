@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { UserPlus, ToggleLeft, ToggleRight, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
+import { UserPlus, ToggleLeft, ToggleRight, CheckCircle2, UserCheck, Users, Briefcase, Shield, BookOpen } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { Modal } from './Modal';
 
@@ -136,6 +136,108 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           <span>{successMsg}</span>
         </div>
       )}
+
+      {/* Role Statistics Cards */}
+      {(() => {
+        const totalUsuarios = users.length;
+        const docentes = users.filter(u => u.role === 'docente').length;
+        const administradores = users.filter(u => u.role === 'super_admin').length;
+        const controlEstudios = users.filter(u => u.role === 'control_estudios').length;
+        const coordinadores = users.filter(u => u.role === 'coordinador').length;
+        const filteredCount = filterRole ? users.filter(u => u.role === filterRole).length : totalUsuarios;
+
+        const stats = [
+          {
+            label: 'TOTAL USUARIOS',
+            value: totalUsuarios,
+            sub: filterRole ? `${filteredCount} filtrados` : 'Registrados en el sistema',
+            icon: <Users className="h-6 w-6" />,
+            bg: 'bg-slate-50',
+            iconColor: 'text-slate-500',
+            border: 'border-slate-200/80',
+            activeBorder: 'border-slate-600',
+            roleFilter: '' as UserRole | '',
+          },
+          {
+            label: 'DOCENTES',
+            value: docentes,
+            sub: 'Registrados',
+            icon: <Briefcase className="h-6 w-6" />,
+            bg: 'bg-blue-50',
+            iconColor: 'text-blue-600',
+            border: 'border-blue-200/60',
+            activeBorder: 'border-blue-500 ring-2 ring-blue-200',
+            roleFilter: 'docente' as UserRole | '',
+          },
+          {
+            label: 'ADMINISTRADORES',
+            value: administradores,
+            sub: 'Con acceso',
+            icon: <Shield className="h-6 w-6" />,
+            bg: 'bg-amber-50',
+            iconColor: 'text-amber-600',
+            border: 'border-amber-200/60',
+            activeBorder: 'border-amber-500 ring-2 ring-amber-200',
+            roleFilter: 'super_admin' as UserRole | '',
+          },
+          {
+            label: 'CONTROL DE ESTUDIOS',
+            value: controlEstudios,
+            sub: 'Registrados',
+            icon: <BookOpen className="h-6 w-6" />,
+            bg: 'bg-indigo-50',
+            iconColor: 'text-indigo-600',
+            border: 'border-indigo-200/60',
+            activeBorder: 'border-indigo-500 ring-2 ring-indigo-200',
+            roleFilter: 'control_estudios' as UserRole | '',
+          },
+        ];
+
+        if (coordinadores > 0) {
+          stats.push({
+            label: 'COORDINADORES',
+            value: coordinadores,
+            sub: 'Registrados',
+            icon: <UserCheck className="h-6 w-6" />,
+            bg: 'bg-emerald-50',
+            iconColor: 'text-emerald-600',
+            border: 'border-emerald-200/60',
+            activeBorder: 'border-emerald-500 ring-2 ring-emerald-200',
+            roleFilter: 'coordinador' as UserRole | '',
+          });
+        }
+
+        return (
+          <div id="user-stats-section" className="space-y-3">
+            <h3 className="text-base font-bold text-slate-800 tracking-tight">Gestión de Usuarios</h3>
+            <div id="user-stats-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {stats.map((stat) => {
+                const isActive = filterRole === stat.roleFilter;
+                return (
+                  <button
+                    key={stat.label}
+                    type="button"
+                    onClick={() => {
+                      setFilterRole(stat.roleFilter);
+                      setFilterName('');
+                    }}
+                    className={`bg-white p-4 rounded-xl border shadow-xs flex items-center gap-3 transition-all text-left w-full cursor-pointer ${isActive ? stat.activeBorder : stat.border} ${isActive ? 'shadow-sm' : 'hover:border-slate-300 hover:shadow-sm'}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[11px] font-semibold uppercase tracking-wider ${isActive ? 'text-slate-700' : 'text-slate-400'}`}>{stat.label}</p>
+                      <h3 className={`text-2xl font-bold mt-1 ${isActive ? 'text-indigo-600' : 'text-slate-800'}`}>{stat.value}</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">{stat.sub}</p>
+                    </div>
+                    <div className={`p-2.5 ${stat.bg} ${stat.iconColor} rounded-lg shrink-0`}>
+                      {stat.icon}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main Grid: Users list full width now */}
       <div id="users-grid" className="grid grid-cols-1 gap-6">
