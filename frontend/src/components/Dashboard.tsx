@@ -37,13 +37,13 @@ export default function Dashboard({ students, users, attendance, grades, subject
   const presentRecords = attendance.filter(a => a.status === 'P');
   const attendanceRate = totalAttRecords.length > 0
     ? Math.round((presentRecords.length / totalAttRecords.length) * 100)
-    : 94; // fallback static realistic percentage if empty
+    : 0;
 
   // School General Average Grade (calculating currently available fully graded / partially graded Lapsos)
   const allGrades = grades.map(g => g.score);
   const averageSchoolGrade = allGrades.length > 0
     ? Number((allGrades.reduce((sum, current) => sum + current, 0) / allGrades.length).toFixed(1))
-    : 14.2;
+    : 0;
 
   // 2. Average Grade per Academic Year (1 to 5)
   const averageGradeByYear = (year: number): number => {
@@ -51,7 +51,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
     if (yearStudents.length === 0) return 0;
 
     const yearGrades = grades.filter(g => yearStudents.includes(g.studentId)).map(g => g.score);
-    if (yearGrades.length === 0) return 12 + (year % 3); // realistic fallback for empty states
+    if (yearGrades.length === 0) return 0;
 
     return Number((yearGrades.reduce((sum, curr) => sum + curr, 0) / yearGrades.length).toFixed(1));
   };
@@ -80,8 +80,10 @@ export default function Dashboard({ students, users, attendance, grades, subject
     let aplazados = 0;
     yearStudents.forEach(s => {
       const g = grades.filter(gr => gr.studentId === s.id).map(gr => gr.score);
-      const avg = g.length > 0 ? (g.reduce((a, b) => a + b, 0) / g.length) : 0;
-      if (avg >= 10 || g.length === 0) aprobados++; else aplazados++;
+      if (g.length > 0) {
+        const avg = g.reduce((a, b) => a + b, 0) / g.length;
+        if (avg >= 10) aprobados++; else aplazados++;
+      }
     });
     return { name: `${year}° Año`, Aprobados: aprobados, Aplazados: aplazados };
   });
