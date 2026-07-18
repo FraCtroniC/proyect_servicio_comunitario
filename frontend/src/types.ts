@@ -143,7 +143,7 @@ export interface Attendance {
   status: 'P' | 'A' | 'J'; // Presente, Ausente, Justificado
   subjectId?: string;
   horarioId?: string;    // id_horario from HorarioDocente
-  observacion?: string;
+  observacion?: ObservacionEstudiante;
   justificaciones?: JustificacionEstudiante[];
 }
 
@@ -187,6 +187,14 @@ export interface JustificacionEstudiante {
   id_asistencia_est: number;
   motivo: string;
   soporte_digital: string | null;
+  created_at: string;
+}
+
+export interface ObservacionEstudiante {
+  id_observacion: number;
+  texto: string;
+  gravedad: 'Bajo' | 'Moderado' | 'Alto' | 'Critico' | null;
+  id_usuario_crea: number | null;
   created_at: string;
 }
 

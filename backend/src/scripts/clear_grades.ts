@@ -7,6 +7,8 @@ async function clearSeedData() {
 
     const seedTables = [
       'materia_pendiente',
+      'justificaciones_estudiante',
+      'observaciones_estudiante',
       'asistencia_estudiante',
       'notas_parciales',
       'evaluaciones',

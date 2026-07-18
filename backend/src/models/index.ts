@@ -27,6 +27,7 @@ import { initAuditoria, Auditoria } from './Auditoria';
 import { initEvaluacion, Evaluacion } from './Evaluacion';
 import { initNotaParcial, NotaParcial } from './NotaParcial';
 import { initAsistenciaEstudiante, AsistenciaEstudiante } from './AsistenciaEstudiante';
+import { initObservacionEstudiante, ObservacionEstudiante } from './ObservacionEstudiante';
 import { initJustificacionEstudiante, JustificacionEstudiante } from './JustificacionEstudiante';
 import { initMateriaPendiente, MateriaPendiente } from './MateriaPendiente';
 import { initLoginAudit, LoginAudit } from './LoginAudit';
@@ -66,6 +67,7 @@ initAuditoria(sequelize);
 initEvaluacion(sequelize);
 initNotaParcial(sequelize);
 initAsistenciaEstudiante(sequelize);
+initObservacionEstudiante(sequelize);
 initJustificacionEstudiante(sequelize);
 initMateriaPendiente(sequelize);
 initLoginAudit(sequelize);
@@ -97,6 +99,7 @@ const models = {
   Evaluacion,
   NotaParcial,
   AsistenciaEstudiante,
+  ObservacionEstudiante,
   JustificacionEstudiante,
   MateriaPendiente,
   LoginAudit,
@@ -137,6 +140,7 @@ export {
   Evaluacion,
   NotaParcial,
   AsistenciaEstudiante,
+  ObservacionEstudiante,
   JustificacionEstudiante,
   MateriaPendiente,
   LoginAudit,

@@ -44,7 +44,8 @@ import {
   Section,
   Docente,
   SubjectSchedule,
-  JustificacionEstudiante
+  JustificacionEstudiante,
+  AcademicYear
 } from './types';
 
 import { api } from './services/api';
@@ -479,8 +480,15 @@ export default function App() {
               academicYear: a.matricula?.seccion?.id_grado || 1,
               section: a.matricula?.seccion?.letra || 'A',
               status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P'),
-              observacion: a.observacion || undefined,
+              observacion: a.observacion ? {
+                id_observacion: a.observacion.id_observacion,
+                texto: a.observacion.texto,
+                gravedad: a.observacion.gravedad,
+                id_usuario_crea: a.observacion.id_usuario_crea,
+                created_at: a.observacion.created_at,
+              } : undefined,
               justificaciones: justMap.get(a.id_asistencia_est) || [],
+              horarioId: a.id_horario != null ? String(a.id_horario) : undefined,
             })));
           }
         } catch (error: any) {
@@ -1040,8 +1048,15 @@ export default function App() {
           academicYear: a.matricula?.seccion?.id_grado || 1,
           section: a.matricula?.seccion?.letra || 'A',
           status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P'),
-          observacion: a.observacion || undefined,
+          observacion: a.observacion ? {
+                id_observacion: a.observacion.id_observacion,
+                texto: a.observacion.texto,
+                gravedad: a.observacion.gravedad,
+                id_usuario_crea: a.observacion.id_usuario_crea,
+                created_at: a.observacion.created_at,
+              } : undefined,
           justificaciones: justMap.get(a.id_asistencia_est) || [],
+          horarioId: a.id_horario != null ? String(a.id_horario) : undefined,
         })));
       }
     } catch (e) {
@@ -1063,12 +1078,12 @@ export default function App() {
     return matricula ? matricula.id_matricula : null;
   };
 
-  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', observacion?: string, horarioId?: string) => {
+  const handleModifyAttendance = async (studentId: string, date: string, year: number, section: string, status: 'P' | 'A' | 'J', horarioId?: string) => {
     try {
       const dbStatus = status === 'P' ? 'Presente' : (status === 'A' ? 'Ausente' : 'Justificado');
 
       // Try to get matriculaId from existing record first, then resolve from cache
-      const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date);
+      const existingAtt = attendance.find(a => a.studentId === studentId && a.date === date && a.horarioId === horarioId);
       let matriculaId: number | null = existingAtt?.matriculaId ? Number(existingAtt.matriculaId) : null;
       if (!matriculaId) {
         matriculaId = resolveMatriculaId(studentId, year, section);
@@ -1088,32 +1103,29 @@ export default function App() {
       if (horarioId) {
         payload.id_horario = Number(horarioId);
       }
-      if (observacion) {
-        payload.observacion = observacion;
-      }
 
       if (existingAtt && existingAtt.id.startsWith('att-')) {
         const created = await api.post<any>('/api/asistencias-estudiantes', payload);
         const newId = String(created.id_asistencia_est || created.id);
         setAttendance(p => {
-          const idx = p.findIndex(a => a.studentId === studentId && a.date === date);
+          const idx = p.findIndex(a => a.studentId === studentId && a.date === date && a.horarioId === horarioId);
           if (idx >= 0) {
             const copy = [...p];
-            copy[idx] = { ...copy[idx], status, id: newId, matriculaId: String(matriculaId) };
+            copy[idx] = { ...copy[idx], status, id: newId, matriculaId: String(matriculaId), horarioId: horarioId || copy[idx].horarioId };
             return copy;
           }
-          return [...p, { id: newId, studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }];
+          return [...p, { id: newId, studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status, horarioId }];
         });
         toast.success('Asistencia guardada');
       } else if (existingAtt) {
         const realId = existingAtt.id.replace(/^[a-zA-Z]+-/, '');
-        await api.patch(`/api/asistencias-estudiantes/${realId}`, { estatus: dbStatus, ...(observacion ? { observacion } : {}) });
-        setAttendance(p => p.map(a => a.id === existingAtt.id ? { ...a, status, matriculaId: String(matriculaId) } : a));
+        await api.patch(`/api/asistencias-estudiantes/${realId}`, { estatus: dbStatus, ...(horarioId ? { id_horario: Number(horarioId) } : {}) });
+        setAttendance(p => p.map(a => a.id === existingAtt.id ? { ...a, status, matriculaId: String(matriculaId), horarioId: horarioId || a.horarioId } : a));
         toast.success('Asistencia guardada');
       } else {
         const created = await api.post<any>('/api/asistencias-estudiantes', payload);
         const newId = String(created.id_asistencia_est || created.id);
-        setAttendance(p => [...p, { id: newId, studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status }]);
+        setAttendance(p => [...p, { id: newId, studentId, matriculaId: String(matriculaId), date, academicYear: year as any, section, status, horarioId }]);
         toast.success('Asistencia guardada');
       }
     } catch (e: any) {
@@ -1122,26 +1134,78 @@ export default function App() {
     }
   };
 
-  const handleJustifyStudentAbsence = async (attendanceId: string, motivo: string, soporteDigital?: string): Promise<boolean> => {
+  const handleJustifyStudentAbsence = async (attendanceId: string | null, motivo: string, soporteDigital?: string, studentId?: string, fecha?: string, horarioId?: string): Promise<boolean> => {
     try {
-      const realId = Number(attendanceId.replace(/^[a-zA-Z]+-/, ''));
-      const payload: any = { id_asistencia_est: realId, motivo };
-      if (soporteDigital) payload.soporte_digital = soporteDigital;
-      const resp = await api.post<any>('/api/justificaciones-estudiantes', payload);
-      const newJust: JustificacionEstudiante = {
-        id: resp.id_justificacion_est || resp.id,
-        id_asistencia_est: realId,
-        motivo,
-        soporte_digital: soporteDigital || null,
-        created_at: resp.created_at || new Date().toISOString(),
-      };
-      setAttendance(p => p.map(a => {
-        if (a.id === attendanceId) {
-          const currentJusts = a.justificaciones || [];
-          return { ...a, status: 'J' as const, justificaciones: [...currentJusts, newJust] };
+      const existingAtt = attendanceId ? attendance.find(a => a.id === attendanceId) : null;
+      const existingJust = existingAtt?.justificaciones?.[0];
+
+      if (existingJust) {
+        await api.patch<any>(`/api/justificaciones-estudiantes/${existingJust.id}`, { motivo, soporte_digital: soporteDigital || undefined });
+        setAttendance(p => p.map(a => {
+          if (a.id === attendanceId) {
+            return {
+              ...a,
+              status: 'J' as const,
+              justificaciones: (a.justificaciones || []).map(j =>
+                j.id === existingJust.id ? { ...j, motivo, soporte_digital: soporteDigital || null } : j
+              ),
+            };
+          }
+          return a;
+        }));
+      } else {
+        const payload: any = { motivo };
+        if (soporteDigital) payload.soporte_digital = soporteDigital;
+
+        if (attendanceId && existingAtt && !attendanceId.startsWith('temp-')) {
+          payload.id_asistencia_est = Number(attendanceId.replace(/^[a-zA-Z]+-/, ''));
+        } else if (studentId && fecha) {
+          payload.id_estudiante = Number(studentId.replace(/\D/g, '') || studentId);
+          payload.fecha = fecha;
+          if (horarioId) payload.id_horario = Number(horarioId);
         }
-        return a;
-      }));
+
+        const resp = await api.post<any>('/api/justificaciones-estudiantes', payload);
+        const justData = resp.data?.data || resp.data;
+        const asistenciaData = resp.data?.asistencia;
+        const newJust: JustificacionEstudiante = {
+          id: justData?.id_justificacion_est || justData?.id,
+          id_asistencia_est: asistenciaData?.id_asistencia_est || (attendanceId ? Number(attendanceId.replace(/^[a-zA-Z]+-/, '')) : 0),
+          motivo,
+          soporte_digital: soporteDigital || null,
+          created_at: justData?.created_at || new Date().toISOString(),
+        };
+
+        if (asistenciaData) {
+          setAttendance(prev => {
+            const exists = prev.some(a => a.id === String(asistenciaData.id_asistencia_est));
+            const estudiante = asistenciaData.matricula?.estudiante;
+            const seccion = asistenciaData.matricula?.seccion;
+            const newAtt: Attendance = {
+              id: String(asistenciaData.id_asistencia_est),
+              studentId: studentId || (estudiante ? String(estudiante.id_estudiante) : ''),
+              matriculaId: String(asistenciaData.id_matricula),
+              date: asistenciaData.fecha,
+              academicYear: (seccion?.id_grado || 5) as AcademicYear,
+              section: seccion?.letra || seccion?.nombre?.charAt(0) || 'A',
+              status: 'J',
+              horarioId: asistenciaData.id_horario ? String(asistenciaData.id_horario) : undefined,
+              justificaciones: [newJust],
+            };
+            if (exists) {
+              return prev.map(a => a.id === String(asistenciaData.id_asistencia_est) ? { ...a, status: 'J' as const, justificaciones: [...(a.justificaciones || []), newJust] } : a);
+            }
+            return [...prev, newAtt];
+          });
+        } else if (attendanceId) {
+          setAttendance(p => p.map(a => {
+            if (a.id === attendanceId) {
+              return { ...a, status: 'J' as const, justificaciones: [...(a.justificaciones || []), newJust] };
+            }
+            return a;
+          }));
+        }
+      }
       toast.success('Justificación registrada');
       return true;
     } catch (e: any) {
@@ -1151,11 +1215,20 @@ export default function App() {
     }
   };
 
-  const handleSaveObservacion = async (attendanceId: string, observacion: string): Promise<boolean> => {
+  const handleSaveObservacion = async (attendanceId: string, texto: string, gravedad?: string): Promise<boolean> => {
     try {
-      const realId = attendanceId.replace(/^[a-zA-Z]+-/, '');
-      await api.patch(`/api/asistencias-estudiantes/${realId}`, { observacion: observacion || null });
-      setAttendance(p => p.map(a => a.id === attendanceId ? { ...a, observacion: observacion || undefined } : a));
+      const realId = Number(attendanceId.replace(/^[a-zA-Z]+-/, ''));
+      const existingAtt = attendance.find(a => a.id === attendanceId);
+      const existingObs = existingAtt?.observacion;
+
+      if (existingObs) {
+        await api.patch(`/api/observaciones-estudiantes/${existingObs.id_observacion}`, { texto, gravedad: gravedad || undefined });
+        setAttendance(p => p.map(a => a.id === attendanceId ? { ...a, observacion: { ...existingObs, texto, gravedad: gravedad as any || existingObs.gravedad } } : a));
+      } else {
+        const created = await api.post<any>('/api/observaciones-estudiantes', { texto, gravedad: gravedad || undefined });
+        await api.patch(`/api/asistencias-estudiantes/${realId}`, { id_observacion: created.id_observacion });
+        setAttendance(p => p.map(a => a.id === attendanceId ? { ...a, observacion: { id_observacion: created.id_observacion, texto, gravedad: gravedad as any || null, id_usuario_crea: null, created_at: created.created_at } } : a));
+      }
       toast.success('Observación guardada');
       return true;
     } catch (e: any) {
@@ -1630,7 +1703,7 @@ export default function App() {
         </header>
 
         {/* MOBILE DRAWER IF OPEN */}
-        <AnimatePresence id="mobile-presence">
+        <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
               key="mobile-backdrop"

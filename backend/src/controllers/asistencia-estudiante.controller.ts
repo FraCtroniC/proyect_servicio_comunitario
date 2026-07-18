@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import {
   AsistenciaEstudiante, Matricula, Estudiante, Seccion,
   Calificacion, PeriodoEscolar, HorarioDocente, Asignatura,
-  BloqueHorario, Usuario, sequelize
+  BloqueHorario, Usuario, ObservacionEstudiante, sequelize
 } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -126,8 +126,22 @@ export const AsistenciaEstudianteController = {
     if (parsed.data.id_horario != null) payload.id_horario = parsed.data.id_horario;
     if (parsed.data.id_docente_toma != null) payload.id_docente_toma = parsed.data.id_docente_toma;
 
+    const observacionData = payload.observacion;
+    delete payload.observacion;
+
+    let id_observacion = null;
+    if (observacionData && observacionData.texto) {
+      const obs = await ObservacionEstudiante.create({
+        texto: observacionData.texto,
+        gravedad: observacionData.gravedad || null,
+        id_usuario_crea: req.user!.idUsuario,
+      });
+      id_observacion = obs.id_observacion;
+    }
+
     const nueva = await AsistenciaEstudiante.create({
       ...payload,
+      id_observacion,
       id_usuario_crea: req.user!.idUsuario,
     });
     const completa = await AsistenciaEstudiante.findByPk(nueva.id_asistencia_est, { include: MATRICULA_INCLUDES });
@@ -151,14 +165,25 @@ export const AsistenciaEstudianteController = {
     const result = await sequelize.transaction(async (t) => {
       const creados: any[] = [];
       for (const r of parsed.data.registros) {
+        const observacionData = r.observacion;
         const payload: any = {
           id_matricula: r.id_matricula,
           fecha: r.fecha,
           estatus: r.estatus || 'Presente',
-          observacion: r.observacion || null,
           id_horario: r.id_horario || null,
           id_usuario_crea: idUsuario,
         };
+
+        let id_observacion = null;
+        if (observacionData && observacionData.texto) {
+          const obs = await ObservacionEstudiante.create({
+            texto: observacionData.texto,
+            gravedad: observacionData.gravedad || null,
+            id_usuario_crea: idUsuario,
+          }, { transaction: t });
+          id_observacion = obs.id_observacion;
+        }
+        payload.id_observacion = id_observacion;
 
         const whereClause: any = { id_matricula: payload.id_matricula, fecha: payload.fecha };
         if (payload.id_horario != null) {
@@ -172,7 +197,7 @@ export const AsistenciaEstudianteController = {
         });
 
         if (!created) {
-          await registro.update({ estatus: payload.estatus, observacion: payload.observacion }, { transaction: t });
+          await registro.update({ estatus: payload.estatus, id_observacion: payload.id_observacion }, { transaction: t });
         }
         creados.push(registro);
       }
@@ -205,12 +230,23 @@ export const AsistenciaEstudianteController = {
     const result = await sequelize.transaction(async (t) => {
       const creados: any[] = [];
       for (const r of registros) {
+        const observacionData = r.observacion;
+        let id_observacion = null;
+        if (observacionData && observacionData.texto) {
+          const obs = await ObservacionEstudiante.create({
+            texto: observacionData.texto,
+            gravedad: observacionData.gravedad || null,
+            id_usuario_crea: idUsuario,
+          }, { transaction: t });
+          id_observacion = obs.id_observacion;
+        }
+
         const payload = {
           id_matricula: r.id_matricula,
           fecha,
           id_horario: Number(id_horario),
           estatus: r.estatus || 'Presente',
-          observacion: r.observacion || null,
+          id_observacion,
           id_usuario_crea: idUsuario,
         };
 
@@ -221,7 +257,7 @@ export const AsistenciaEstudianteController = {
         });
 
         if (!created) {
-          await registro.update({ estatus: payload.estatus, observacion: payload.observacion }, { transaction: t });
+          await registro.update({ estatus: payload.estatus, id_observacion: payload.id_observacion }, { transaction: t });
         }
         creados.push(registro);
       }
@@ -472,8 +508,38 @@ export const AsistenciaEstudianteController = {
       return;
     }
 
+    const observacionData = parsed.data.observacion;
+    const updateData: any = { estatus: parsed.data.estatus };
+    delete updateData.observacion;
+
+    if (parsed.data.id_observacion !== undefined) {
+      updateData.id_observacion = parsed.data.id_observacion;
+    }
+
+    if (observacionData !== undefined) {
+      if (observacionData === null) {
+        updateData.id_observacion = null;
+      } else if (observacionData.texto) {
+        let idObs = record.id_observacion;
+        if (idObs) {
+          const obs = await ObservacionEstudiante.findByPk(idObs);
+          if (obs) {
+            await obs.update({ texto: observacionData.texto, gravedad: observacionData.gravedad || obs.gravedad });
+          }
+        } else {
+          const obs = await ObservacionEstudiante.create({
+            texto: observacionData.texto,
+            gravedad: observacionData.gravedad || null,
+            id_usuario_crea: req.user!.idUsuario,
+          });
+          idObs = obs.id_observacion;
+        }
+        updateData.id_observacion = idObs;
+      }
+    }
+
     await record.update({
-      ...parsed.data,
+      ...updateData,
       id_usuario_modifica: req.user!.idUsuario,
     });
     const completa = await AsistenciaEstudiante.findByPk(record.id_asistencia_est, { include: MATRICULA_INCLUDES });

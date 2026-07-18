@@ -27,9 +27,21 @@ export const actualizarJustificacionSchema = z.object({
 });
 
 export const crearJustificacionEstudianteSchema = z.object({
-  id_asistencia_est: z.number({ message: 'id_asistencia_est es requerido' })
+  id_asistencia_est: z.number()
     .int()
-    .positive(),
+    .positive()
+    .optional(),
+  id_estudiante: z.number()
+    .int()
+    .positive()
+    .optional(),
+  fecha: z.string()
+    .optional(),
+  id_horario: z.number()
+    .int()
+    .positive()
+    .nullable()
+    .optional(),
   motivo: z.string({ message: 'El motivo de la justificación es requerido' })
     .min(1, 'El motivo no puede estar vacío')
     .transform(val => val.trim()),
@@ -38,4 +50,7 @@ export const crearJustificacionEstudianteSchema = z.object({
     .transform(val => val?.trim() || null)
     .nullable()
     .optional(),
-});
+}).refine(
+  (data) => data.id_asistencia_est || (data.id_estudiante && data.fecha),
+  { message: 'Se requiere id_asistencia_est o (id_estudiante y fecha)' }
+);

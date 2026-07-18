@@ -26,13 +26,13 @@ interface AttendanceTrackerProps {
   scheduleEvents: ScheduleEvent[];
   currentUser: User | null;
   currentUserRole: UserRole;
-  onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', observacion?: string, horarioId?: string) => void;
+  onModifyAttendance: (studentId: string, date: string, year: AcademicYear, section: string, status: 'P' | 'A' | 'J', horarioId?: string) => void;
   onAddTeacherLog: (log: TeacherScheduleLog) => void;
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
   onSyncInasistencias?: (ids_matricula: string[]) => void;
   onJustifyTeacherAbsence?: (logId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
-  onJustifyStudentAbsence?: (attendanceId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
-  onSaveObservacion?: (attendanceId: string, observacion: string) => Promise<boolean>;
+  onJustifyStudentAbsence?: (attendanceId: string | null, motivo: string, soporteDigital?: string, studentId?: string, fecha?: string, horarioId?: string) => Promise<boolean>;
+  onSaveObservacion?: (attendanceId: string, texto: string, gravedad?: string) => Promise<boolean>;
   onDeleteAttendance?: (attendanceId: string) => void;
   onRefreshData?: () => Promise<void>;
   onFetchMiHorario?: (fecha?: string) => Promise<void>;
@@ -74,6 +74,7 @@ export default function AttendanceTracker({
   const [selectedBitacoraStudent, setSelectedBitacoraStudent] = useState<string>('');
   const [bitacoraEditObs, setBitacoraEditObs] = useState<Attendance | null>(null);
   const [bitacoraEditObsText, setBitacoraEditObsText] = useState('');
+  const [bitacoraEditObsGravedad, setBitacoraEditObsGravedad] = useState<string>('');
   const [bitacoraEditObsLoading, setBitacoraEditObsLoading] = useState(false);
   const [bitacoraEditJust, setBitacoraEditJust] = useState<Attendance | null>(null);
   const [bitacoraEditJustMotivo, setBitacoraEditJustMotivo] = useState('');
@@ -109,6 +110,7 @@ export default function AttendanceTracker({
 
   // Student Justification Modal state
   const [studentJustifyAtt, setStudentJustifyAtt] = useState<Attendance | null>(null);
+  const [studentJustifyStudentId, setStudentJustifyStudentId] = useState<string | null>(null);
   const [studentJustifyMotivo, setStudentJustifyMotivo] = useState('');
   const [studentJustifySoporte, setStudentJustifySoporte] = useState('');
   const [studentJustifyLoading, setStudentJustifyLoading] = useState(false);
@@ -116,7 +118,11 @@ export default function AttendanceTracker({
   // Observation Modal state
   const [obsModalAtt, setObsModalAtt] = useState<Attendance | null>(null);
   const [obsModalText, setObsModalText] = useState('');
+  const [obsModalGravedad, setObsModalGravedad] = useState<string>('');
   const [obsModalLoading, setObsModalLoading] = useState(false);
+
+  // Delete confirmation modal state
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -145,7 +151,10 @@ export default function AttendanceTracker({
   const maxDate = todayString < schoolYearEnd ? todayString : schoolYearEnd;
 
   const attendanceSummary = (() => {
-    const todayRecords = attendance.filter(a => a.date === selectedDate);
+    const todayRecords = attendance.filter(a =>
+      a.date === selectedDate &&
+      (selectedSubject ? a.horarioId === selectedSubject : !a.horarioId)
+    );
     return {
       presentes: todayRecords.filter(a => a.status === 'P').length,
       ausentes: todayRecords.filter(a => a.status === 'A').length,
@@ -195,41 +204,44 @@ export default function AttendanceTracker({
     }
   }, [isDocente, selectedYear, selectedSection, docenteSections]);
 
-  const availableSubjects = subjects
-    .filter(s => !s.years || s.years.length === 0 || s.years.includes(selectedYear))
-    .filter(s => !isDocente || (docenteSubjects && docenteSubjects.includes(String(s.id))))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const availableHorarios = scheduleEvents
+    .filter(e => e.year === selectedYear && e.section === selectedSection)
+    .filter(e => !isDocente || (docenteSubjects && docenteSubjects.includes(String(e.subjectId))));
 
   useEffect(() => {
-    if (availableSubjects.length > 0) {
-      if (!selectedSubject || !availableSubjects.find(s => String(s.id) === selectedSubject)) {
-        setSelectedSubject(String(availableSubjects[0].id));
+    if (availableHorarios.length > 0) {
+      if (!selectedSubject || !availableHorarios.find(e => e.id === selectedSubject)) {
+        setSelectedSubject(availableHorarios[0].id);
       }
-    } else if (availableSubjects.length === 0 && selectedSubject !== '') {
+    } else if (availableHorarios.length === 0 && selectedSubject !== '') {
       setSelectedSubject('');
     }
-  }, [selectedYear, selectedSection, isDocente, docenteSubjects]); // depend on top level changes to avoid loops
+  }, [selectedYear, selectedSection, isDocente, docenteSubjects]);
 
-  const allowedBlocksForClass = Array.from(new Set(
-    scheduleEvents
-      .filter(e => 
-        e.year === selectedYear && 
-        e.section === selectedSection && 
-        (selectedSubject ? e.subjectId === selectedSubject : true)
-      )
-      .flatMap(e => [e.blockId, e.timeBlock])
-      .filter(Boolean)
-  )) as string[];
+  const selectedSubjectId = selectedSubject
+    ? scheduleEvents.find(e => e.id === selectedSubject)?.subjectId || null
+    : null;
 
-  const validDaysForClass = Array.from(new Set(
-    scheduleEvents
-      .filter(e => 
-        e.year === selectedYear && 
-        e.section === selectedSection && 
-        (selectedSubject ? e.subjectId === selectedSubject : true)
-      )
-      .map(e => e.day)
-  ));
+  const activeHorario = selectedSubject
+    ? scheduleEvents.find(e => e.id === selectedSubject) || null
+    : null;
+
+  const allowedBlocksForClass = activeHorario
+    ? [activeHorario.blockId, activeHorario.timeBlock].filter(Boolean) as string[]
+    : Array.from(new Set(
+        scheduleEvents
+          .filter(e => e.year === selectedYear && e.section === selectedSection)
+          .flatMap(e => [e.blockId, e.timeBlock])
+          .filter(Boolean)
+      )) as string[];
+
+  const validDaysForClass = activeHorario
+    ? [activeHorario.day]
+    : Array.from(new Set(
+        scheduleEvents
+          .filter(e => e.year === selectedYear && e.section === selectedSection)
+          .map(e => e.day)
+      ));
 
   useEffect(() => {
     if (allowedBlocksForClass.length > 0 && (!selectedBlock || !allowedBlocksForClass.includes(selectedBlock))) {
@@ -238,6 +250,17 @@ export default function AttendanceTracker({
       setSelectedBlock('');
     }
   }, [selectedYear, selectedSection, selectedSubject, scheduleEvents]); // don't depend directly on allowedBlocksForClass to avoid loop
+
+  useEffect(() => {
+    if (selectedSubject) {
+      const horario = scheduleEvents.find(e => e.id === selectedSubject);
+      if (horario) {
+        setSelectedTeacher(String(horario.teacherId));
+      }
+    } else {
+      setSelectedTeacher('');
+    }
+  }, [selectedSubject, scheduleEvents]);
 
   // Teacher actions
   const activeTeachers = docentes.filter(d => d.status === 'Activo');
@@ -429,28 +452,54 @@ export default function AttendanceTracker({
             <div id="filter-att-subject" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Materia</span>
               <SearchableSelect
-                options={availableSubjects.map(s => ({ value: s.id, label: s.name }))}
+                options={scheduleEvents
+                  .filter(e => e.year === selectedYear && e.section === selectedSection)
+                  .filter(e => !isDocente || (docenteSubjects && docenteSubjects.includes(String(e.subjectId))))
+                  .map(e => {
+                    const subject = subjects.find(s => String(s.id) === e.subjectId);
+                    const dayNames: Record<string, string> = { L: 'Lunes', M: 'Martes', MI: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado' };
+                    const dayLabel = dayNames[e.day as string] || e.day;
+                    const startTime = e.timeBlock?.split('-')[0] || '';
+                    const endTime = e.timeBlock?.split('-')[1] || '';
+                    return { value: e.id, label: `${subject?.name || e.subjectId} - ${dayLabel} ${startTime}-${endTime}` };
+                  })}
                 value={selectedSubject}
                 onChange={(val) => setSelectedSubject(String(val))}
-                placeholder="Todas las materias"
+                placeholder="Seleccionar materia..."
               />
             </div>
 
             {!isDocente && (
               <div id="filter-att-teacher" className="flex flex-col gap-1">
                 <span className="text-sm font-bold text-slate-400 uppercase">Docente</span>
-                <SearchableSelect
-                  options={[
-                    { value: '', label: 'Todos los docentes' },
-                    ...docentes
-                      .filter(d => d.status === 'Activo')
-                      .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || ''))
-                      .map(d => ({ value: d.id, label: `${d.lastName || ''}, ${d.firstName || ''}` }))
-                  ]}
-                  value={selectedTeacher}
-                  onChange={(val) => setSelectedTeacher(String(val))}
-                  placeholder="Seleccionar docente..."
-                />
+                {selectedSubject ? (
+                  <select
+                    value={selectedTeacher}
+                    disabled
+                    className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700"
+                  >
+                    {selectedTeacher && (() => {
+                      const d = docentes.find(doc => doc.id === selectedTeacher);
+                      return d ? <option value={d.id}>{d.lastName}, {d.firstName}</option> : null;
+                    })()}
+                  </select>
+                ) : (
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'Todos los docentes' },
+                      ...docentes
+                        .filter(d => {
+                          if (d.status !== 'Activo') return false;
+                          return scheduleEvents.some(e => e.year === selectedYear && e.section === selectedSection && String(e.teacherId) === d.id);
+                        })
+                        .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || ''))
+                        .map(d => ({ value: d.id, label: `${d.lastName || ''}, ${d.firstName || ''}` }))
+                    ]}
+                    value={selectedTeacher}
+                    onChange={(val) => setSelectedTeacher(String(val))}
+                    placeholder="Seleccionar docente..."
+                  />
+                )}
               </div>
             )}
 
@@ -532,7 +581,7 @@ export default function AttendanceTracker({
                 <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                   Justificados: {attendanceSummary.justificados}
                 </span>
-                <span className="text-xs text-slate-500 font-mono">Simulado para: <strong>{selectedDate}</strong></span>
+                <span className="text-xs text-slate-500 font-mono">Asistencia para: <strong>{selectedDate}</strong></span>
               </div>
             </div>
 
@@ -582,7 +631,7 @@ export default function AttendanceTracker({
                                 const isLoading = loadingStudentId === student.id;
                                 
                                 const getFlagTheme = (f: 'P' | 'A' | 'J') => {
-                                  if (isLoading) return 'bg-slate-100 text-slate-400 cursor-not-allowed';
+                                  if (isLoading || !selectedSubject) return 'bg-slate-100 text-slate-400 cursor-not-allowed';
                                   if (f === 'P') return isSelected ? 'bg-green-600 text-white' : 'bg-slate-50 hover:bg-green-50 text-slate-500';
                                   if (f === 'A') return isSelected ? 'bg-rose-600 text-white' : 'bg-slate-50 hover:bg-rose-50 text-slate-500';
                                   return isSelected ? 'bg-amber-600 text-white' : 'bg-slate-50 hover:bg-amber-50 text-slate-500';
@@ -592,8 +641,12 @@ export default function AttendanceTracker({
                                   <button
                                     id={`att-flag-${student.id}-${flag}`}
                                     key={flag}
-                                    disabled={isLoading}
+                                    disabled={isLoading || !selectedSubject}
                                     onClick={async () => {
+                                      if (!selectedSubject) {
+                                        toast.error("Debe seleccionar una materia para registrar asistencia.");
+                                        return;
+                                      }
                                       if (currentUserRole !== 'super_admin' && currentUserRole !== 'docente' && currentUserRole !== 'control_estudios') {
                                         toast.error("Error: Solo los docentes o el cuerpo de Control de Estudios pueden pasar asistencia.");
                                         return;
@@ -603,10 +656,12 @@ export default function AttendanceTracker({
                                         if (currentStatus === 'J' && todayAtt) {
                                           const existingJust = todayAtt.justificaciones?.[0];
                                           setStudentJustifyAtt(todayAtt);
+                                          setStudentJustifyStudentId(null);
                                           setStudentJustifyMotivo(existingJust?.motivo || '');
                                           setStudentJustifySoporte(existingJust?.soporte_digital || '');
                                         } else {
-                                          setStudentJustifyAtt(todayAtt || { id: `temp-${student.id}-${selectedDate}`, studentId: student.id, date: selectedDate, academicYear: selectedYear, section: selectedSection, status: 'A' });
+                                          setStudentJustifyAtt(todayAtt || null);
+                                          setStudentJustifyStudentId(todayAtt ? null : student.id);
                                           setStudentJustifyMotivo('');
                                           setStudentJustifySoporte('');
                                         }
@@ -614,7 +669,7 @@ export default function AttendanceTracker({
                                       }
                                       setLoadingStudentId(student.id);
                                       try {
-                                        await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '', selectedSubject || undefined);
+                                        await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, selectedSubject || undefined);
                                       } finally {
                                         setLoadingStudentId(null);
                                       }
@@ -633,14 +688,15 @@ export default function AttendanceTracker({
                               <button
                                 onClick={() => {
                                   setObsModalAtt(todayAtt);
-                                  setObsModalText(todayAtt.observacion || observaciones[student.id] || '');
+                                  setObsModalText(todayAtt.observacion?.texto || observaciones[student.id] || '');
+                                  setObsModalGravedad(todayAtt.observacion?.gravedad || '');
                                 }}
                                 className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                  (todayAtt.observacion || observaciones[student.id])
+                                  (todayAtt.observacion?.texto || observaciones[student.id])
                                     ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
                                     : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                                 }`}
-                                title={todayAtt.observacion ? 'Ver/editar observación' : 'Agregar observación'}
+                                title={todayAtt.observacion?.texto ? 'Ver/editar observación' : 'Agregar observación'}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
@@ -657,11 +713,7 @@ export default function AttendanceTracker({
                             <div className="flex items-center justify-center gap-1">
                               {currentUserRole === 'super_admin' && todayAtt && (
                                 <button
-                                  onClick={() => {
-                                    if (confirm('¿Eliminar este registro de asistencia?')) {
-                                      onDeleteAttendance?.(todayAtt.id);
-                                    }
-                                  }}
+                                  onClick={() => setConfirmDeleteId(todayAtt.id)}
                                   className="text-sm text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
                                   title="Eliminar registro"
                                 >
@@ -813,7 +865,6 @@ export default function AttendanceTracker({
                                           ((selectedHorario.seccion as any)?.grade || (selectedHorario.seccion as any)?.id_grado || 5) as AcademicYear,
                                           selectedHorario.seccion?.letter || 'A',
                                           flag,
-                                          '',
                                           String(selectedHorario.id_horario)
                                         );
                                       } finally {
@@ -861,7 +912,7 @@ export default function AttendanceTracker({
 
           {selectedBitacoraStudent && (() => {
             const studentAtts = attendance.filter(a => a.studentId === selectedBitacoraStudent);
-            const obsAtts = studentAtts.filter(a => a.observacion && a.observacion.trim());
+            const obsAtts = studentAtts.filter(a => a.observacion?.texto && a.observacion.texto.trim());
             const justAtts = studentAtts.filter(a => a.status === 'J' && a.justificaciones && a.justificaciones.length > 0);
 
             return (
@@ -896,6 +947,7 @@ export default function AttendanceTracker({
                         <thead>
                           <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold text-xs tracking-wider">
                             <th className="py-3 px-4">Fecha</th>
+                            <th className="py-3 px-4">Materia</th>
                             <th className="py-3 px-4">Año / Sección</th>
                             <th className="py-3 px-4">Estado</th>
                             <th className="py-3 px-4">Observación</th>
@@ -903,9 +955,15 @@ export default function AttendanceTracker({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-700">
-                          {obsAtts.sort((a, b) => b.date.localeCompare(a.date)).map(att => (
+                          {obsAtts.sort((a, b) => b.date.localeCompare(a.date)).map(att => {
+                            const schedEvent = scheduleEvents.find(e => e.id === att.horarioId);
+                            const subj = schedEvent ? subjects.find(s => String(s.id) === schedEvent.subjectId) : null;
+                            const dayMap: Record<string, string> = { L: 'Lunes', M: 'Martes', MI: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado' };
+                            const matLabel = schedEvent ? `${subj?.name || ''} - ${dayMap[schedEvent.day] || schedEvent.day} ${schedEvent.timeBlock}` : '—';
+                            return (
                             <tr key={att.id} className="hover:bg-slate-50/40 transition-colors">
                               <td className="py-3 px-4 font-mono text-sm">{att.date}</td>
+                              <td className="py-3 px-4 text-sm">{matLabel}</td>
                               <td className="py-3 px-4">{att.academicYear}° Año "{att.section}"</td>
                               <td className="py-3 px-4">
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -916,12 +974,27 @@ export default function AttendanceTracker({
                                   {att.status === 'P' ? 'Presente' : att.status === 'A' ? 'Ausente' : 'Justificado'}
                                 </span>
                               </td>
-                              <td className="py-3 px-4 text-sm max-w-xs">{att.observacion}</td>
+                              <td className="py-3 px-4 text-sm max-w-xs">
+                                <div className="flex items-center gap-2">
+                                  {att.observacion?.gravedad && (
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${
+                                       att.observacion.gravedad === 'Bajo' ? 'bg-green-100 text-green-700' :
+                                      att.observacion.gravedad === 'Moderado' ? 'bg-yellow-100 text-yellow-700' :
+                                      att.observacion.gravedad === 'Alto' ? 'bg-orange-100 text-orange-700' :
+                                      'bg-red-100 text-red-700'
+                                    }`}>
+                                      {att.observacion.gravedad}
+                                    </span>
+                                  )}
+                                  <span>{att.observacion?.texto}</span>
+                                </div>
+                              </td>
                               <td className="py-3 px-4 text-center">
                                 <button
                                   onClick={() => {
                                     setBitacoraEditObs(att);
-                                    setBitacoraEditObsText(att.observacion || '');
+                                    setBitacoraEditObsText(att.observacion?.texto || '');
+                                    setBitacoraEditObsGravedad(att.observacion?.gravedad || '');
                                   }}
                                   className="p-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
                                   title="Editar observación"
@@ -930,7 +1003,8 @@ export default function AttendanceTracker({
                                 </button>
                               </td>
                             </tr>
-                          ))}
+                          );
+                          })}
                         </tbody>
                       </table>
                     ) : (
@@ -947,6 +1021,7 @@ export default function AttendanceTracker({
                         <thead>
                           <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold text-xs tracking-wider">
                             <th className="py-3 px-4">Fecha</th>
+                            <th className="py-3 px-4">Materia</th>
                             <th className="py-3 px-4">Año / Sección</th>
                             <th className="py-3 px-4">Motivo</th>
                             <th className="py-3 px-4">Soporte</th>
@@ -957,9 +1032,14 @@ export default function AttendanceTracker({
                         <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-700">
                           {justAtts.sort((a, b) => b.date.localeCompare(a.date)).map(att => {
                             const just = att.justificaciones?.[0];
+                            const schedEvent = scheduleEvents.find(e => e.id === att.horarioId);
+                            const subj = schedEvent ? subjects.find(s => String(s.id) === schedEvent.subjectId) : null;
+                            const dayMap: Record<string, string> = { L: 'Lunes', M: 'Martes', MI: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado' };
+                            const matLabel = schedEvent ? `${subj?.name || ''} - ${dayMap[schedEvent.day] || schedEvent.day} ${schedEvent.timeBlock}` : '—';
                             return (
                               <tr key={att.id} className="hover:bg-slate-50/40 transition-colors">
                                 <td className="py-3 px-4 font-mono text-sm">{att.date}</td>
+                                <td className="py-3 px-4 text-sm">{matLabel}</td>
                                 <td className="py-3 px-4">{att.academicYear}° Año "{att.section}"</td>
                                 <td className="py-3 px-4 text-sm max-w-xs">{just?.motivo}</td>
                                 <td className="py-3 px-4 text-sm text-slate-500">{just?.soporte_digital || '—'}</td>
@@ -1246,18 +1326,29 @@ export default function AttendanceTracker({
       </Modal>
 
       {/* Student Justification Modal */}
-      <Modal isOpen={!!studentJustifyAtt} onClose={() => {
+      <Modal isOpen={!!studentJustifyAtt || !!studentJustifyStudentId} onClose={() => {
         setStudentJustifyAtt(null);
+        setStudentJustifyStudentId(null);
         setStudentJustifyMotivo('');
         setStudentJustifySoporte('');
       }} title={studentJustifyAtt?.justificaciones?.length ? "Editar Justificación Estudiante" : "Justificar Inasistencia Estudiante"}>
         <div className="space-y-4">
-          {studentJustifyAtt && (
-            <p className="text-sm text-slate-500">
-              Estudiante: <strong>{students.find(s => s.id === studentJustifyAtt.studentId)?.firstName} {students.find(s => s.id === studentJustifyAtt.studentId)?.lastName}</strong>
-              {' '}&mdash; {studentJustifyAtt.date}
-            </p>
-          )}
+          {(studentJustifyAtt || studentJustifyStudentId) && (() => {
+            const horarioId = studentJustifyAtt?.horarioId || selectedSubject;
+            const scheduleEvent = scheduleEvents.find(e => e.id === horarioId);
+            const subject = scheduleEvent ? subjects.find(s => String(s.id) === scheduleEvent.subjectId) : null;
+            const dayNames: Record<string, string> = { L: 'Lunes', M: 'Martes', MI: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado' };
+            const materiaLabel = scheduleEvent
+              ? `${subject?.name || ''} - ${dayNames[scheduleEvent.day] || scheduleEvent.day} ${scheduleEvent.timeBlock}`
+              : '';
+            return (
+              <p className="text-sm text-slate-500">
+                Estudiante: <strong>{students.find(s => s.id === (studentJustifyAtt?.studentId || studentJustifyStudentId))?.firstName} {students.find(s => s.id === (studentJustifyAtt?.studentId || studentJustifyStudentId))?.lastName}</strong>
+                {' — '}{studentJustifyAtt?.date || selectedDate}
+                {materiaLabel && <><br/>Materia: <strong>{materiaLabel}</strong></>}
+              </p>
+            );
+          })()}
 
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-400 uppercase">Motivo de la Justificación *</label>
@@ -1285,6 +1376,7 @@ export default function AttendanceTracker({
             <button
               onClick={() => {
                 setStudentJustifyAtt(null);
+                setStudentJustifyStudentId(null);
                 setStudentJustifyMotivo('');
                 setStudentJustifySoporte('');
               }}
@@ -1295,7 +1387,7 @@ export default function AttendanceTracker({
             <button
               disabled={studentJustifyLoading}
               onClick={async () => {
-                if (!studentJustifyAtt) return;
+                if (!studentJustifyAtt && !studentJustifyStudentId) return;
                 if (!studentJustifyMotivo.trim()) {
                   toast.error("El motivo es obligatorio.");
                   return;
@@ -1303,11 +1395,17 @@ export default function AttendanceTracker({
                 setStudentJustifyLoading(true);
                 try {
                   if (onJustifyStudentAbsence) {
-                    const success = await onJustifyStudentAbsence(studentJustifyAtt.id, studentJustifyMotivo, studentJustifySoporte || undefined);
+                    const attId = studentJustifyAtt?.id || null;
+                    const stId = studentJustifyStudentId || studentJustifyAtt?.studentId || undefined;
+                    const fecha = studentJustifyAtt?.date || selectedDate;
+                    const hId = studentJustifyAtt?.horarioId || selectedSubject || undefined;
+                    const success = await onJustifyStudentAbsence(attId, studentJustifyMotivo, studentJustifySoporte || undefined, stId, fecha, hId);
                     if (success) {
                       setStudentJustifyAtt(null);
+                      setStudentJustifyStudentId(null);
                       setStudentJustifyMotivo('');
                       setStudentJustifySoporte('');
+                      if (onRefreshData) await onRefreshData();
                     }
                   }
                 } finally {
@@ -1326,14 +1424,39 @@ export default function AttendanceTracker({
       <Modal isOpen={!!obsModalAtt} onClose={() => {
         setObsModalAtt(null);
         setObsModalText('');
+        setObsModalGravedad('');
       }} title="Observación del Estudiante">
         <div className="space-y-4">
-          {obsModalAtt && (
-            <p className="text-sm text-slate-500">
-              Estudiante: <strong>{students.find(s => s.id === obsModalAtt.studentId)?.firstName} {students.find(s => s.id === obsModalAtt.studentId)?.lastName}</strong>
-              {' '}&mdash; {obsModalAtt.date}
-            </p>
-          )}
+          {obsModalAtt && (() => {
+            const scheduleEvent = scheduleEvents.find(e => e.id === obsModalAtt.horarioId);
+            const subject = scheduleEvent ? subjects.find(s => String(s.id) === scheduleEvent.subjectId) : null;
+            const dayNames: Record<string, string> = { L: 'Lunes', M: 'Martes', MI: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado' };
+            const materiaLabel = scheduleEvent
+              ? `${subject?.name || ''} - ${dayNames[scheduleEvent.day] || scheduleEvent.day} ${scheduleEvent.timeBlock}`
+              : '';
+            return (
+              <p className="text-sm text-slate-500">
+                Estudiante: <strong>{students.find(s => s.id === obsModalAtt.studentId)?.firstName} {students.find(s => s.id === obsModalAtt.studentId)?.lastName}</strong>
+                {' — '}{obsModalAtt.date}
+                {materiaLabel && <><br/>Materia: <strong>{materiaLabel}</strong></>}
+              </p>
+            );
+          })()}
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Gravedad</label>
+            <select
+              value={obsModalGravedad}
+              onChange={e => setObsModalGravedad(e.target.value)}
+              className="text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+            >
+              <option value="">Sin clasificar</option>
+              <option value="Bajo" className="bg-green-50 text-green-700">Bajo</option>
+              <option value="Moderado" className="bg-yellow-50 text-yellow-700">Moderado</option>
+              <option value="Alto" className="bg-orange-50 text-orange-700">Alto</option>
+              <option value="Critico" className="bg-red-50 text-red-700">Crítico</option>
+            </select>
+          </div>
 
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-400 uppercase">Observación</label>
@@ -1352,6 +1475,7 @@ export default function AttendanceTracker({
               onClick={() => {
                 setObsModalAtt(null);
                 setObsModalText('');
+                setObsModalGravedad('');
               }}
               className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
             >
@@ -1364,10 +1488,11 @@ export default function AttendanceTracker({
                 setObsModalLoading(true);
                 try {
                   if (onSaveObservacion) {
-                    const success = await onSaveObservacion(obsModalAtt.id, obsModalText);
+                    const success = await onSaveObservacion(obsModalAtt.id, obsModalText, obsModalGravedad || undefined);
                     if (success) {
                       setObsModalAtt(null);
                       setObsModalText('');
+                      setObsModalGravedad('');
                     }
                   }
                 } finally {
@@ -1383,7 +1508,7 @@ export default function AttendanceTracker({
       </Modal>
 
       {/* Bitácora - Edit Observation Modal */}
-      <Modal isOpen={!!bitacoraEditObs} onClose={() => { setBitacoraEditObs(null); setBitacoraEditObsText(''); }} title="Editar Observación">
+      <Modal isOpen={!!bitacoraEditObs} onClose={() => { setBitacoraEditObs(null); setBitacoraEditObsText(''); setBitacoraEditObsGravedad(''); }} title="Editar Observación">
         <div className="space-y-4">
           {bitacoraEditObs && (
             <p className="text-sm text-slate-500">
@@ -1391,6 +1516,20 @@ export default function AttendanceTracker({
               {' '}&mdash; {bitacoraEditObs.date}
             </p>
           )}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Gravedad</label>
+            <select
+              value={bitacoraEditObsGravedad}
+              onChange={e => setBitacoraEditObsGravedad(e.target.value)}
+              className="text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium"
+            >
+              <option value="">Sin clasificar</option>
+              <option value="Bajo">Bajo</option>
+              <option value="Moderado">Moderado</option>
+              <option value="Alto">Alto</option>
+              <option value="Critico">Crítico</option>
+            </select>
+          </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-400 uppercase">Observación</label>
             <textarea
@@ -1403,7 +1542,7 @@ export default function AttendanceTracker({
             <p className="text-[10px] text-slate-400 text-right">{bitacoraEditObsText.length}/255</p>
           </div>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <button onClick={() => { setBitacoraEditObs(null); setBitacoraEditObsText(''); }} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button onClick={() => { setBitacoraEditObs(null); setBitacoraEditObsText(''); setBitacoraEditObsGravedad(''); }} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
             <button
               disabled={bitacoraEditObsLoading}
               onClick={async () => {
@@ -1411,8 +1550,8 @@ export default function AttendanceTracker({
                 setBitacoraEditObsLoading(true);
                 try {
                   if (onSaveObservacion) {
-                    const success = await onSaveObservacion(bitacoraEditObs.id, bitacoraEditObsText);
-                    if (success) { setBitacoraEditObs(null); setBitacoraEditObsText(''); }
+                    const success = await onSaveObservacion(bitacoraEditObs.id, bitacoraEditObsText, bitacoraEditObsGravedad || undefined);
+                    if (success) { setBitacoraEditObs(null); setBitacoraEditObsText(''); setBitacoraEditObsGravedad(''); }
                   }
                 } finally { setBitacoraEditObsLoading(false); }
               }}
@@ -1463,8 +1602,8 @@ export default function AttendanceTracker({
                 setBitacoraEditJustLoading(true);
                 try {
                   if (onJustifyStudentAbsence) {
-                    const success = await onJustifyStudentAbsence(bitacoraEditJust.id, bitacoraEditJustMotivo, bitacoraEditJustSoporte || undefined);
-                    if (success) { setBitacoraEditJust(null); setBitacoraEditJustMotivo(''); setBitacoraEditJustSoporte(''); }
+                    const success = await onJustifyStudentAbsence(bitacoraEditJust.id, bitacoraEditJustMotivo, bitacoraEditJustSoporte || undefined, undefined, undefined, undefined);
+                    if (success) { setBitacoraEditJust(null); setBitacoraEditJustMotivo(''); setBitacoraEditJustSoporte(''); if (onRefreshData) await onRefreshData(); }
                   }
                 } finally { setBitacoraEditJustLoading(false); }
               }}
@@ -1473,6 +1612,23 @@ export default function AttendanceTracker({
               {bitacoraEditJustLoading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={confirmDeleteId !== null} onClose={() => setConfirmDeleteId(null)} title="Confirmar eliminación" maxWidth="max-w-md">
+        <p className="text-sm text-slate-600 mb-6">¿Estás seguro de que deseas eliminar este registro de asistencia? Esta acción no se puede deshacer.</p>
+        <div className="flex justify-end gap-3">
+          <button onClick={() => setConfirmDeleteId(null)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+          <button
+            onClick={() => {
+              if (confirmDeleteId) onDeleteAttendance?.(confirmDeleteId);
+              setConfirmDeleteId(null);
+            }}
+            className="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
+          >
+            Eliminar
+          </button>
         </div>
       </Modal>
 

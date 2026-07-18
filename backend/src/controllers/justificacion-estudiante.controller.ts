@@ -75,27 +75,77 @@ export const JustificacionEstudianteController = {
       return;
     }
 
-    const { id_asistencia_est, motivo, soporte_digital } = parsed.data;
+    const { id_asistencia_est, id_estudiante, fecha, id_horario, motivo, soporte_digital } = parsed.data;
 
-    const asistencia = await AsistenciaEstudiante.findByPk(id_asistencia_est);
-    if (!asistencia) {
-      res.status(404).json({ error: { message: 'Registro de asistencia de estudiante no encontrado' } });
+    let asistencia: any;
+
+    if (id_asistencia_est) {
+      asistencia = await AsistenciaEstudiante.findByPk(id_asistencia_est);
+      if (!asistencia) {
+        res.status(404).json({ error: { message: 'Registro de asistencia de estudiante no encontrado' } });
+        return;
+      }
+    } else if (id_estudiante && fecha) {
+      const periodoActivo = await (await import('../models')).PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+      if (!periodoActivo) {
+        res.status(400).json({ error: { message: 'No hay periodo escolar activo' } });
+        return;
+      }
+      const matricula = await Matricula.findOne({
+        where: { id_estudiante, id_periodo: periodoActivo.id_periodo }
+      });
+      if (!matricula) {
+        res.status(400).json({ error: { message: 'El estudiante no tiene matrícula en el periodo activo' } });
+        return;
+      }
+
+      const whereClause: any = { id_matricula: matricula.id_matricula, fecha };
+      if (id_horario != null) whereClause.id_horario = id_horario;
+
+      const existing = await AsistenciaEstudiante.findOne({ where: whereClause });
+      if (existing) {
+        asistencia = existing;
+      } else {
+        asistencia = await AsistenciaEstudiante.create({
+          id_matricula: matricula.id_matricula,
+          fecha,
+          id_horario: id_horario || null,
+          estatus: 'Justificado',
+          id_usuario_crea: (req as any).user?.idUsuario || null,
+        });
+      }
+    } else {
+      res.status(400).json({ error: { message: 'Datos insuficientes para crear justificación' } });
       return;
     }
 
     const result = await sequelize.transaction(async (t) => {
       const justificacion = await JustificacionEstudiante.create(
         {
-          id_asistencia_est,
+          id_asistencia_est: asistencia.id_asistencia_est,
           motivo,
           soporte_digital: soporte_digital || null,
         },
         { transaction: t }
       );
-      await asistencia.update({ estatus: 'Justificado' }, { transaction: t });
+      if (asistencia.estatus !== 'Justificado') {
+        await asistencia.update({ estatus: 'Justificado' }, { transaction: t });
+      }
       return justificacion;
     });
-    res.status(201).json({ data: result });
+
+    const asistenciaCompleta = await AsistenciaEstudiante.findByPk(asistencia.id_asistencia_est, {
+      include: [{
+        model: Matricula,
+        as: 'matricula',
+        include: [
+          { model: Estudiante, as: 'estudiante' },
+          { model: Seccion, as: 'seccion' }
+        ]
+      }]
+    });
+
+    res.status(201).json({ data: result, asistencia: asistenciaCompleta });
   }),
 
   actualizar: wrapAsync(async (req: Request, res: Response) => {

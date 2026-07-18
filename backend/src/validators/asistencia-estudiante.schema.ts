@@ -28,11 +28,10 @@ export const crearAsistenciaEstudianteSchema = z.object({
   estatus: z.enum(ASISTENCIA_ESTUDIANTE_STATUS as unknown as [string, ...string[]], {
     message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}`,
   }).optional(),
-  observacion: z.string()
-    .max(255, 'observacion debe tener máximo 255 caracteres')
-    .transform(val => val === '' ? null : val)
-    .nullable()
-    .optional(),
+  observacion: z.object({
+    texto: z.string().min(1, 'El texto de la observación es requerido').transform(val => val.trim()),
+    gravedad: z.enum(['Bajo', 'Moderado', 'Alto', 'Critico']).optional(),
+  }).nullable().optional(),
 });
 
 export const crearBatchAsistenciaEstudianteSchema = z.object({
@@ -48,11 +47,10 @@ export const crearBatchAsistenciaEstudianteSchema = z.object({
       .optional(),
     estatus: z.enum(ASISTENCIA_ESTUDIANTE_STATUS as unknown as [string, ...string[]])
       .optional(),
-    observacion: z.string()
-      .max(255, 'observacion debe tener máximo 255 caracteres')
-      .transform(val => val === '' ? null : val)
-      .nullable()
-      .optional(),
+    observacion: z.object({
+      texto: z.string().min(1).transform(val => val.trim()),
+      gravedad: z.enum(['Bajo', 'Moderado', 'Alto', 'Critico']).optional(),
+    }).nullable().optional(),
   })).nonempty('registros debe ser un array no vacío'),
 });
 
@@ -60,11 +58,15 @@ export const actualizarAsistenciaEstudianteSchema = z.object({
   estatus: z.enum(ASISTENCIA_ESTUDIANTE_STATUS as unknown as [string, ...string[]], {
     message: `estatus debe ser: ${ASISTENCIA_ESTUDIANTE_STATUS.join(', ')}`,
   }).optional(),
-  observacion: z.string()
-    .max(255, 'observacion debe tener máximo 255 caracteres')
-    .transform(val => val === '' ? null : val)
+  id_observacion: z.number()
+    .int()
+    .positive()
     .nullable()
     .optional(),
+  observacion: z.object({
+    texto: z.string().min(1, 'El texto de la observación es requerido').transform(val => val.trim()),
+    gravedad: z.enum(['Bajo', 'Moderado', 'Alto', 'Critico']).optional(),
+  }).nullable().optional(),
 });
 
 export const syncInasistenciasSchema = z.object({

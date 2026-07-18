@@ -5,7 +5,7 @@ export class AsistenciaEstudiante extends Model {
   declare id_matricula: number;
   declare fecha: string;
   declare estatus: string | null;
-  declare observacion: string | null;
+  declare id_observacion: number | null;
   declare id_horario: number | null;
   declare id_docente_toma: number | null;
   declare id_usuario_crea: number | null;
@@ -20,6 +20,7 @@ export class AsistenciaEstudiante extends Model {
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_crea', as: 'usuarioCrea' });
     AsistenciaEstudiante.belongsTo(models.Usuario, { foreignKey: 'id_usuario_modifica', as: 'usuarioModifica' });
     AsistenciaEstudiante.hasMany(models.JustificacionEstudiante, { foreignKey: 'id_asistencia_est', as: 'justificaciones' });
+    AsistenciaEstudiante.belongsTo(models.ObservacionEstudiante, { foreignKey: 'id_observacion', as: 'observacion' });
   }
 }
 
@@ -64,9 +65,13 @@ export function initAsistenciaEstudiante(sequelize: Sequelize): typeof Asistenci
         allowNull: true,
         comment: 'Presente, Ausente, Justificado',
       },
-      observacion: {
-        type: DataTypes.STRING(255),
+      id_observacion: {
+        type: DataTypes.INTEGER,
         allowNull: true,
+        references: {
+          model: 'observaciones_estudiante',
+          key: 'id_observacion',
+        },
       },
       id_usuario_crea: {
         type: DataTypes.INTEGER,
