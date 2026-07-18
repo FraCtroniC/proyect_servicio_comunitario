@@ -637,6 +637,7 @@ export default function App() {
         apellido1: stuLastParts[0] || '',
         fecha_nac: newStudent.dateOfBirth,
         id_representante: Number(repId),
+        id_grado: newStudent.academicYear,
         estatus_estudiante: 'Activo'
       };
       if (stuNameParts.length > 1) estPayload.nombre2 = stuNameParts.slice(1).join(' ');

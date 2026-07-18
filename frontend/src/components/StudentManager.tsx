@@ -13,6 +13,7 @@ import { Modal } from './Modal';
 import { api } from '../services/api';
 import { getStates, getMunicipalities, getParishes } from '../utils/venezuela';
 import { SearchableSelect } from './SearchableSelect';
+import { calculateAge, validateAgeForYear } from '../utils/ageValidation';
 
 interface StudentManagerProps {
   students: Student[];
@@ -230,18 +231,6 @@ export default function StudentManager({ students, sections, classrooms, current
   const validateCedula = (val: string) => /^[0-9]{7,9}$/.test(val);
   const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 
-  const calculateAge = (dob: string) => {
-    if (!dob) return 0;
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   const handleFieldChange = (name: string, val: string, setter: (v: string) => void) => {
     setter(val);
     const newErrors = { ...errors };
@@ -316,12 +305,16 @@ export default function StudentManager({ students, sections, classrooms, current
     setErrors(newErrors);
   };
 
-  const checkAge = (val: string) => {
+  const checkAge = (val: string, academicYear: number = enrollYear) => {
     if (!val) return;
     const newErrors = { ...errors };
     const age = calculateAge(val);
-    if (age < 10) newErrors['birthYear'] = 'Edad ilógica (< 10 años).';
-    else delete newErrors['birthYear'];
+    const ageError = validateAgeForYear(age, academicYear);
+    if (ageError) {
+      newErrors['birthYear'] = ageError;
+    } else {
+      delete newErrors['birthYear'];
+    }
     setErrors(newErrors);
   };
 
@@ -368,9 +361,10 @@ export default function StudentManager({ students, sections, classrooms, current
     }
 
     const age = calculateAge(birthYear);
-    if (age < 10) {
-      setErrors(prev => ({ ...prev, birthYear: 'El estudiante debe tener al menos 10 años.' }));
-      setFormError('Revisar edad del estudiante.');
+    const ageError = validateAgeForYear(age, enrollYear);
+    if (ageError) {
+      setErrors(prev => ({ ...prev, birthYear: ageError }));
+      setFormError(`Revisar edad del estudiante. Edad actual: ${age} años.`);
       scrollToError();
       return;
     }
@@ -704,6 +698,9 @@ export default function StudentManager({ students, sections, classrooms, current
                   className={`w-full text-base p-2 bg-slate-50 border ${errors.birthYear ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded focus:bg-white focus:outline-hidden font-medium`}
                 />
                 {errors.birthYear && <p className="text-rose-500 text-sm mt-1 font-semibold">{errors.birthYear}</p>}
+                {!errors.birthYear && birthYear && (
+                  <p className="text-sm text-slate-500 mt-1">Edad actual: {calculateAge(birthYear)} años</p>
+                )}
               </div>
             </div>
 
@@ -806,7 +803,11 @@ export default function StudentManager({ students, sections, classrooms, current
                 <label className="text-sm font-semibold text-slate-500">Año Escolar <span className="text-red-500 font-bold text-base">*</span></label>
                 <select 
                   value={enrollYear} 
-                  onChange={(e) => setEnrollYear(Number(e.target.value) as AcademicYear)}
+                  onChange={(e) => {
+                    const newYear = Number(e.target.value) as AcademicYear;
+                    setEnrollYear(newYear);
+                    if (birthYear) checkAge(birthYear, newYear);
+                  }}
                   className="w-full text-base p-2 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:outline-hidden"
                 >
                   <option value={1}>1er Año</option>
