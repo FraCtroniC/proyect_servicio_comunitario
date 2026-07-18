@@ -26,6 +26,7 @@ import {
   CalendarDays,
   Sparkles,
   Clock,
+  Database,
 } from 'lucide-react';
 
 import {
@@ -128,6 +129,37 @@ export default function App() {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [teacherLogs, setTeacherLogs] = useState<TeacherScheduleLog[]>([]);
   const [matriculasCache, setMatriculasCache] = useState<any[]>([]);
+
+  const [isBackingUp, setIsBackingUp] = useState(false);
+
+  const handleBackup = async () => {
+    if (isBackingUp) return;
+    setIsBackingUp(true);
+    toast.loading("Generando respaldo de la base de datos...", { id: 'backup-toast' });
+    try {
+      // Usaremos un endpoint directo que devuelve el blob
+      const response = await fetch('/api/system/backup', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Fallo al respaldar');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Respaldo_Liceo_${new Date().toISOString().split('T')[0]}.sql`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      
+      toast.success('Respaldo descargado exitosamente', { id: 'backup-toast' });
+    } catch (e) {
+      toast.error("Error al descargar el respaldo.", { id: 'backup-toast' });
+      console.error(e);
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   // Schedule/Horario states for attendance-by-class
   const [horariosDisponibles, setHorariosDisponibles] = useState<SubjectSchedule[]>([]);
@@ -1668,6 +1700,28 @@ export default function App() {
                   <span className="block text-sm text-slate-400 font-bold uppercase tracking-tight truncate">{currentRoleLabel}</span>
                 </div>
               </button>
+
+              {currentUserRole === 'super_admin' && (
+                <button
+                  onClick={handleBackup}
+                  disabled={isBackingUp}
+                  className={`w-full py-1.5 px-3 text-white text-[11px] font-bold uppercase tracking-wide rounded-lg shadow-sm transition-all pointer-events-auto flex justify-center items-center gap-2 ${isBackingUp
+                    ? 'bg-slate-600/50 cursor-not-allowed border border-slate-500/30'
+                    : 'bg-slate-700/80 hover:bg-slate-600 border border-slate-600/50 cursor-pointer'
+                  }`}
+                >
+                  {isBackingUp ? (
+                    <>
+                      <div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Respaldando...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-3.5 w-3.5 text-blue-400" /> Respaldo DB (.sql)
+                    </>
+                  )}
+                </button>
+              )}
 
               <button
                 onClick={handleLogout}
