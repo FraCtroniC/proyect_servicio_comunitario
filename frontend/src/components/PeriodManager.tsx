@@ -196,29 +196,6 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
           <p className="text-sm text-slate-500 mt-1">Gestión de Años Académicos y Bloqueo de Históricos.</p>
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-0">
-          {(() => {
-            const active = periods.find(p => p.status === 'Activo');
-            if (active) {
-              return (
-                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 shadow-xs">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <div className="text-xs leading-tight">
-                    <p className="font-bold text-emerald-800">Periodo Activo</p>
-                    <p className="font-black text-emerald-700 text-sm">{active.name}</p>
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 shadow-xs">
-                <Clock className="w-5 h-5 text-amber-600" />
-                <div className="text-xs leading-tight">
-                  <p className="font-bold text-amber-800">Sin Periodo Activo</p>
-                  <p className="text-amber-700 text-xs">Ningún periodo está activo actualmente</p>
-                </div>
-              </div>
-            );
-          })()}
           {canEdit && (
             <button
               onClick={openAddModal}

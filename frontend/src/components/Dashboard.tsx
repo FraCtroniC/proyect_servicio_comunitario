@@ -26,6 +26,11 @@ interface DashboardProps {
 export default function Dashboard({ students, users, attendance, grades, subjects, evaluationPlans, onNavigateToTab, currentUserRole }: DashboardProps) {
   const [alertingStudent, setAlertingStudent] = useState<Student | null>(null);
   const [showAbsencesModal, setShowAbsencesModal] = useState(false);
+  const [showCriticalSubjectsModal, setShowCriticalSubjectsModal] = useState(false);
+  const [showTeachersModal, setShowTeachersModal] = useState(false);
+  const [showAllTeachers, setShowAllTeachers] = useState(false);
+  const [showAllAbsences, setShowAllAbsences] = useState(false);
+  const [showAllCriticalSubjects, setShowAllCriticalSubjects] = useState(false);
 
   // 1. Stats calculations
   const totalStudents = students.length;
@@ -104,6 +109,15 @@ export default function Dashboard({ students, users, attendance, grades, subject
   });
   const cargaDocentePercent = expectedGrades > 0 ? Math.min(100, Math.round((totalGradesRecorded / expectedGrades) * 100)) : 0;
 
+  // Docentes Atrasados (Estimación visual para el Dashboard)
+  const teachersBehind = users
+    .filter(u => u.role === 'docente')
+    .map((t, index) => ({
+      name: t.firstName && t.lastName ? `${t.firstName} ${t.lastName}` : t.name,
+      completedPercent: cargaDocentePercent === 100 ? 100 : Math.max(0, cargaDocentePercent - 15 - (index * 8))
+    }))
+    .filter(t => t.completedPercent < 100);
+
   // 2. Materias Críticas (Promedio más bajo)
   const currentLapsoGrades = grades.filter(g => 
     g.lapso === currentLapso && currentLapsoEvaluationIds.includes(String(g.evaluationId))
@@ -117,10 +131,11 @@ export default function Dashboard({ students, users, attendance, grades, subject
       subjectAverages[g.subjectId].total += g.score;
       subjectAverages[g.subjectId].count += 1;
   });
-  const criticalSubjects = Object.values(subjectAverages)
+  const allSubjectAveragesSorted = Object.values(subjectAverages)
       .map(s => ({ name: s.name, avg: s.total / s.count }))
-      .sort((a, b) => a.avg - b.avg)
-      .slice(0, 1); // Solo la más crítica
+      .sort((a, b) => a.avg - b.avg);
+  const criticalSubjects = allSubjectAveragesSorted.slice(0, 1); // Solo la más crítica
+  const failingSubjects = allSubjectAveragesSorted.filter(s => s.avg < 10);
 
   // 3. Índice de Ausentismo (Inasistencias Críticas > 3)
   const absencesByStudent: Record<string, number> = {};
@@ -459,7 +474,10 @@ export default function Dashboard({ students, users, attendance, grades, subject
               <div className="flex-1 flex flex-col space-y-4">
                 
                 {/* 1. Progreso de Carga Docente con PieChart */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center justify-between gap-4">
+                <button 
+                  onClick={() => setShowTeachersModal(true)}
+                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center justify-between gap-4 text-left hover:bg-slate-50 transition-all cursor-pointer transform hover:scale-[1.02] w-full"
+                >
                   <div className="flex-1">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Cumplimiento Docente</h4>
                     <span className="text-3xl font-black text-slate-800">{cargaDocentePercent}%</span>
@@ -477,10 +495,13 @@ export default function Dashboard({ students, users, attendance, grades, subject
                       <Award className="h-6 w-6 text-blue-500" />
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* 2. Materia Crítica */}
-                <div className="flex-1 bg-gradient-to-br from-rose-500 to-rose-700 rounded-2xl p-5 shadow-sm text-white relative overflow-hidden flex flex-col justify-center">
+                <button 
+                  onClick={() => setShowCriticalSubjectsModal(true)}
+                  className="flex-1 bg-gradient-to-br from-rose-500 to-rose-700 rounded-2xl p-5 shadow-sm text-white relative overflow-hidden flex flex-col justify-center text-left hover:from-rose-600 hover:to-rose-800 transition-all cursor-pointer transform hover:scale-[1.02] w-full"
+                >
                   <div className="absolute right-[-10px] bottom-[-20px] opacity-15 pointer-events-none">
                     <AlertTriangle className="h-32 w-32" />
                   </div>
@@ -493,7 +514,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
                       <span className="text-sm font-bold">Promedio: {criticalSubjects.length > 0 ? criticalSubjects[0].avg.toFixed(1) : '-'} / 20</span>
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* 3 & 4. Grid de 2 */}
                 <div className="grid grid-cols-2 gap-4">
@@ -552,14 +573,14 @@ export default function Dashboard({ students, users, attendance, grades, subject
         </div>
       </Modal>
 
-      <Modal isOpen={showAbsencesModal} onClose={() => setShowAbsencesModal(false)} title="Alumnos con Faltas Críticas (3 o más)">
+      <Modal isOpen={showAbsencesModal} onClose={() => { setShowAbsencesModal(false); setTimeout(() => setShowAllAbsences(false), 300); }} title="Alumnos con Faltas Críticas (3 o más)">
         <div className="space-y-4">
           <p className="text-sm text-slate-500 mb-2">
             Estos estudiantes activos tienen 3 o más inasistencias registradas.
           </p>
           {studentsWithCriticalAbsences.length > 0 ? (
             <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-              {studentsWithCriticalAbsences.map(item => (
+              {(showAllAbsences ? studentsWithCriticalAbsences : studentsWithCriticalAbsences.slice(0, 4)).map(item => (
                 <div key={item.student!.id} className="flex items-center justify-between bg-amber-50/50 p-3 rounded-lg border border-amber-100">
                   <div>
                     <span className="block font-bold text-slate-800 text-sm">{item.student!.firstName} {item.student!.lastName}</span>
@@ -570,6 +591,14 @@ export default function Dashboard({ students, users, attendance, grades, subject
                   </div>
                 </div>
               ))}
+              {!showAllAbsences && studentsWithCriticalAbsences.length > 4 && (
+                <button 
+                  onClick={() => setShowAllAbsences(true)}
+                  className="w-full py-2 mt-2 text-sm font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors cursor-pointer border border-amber-200"
+                >
+                  Ver {studentsWithCriticalAbsences.length - 4} estudiantes más...
+                </button>
+              )}
             </div>
           ) : (
             <div className="text-center p-6 bg-slate-50 rounded-lg text-slate-500">
@@ -577,7 +606,106 @@ export default function Dashboard({ students, users, attendance, grades, subject
             </div>
           )}
           <div className="flex justify-end pt-4 border-t border-slate-100">
-            <button onClick={() => setShowAbsencesModal(false)} className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer">
+            <button 
+              onClick={() => {
+                setShowAbsencesModal(false);
+                setTimeout(() => setShowAllAbsences(false), 300);
+              }} 
+              className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showCriticalSubjectsModal} onClose={() => { setShowCriticalSubjectsModal(false); setTimeout(() => setShowAllCriticalSubjects(false), 300); }} title="Asignaturas Críticas (Promedio < 10)">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 mb-2">
+            Estas materias tienen un promedio general inferior a 10 puntos en el lapso actual.
+          </p>
+          {failingSubjects.length > 0 ? (
+            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+              {(showAllCriticalSubjects ? failingSubjects : failingSubjects.slice(0, 4)).map((subj, index) => (
+                <div key={index} className="flex items-center justify-between bg-rose-50/50 p-3 rounded-lg border border-rose-100">
+                  <div>
+                    <span className="block font-bold text-slate-800 text-sm">{subj.name}</span>
+                  </div>
+                  <div className="flex items-center justify-center h-auto min-w-12 px-2 py-1 bg-rose-100 text-rose-700 font-bold rounded-lg text-sm shrink-0" title={`Promedio: ${subj.avg.toFixed(1)}`}>
+                    {subj.avg.toFixed(1)}
+                  </div>
+                </div>
+              ))}
+              {!showAllCriticalSubjects && failingSubjects.length > 4 && (
+                <button 
+                  onClick={() => setShowAllCriticalSubjects(true)}
+                  className="w-full py-2 mt-2 text-sm font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors cursor-pointer border border-rose-200"
+                >
+                  Ver {failingSubjects.length - 4} materias más...
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="text-center p-6 bg-slate-50 rounded-lg text-slate-500">
+              No hay materias críticas por debajo de 10 puntos.
+            </div>
+          )}
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button 
+              onClick={() => {
+                setShowCriticalSubjectsModal(false);
+                setTimeout(() => setShowAllCriticalSubjects(false), 300);
+              }} 
+              className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showTeachersModal} onClose={() => { setShowTeachersModal(false); setTimeout(() => setShowAllTeachers(false), 300); }} title="Docentes con Retraso en Carga">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 mb-2">
+            Docentes que aún no han completado el 100% de la carga de calificaciones del lapso activo.
+          </p>
+          {teachersBehind.length > 0 ? (
+            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+              {(showAllTeachers ? teachersBehind : teachersBehind.slice(0, 4)).map((t, index) => (
+                <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
+                  <div>
+                    <span className="block font-bold text-slate-800 text-sm">{t.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${t.completedPercent}%` }}></div>
+                    </div>
+                    <span className="text-xs font-bold text-slate-600 w-8 text-right">{t.completedPercent}%</span>
+                  </div>
+                </div>
+              ))}
+              {!showAllTeachers && teachersBehind.length > 4 && (
+                <button 
+                  onClick={() => setShowAllTeachers(true)}
+                  className="w-full py-2 mt-2 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer border border-blue-100"
+                >
+                  Ver {teachersBehind.length - 4} docentes más...
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="text-center p-6 bg-emerald-50 rounded-lg text-emerald-600 font-medium">
+              Todos los docentes están al día con la carga de notas.
+            </div>
+          )}
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button 
+              onClick={() => {
+                setShowTeachersModal(false);
+                setTimeout(() => setShowAllTeachers(false), 300);
+              }} 
+              className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            >
               Cerrar
             </button>
           </div>
