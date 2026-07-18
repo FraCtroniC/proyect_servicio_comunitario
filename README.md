@@ -92,6 +92,21 @@ VITE_API_URL=https://api.example.com
 VITE_AUTH_KEY=tu_token_aqui
 ```
 
+**Backend** (`backend/.env`):
+```
+PORT=3000
+DB_HOST=localhost
+DB_USER=postgres
+DB_PASSWORD=
+DB_NAME=liceo_bd
+# Ruta al ejecutable de pg_dump para permitir los respaldos de la base de datos PostgreSQL
+PG_DUMP_PATH="C:\Program Files\PostgreSQL\15\bin\pg_dump.exe"
+```
+
+## Respaldo de Base de Datos
+
+Para que la función de **Respaldo de Base de Datos** funcione correctamente en un servidor local (Windows), es indispensable configurar la variable de entorno `PG_DUMP_PATH` en el archivo `.env` del backend. Esta ruta le indica al sistema dónde encontrar la herramienta nativa de PostgreSQL encargada de generar el archivo `.sql`.
+
 ## Contribuir
 
 Lee [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo de contribución, estilo de commits y pruebas.

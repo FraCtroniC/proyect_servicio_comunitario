@@ -24,10 +24,12 @@ export const BackupService = {
 
       // Prevent pg_dump errors on Windows due to missing root certificates with verify-full
       const dbUrl = environment.databaseUrl.replace('sslmode=verify-full', 'sslmode=require');
+      
+      const pgDumpExecutable = process.env.PG_DUMP_PATH || 'pg_dump';
 
       console.log(`[BackupService] Iniciando respaldo de base de datos: ${filename}`);
 
-      execFile('pg_dump', [dbUrl, '-f', backupPath], (error, stdout, stderr) => {
+      execFile(pgDumpExecutable, [dbUrl, '-f', backupPath], (error, stdout, stderr) => {
         if (error) {
           console.error(`[BackupService] Error al generar respaldo: ${error.message}`);
           return reject(error);

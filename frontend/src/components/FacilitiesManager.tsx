@@ -40,6 +40,7 @@ export default function FacilitiesManager({
   const [errorMsg, setErrorMsg] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState('');
+  const [isCustomLocation, setIsCustomLocation] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<Classroom | null>(null);
@@ -49,11 +50,14 @@ export default function FacilitiesManager({
     c => c.name.toUpperCase() === name.toUpperCase() && c.id !== editingRoomId
   );
 
+  const uniqueLocations = Array.from(new Set(classrooms.map(c => c.location).filter(Boolean)));
+
   const openAddModal = () => {
     setName('');
     setCapacity(30);
     setType('Teórica');
     setLocation('Planta Baja');
+    setIsCustomLocation(false);
     setEditingRoomId(null);
     setErrorMsg('');
     setFieldErrors({});
@@ -65,6 +69,7 @@ export default function FacilitiesManager({
     setCapacity(room.capacity);
     setType(room.type);
     setLocation(room.location || 'Planta Baja');
+    setIsCustomLocation(false);
     setEditingRoomId(room.id);
     setErrorMsg('');
     setFieldErrors({});
@@ -358,15 +363,47 @@ export default function FacilitiesManager({
 
             <div id="form-room-loc" className="space-y-1">
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Ubicación (Nivel / Piso)</label>
-              <select 
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-              >
-                <option value="Planta Baja">Planta Baja</option>
-                <option value="Piso 1">Piso 1</option>
-                <option value="Piso 2">Piso 2</option>
-              </select>
+              {isCustomLocation ? (
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Escriba la nueva ubicación..."
+                    className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
+                    autoFocus
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsCustomLocation(false);
+                      setLocation(uniqueLocations.length > 0 ? uniqueLocations[0] : 'Planta Baja');
+                    }}
+                    className="px-3 py-2.5 bg-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-300 cursor-pointer transition-colors"
+                  >
+                    Volver
+                  </button>
+                </div>
+              ) : (
+                <select 
+                  value={location}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom_new') {
+                      setIsCustomLocation(true);
+                      setLocation('');
+                    } else {
+                      setLocation(e.target.value);
+                    }
+                  }}
+                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 cursor-pointer"
+                >
+                  {uniqueLocations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                  {uniqueLocations.length === 0 && <option value="Planta Baja">Planta Baja</option>}
+                  <option value="custom_new" className="font-bold bg-indigo-50 text-indigo-700">➕ Otra (Escribir nueva)...</option>
+                </select>
+              )}
             </div>
 
             <button
