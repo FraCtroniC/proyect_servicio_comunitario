@@ -117,6 +117,7 @@ export default function App() {
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const [evaluationPlans, setEvaluationPlans] = useState<EvaluationPlan[]>([]);
   const [studyPlans, setStudyPlans] = useState<StudyPlanItem[]>([]);
+  const [studyPlanVersions, setStudyPlanVersions] = useState<any[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [periods, setPeriods] = useState<SchoolPeriod[]>([]);
@@ -409,7 +410,8 @@ export default function App() {
             asistenciasEstudiantesData,
             matriculasData,
             docentesData,
-            gradosData
+            gradosData,
+            tipoPlanesData
           ] = await Promise.all([
             api.get<any[]>('/api/usuarios'),
             api.get<any[]>('/api/estudiantes'),
@@ -431,7 +433,8 @@ export default function App() {
             api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
             // temporarily empty - we filter docentes from usuariosData below
             Promise.resolve([]),
-            api.get<any[]>('/api/grados').catch(() => ({ data: [] }))
+            api.get<any[]>('/api/grados').catch(() => ({ data: [] })),
+            api.get<any[]>('/api/tipo-plan-estudio').catch(() => ({ data: [] }))
           ]);
 
           const seccionesMap = aulasData.reduce((acc, a) => {
@@ -454,6 +457,7 @@ export default function App() {
 
           const studyPlansList = planesData.map(mapPlanToStudyPlanItem);
           setStudyPlans(studyPlansList);
+          setStudyPlanVersions(Array.isArray(tipoPlanesData) ? tipoPlanesData : ((tipoPlanesData as any)?.data || []));
 
           const dbEvaluationsList = (Array.isArray((evaluacionesPlanesResp as any)?.data) ? (evaluacionesPlanesResp as any).data : (Array.isArray(evaluacionesPlanesResp) ? evaluacionesPlanesResp : [])) || [];
           const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, planesData, seccionesMap);
@@ -730,7 +734,7 @@ export default function App() {
     }
   };
 
-  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
+  const handleAddStudyPlanItem = async (name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string, id_tipo_plan: number) => {
     // 1. Check if subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
 
@@ -749,11 +753,12 @@ export default function App() {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
-      posicion: posicion
+      posicion: posicion,
+      id_tipo_plan: id_tipo_plan
     });
     // State updates via WebSocket
   };
-  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string) => {
+  const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string, id_tipo_plan: number) => {
     // 1. Ensure subject exists or create it
     let subjectId = subjects.find(s => s.name.toLowerCase() === name.toLowerCase())?.id;
     if (!subjectId) {
@@ -771,7 +776,8 @@ export default function App() {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
-      posicion: posicion
+      posicion: posicion,
+      id_tipo_plan: id_tipo_plan
     });
     // State updates via WebSocket
   };
@@ -783,6 +789,36 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al eliminar la materia del plan de estudio');
+    }
+  };
+
+  const handleAddStudyPlanVersion = async (name: string) => {
+    try {
+      const resp = await api.post<any>('/api/tipo-plan-estudio', { nombre: name });
+      setStudyPlanVersions(p => [...p, resp]);
+      return resp;
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Error al crear una nueva versión de plan de estudio');
+      throw e;
+    }
+  };
+
+  const handleDeleteStudyPlanVersion = async (id: number) => {
+    try {
+      await api.delete(`/api/tipo-plan-estudio/${id}`);
+      setStudyPlanVersions(p => p.filter(v => v.id_tipo_plan !== id));
+      toast.success('Versión eliminada exitosamente');
+    } catch (e: any) {
+      console.error(e);
+      if (e.details && e.details.message) {
+        toast.error(e.details.message);
+      } else if (e.message) {
+        toast.error(e.message);
+      } else {
+        toast.error('Error al eliminar la versión del plan de estudio');
+      }
+      throw e;
     }
   };
 
@@ -1900,10 +1936,13 @@ export default function App() {
               {activeTab === 'subjects' && (
                 <SubjectManager
                   studyPlans={studyPlans}
+                  studyPlanVersions={studyPlanVersions}
                   currentUserRole={currentUserRole}
                   onAddStudyPlanItem={handleAddStudyPlanItem}
                   onUpdateStudyPlanItem={handleUpdateStudyPlanItem}
                   onDeleteStudyPlanItem={handleDeleteStudyPlanItem}
+                  onAddStudyPlanVersion={handleAddStudyPlanVersion}
+                  onDeleteStudyPlanVersion={handleDeleteStudyPlanVersion}
                 />
               )}
 

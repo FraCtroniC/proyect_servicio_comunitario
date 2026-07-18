@@ -171,7 +171,8 @@ export function mapPlanToStudyPlanItem(dbPlan: any): StudyPlanItem {
     year: (dbPlan.grado?.numero || dbPlan.id_grado || 1) as any,
     codigo: dbPlan.codigo_asignatura || '',
     posicion: dbPlan.posicion || 0,
-    tipoCalificacion: dbPlan.asignatura?.tipo_calificacion || 'Cuantitativa'
+    tipoCalificacion: dbPlan.asignatura?.tipo_calificacion || 'Cuantitativa',
+    id_tipo_plan: dbPlan.id_tipo_plan || 1, // Fallback to 1 if not present
   };
 }
 

@@ -540,7 +540,7 @@ export default function ScheduleCoordinator({
               {/* School Year Section Select */}
               <div id="block-form-cohort" className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Año EMG</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Año</label>
                   <select
                     value={formYear}
                     onChange={(e) => setFormYear(Number(e.target.value) as AcademicYear)}
@@ -634,7 +634,7 @@ export default function ScheduleCoordinator({
                 type="submit"
                 className={`w-full py-2.5 ${editingEvent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-700 hover:bg-indigo-800'} text-white font-bold text-sm rounded-lg transition-colors pointer-events-auto cursor-pointer flex items-center justify-center gap-1`}
               >
-                <span>{editingEvent ? 'Guardar Cambios y Verificar Overlaps' : 'Asignar y Verificar Overlaps'}</span>
+                <span>{editingEvent ? 'Guardar Cambios' : 'Asignar Bloque'}</span>
               </button>
             </form>
           )}

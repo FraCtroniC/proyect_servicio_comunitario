@@ -9,6 +9,7 @@ import { initPeriodoEscolar, PeriodoEscolar } from './PeriodoEscolar';
 import { initGradoAno, GradoAno } from './GradoAno';
 import { initSeccion, Seccion } from './Seccion';
 import { initAsignatura, Asignatura } from './Asignatura';
+import { initTipoPlanEstudio, TipoPlanEstudio } from './TipoPlanEstudio';
 import { initPlanEstudio, PlanEstudio } from './PlanEstudio';
 import { initRepresentante, Representante } from './Representante';
 import { initEstudiante, Estudiante } from './Estudiante';
@@ -49,6 +50,7 @@ initPeriodoEscolar(sequelize);
 initGradoAno(sequelize);
 initSeccion(sequelize);
 initAsignatura(sequelize);
+initTipoPlanEstudio(sequelize);
 initPlanEstudio(sequelize);
 initRepresentante(sequelize);
 initEstudiante(sequelize);
@@ -81,6 +83,7 @@ const models = {
   GradoAno,
   Seccion,
   Asignatura,
+  TipoPlanEstudio,
   PlanEstudio,
   Representante,
   Estudiante,
@@ -122,6 +125,7 @@ export {
   GradoAno,
   Seccion,
   Asignatura,
+  TipoPlanEstudio,
   PlanEstudio,
   Representante,
   Estudiante,

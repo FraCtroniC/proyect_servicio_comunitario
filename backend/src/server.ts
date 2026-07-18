@@ -2,7 +2,6 @@ import { createServer } from 'http';
 import app from './app';
 import { environment } from '../config/environment';
 import { sequelize } from './models';
-import { connectRedis, closeRedis } from '../config/redis';
 import { initSocket } from './socket';
 
 async function main() {
@@ -10,17 +9,6 @@ async function main() {
     console.log('Conectando a la base de datos con Sequelize...');
     await sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
-
-    if (environment.redisUrl) {
-      try {
-        await connectRedis();
-        console.log('Conexión a Redis establecida correctamente.');
-      } catch (err) {
-        console.warn('No se pudo conectar a Redis. La caché continuará sin Redis:', (err as Error).message);
-      }
-    } else {
-      console.log('REDIS_URL no configurada. La caché no estará disponible.');
-    }
   } catch (err) {
     console.error('Error al conectar con PostgreSQL mediante Sequelize:', err);
     process.exit(1);
@@ -46,9 +34,6 @@ const gracefulShutdown = async () => {
     console.log('Cerrando conexión de Sequelize...');
     await sequelize.close();
     console.log('Conexión de Sequelize cerrada correctamente.');
-
-    await closeRedis();
-    console.log('Conexión de Redis cerrada correctamente.');
 
     process.exit(0);
   } catch (err) {

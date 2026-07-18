@@ -101,6 +101,13 @@ export interface Subject {
   tipoCalificacion?: 'Cuantitativa' | 'Cualitativo';
 }
 
+export interface StudyPlanVersion {
+  id_tipo_plan: number;
+  nombre: string;
+  resolucion: string | null;
+  estatus: 'Activo' | 'Inactivo';
+}
+
 export interface StudyPlanItem {
   id: string;
   subjectId: string;
@@ -109,6 +116,7 @@ export interface StudyPlanItem {
   codigo: string;
   posicion: number;
   tipoCalificacion: 'Cuantitativa' | 'Cualitativo';
+  id_tipo_plan: number;
 }
 
 export interface EvaluationItem {
