@@ -165,10 +165,27 @@ export default function App() {
   const [horariosDisponibles, setHorariosDisponibles] = useState<SubjectSchedule[]>([]);
   const [miHorario, setMiHorario] = useState<SubjectSchedule[]>([]);
 
-  // Simulated login/role permission state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('super_admin'); // SuperAdmin by default so everything is unlocked
+  const checkInitialAuth = () => {
+    try {
+      const storedUser = sessionStorage.getItem('frontend_new_user');
+      const sessionData = sessionStorage.getItem('liceo-auth-session');
+      if (storedUser && sessionData) {
+        const parsedSession = JSON.parse(sessionData);
+        if (parsedSession.expiresAt && parsedSession.expiresAt > Date.now()) {
+          return { isLoggedIn: true, user: JSON.parse(storedUser) as User };
+        }
+      }
+    } catch (e) {
+      console.error('Error verificando sesión:', e);
+    }
+    return { isLoggedIn: false, user: null };
+  };
+
+  const initialAuth = checkInitialAuth();
+
+  const [isLoggedIn, setIsLoggedIn] = useState(initialAuth.isLoggedIn);
+  const [currentUser, setCurrentUser] = useState<User | null>(initialAuth.user);
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>(initialAuth.user?.role || 'super_admin');
   const [activeTab, setActiveTab] = useState<string>(() => {
     return localStorage.getItem('mppe_active_tab') || 'dashboard';
   });
@@ -178,23 +195,9 @@ export default function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedUser = sessionStorage.getItem('frontend_new_user');
-      const sessionData = sessionStorage.getItem('liceo-auth-session');
-      if (storedUser && sessionData) {
-        const parsedSession = JSON.parse(sessionData);
-        if (parsedSession.expiresAt && parsedSession.expiresAt > Date.now()) {
-          const user = JSON.parse(storedUser) as User;
-          setCurrentUser(user);
-          setCurrentUserRole(user.role);
-          setIsLoggedIn(true);
-        } else {
-          sessionStorage.removeItem('liceo-auth-session');
-          sessionStorage.removeItem('frontend_new_user');
-        }
-      }
-    } catch (e) {
-      console.error('Error al restaurar sesión:', e);
+    if (!initialAuth.isLoggedIn) {
+      sessionStorage.removeItem('liceo-auth-session');
+      sessionStorage.removeItem('frontend_new_user');
     }
   }, []);
 
@@ -353,6 +356,13 @@ export default function App() {
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setCurrentUserRole(user.role);
+    
+    // Al iniciar sesión, forzar la vista inicial correspondiente a su rol
+    const roleTabs = tabGroups.flatMap(g => g.items).filter(t => t.allowedRoles.includes(user.role));
+    if (roleTabs.length > 0) {
+      setActiveTab(roleTabs[0].id);
+    }
+    
     setIsLoggedIn(true);
     sessionStorage.setItem('frontend_new_user', JSON.stringify(user));
   };
