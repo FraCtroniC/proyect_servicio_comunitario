@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen, Pencil } from 'lucide-react';
+import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen, Pencil, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
@@ -123,6 +123,9 @@ export default function AttendanceTracker({
 
   // Delete confirmation modal state
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Representative modal state
+  const [showRepModal, setShowRepModal] = useState(false);
 
   
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -908,6 +911,19 @@ export default function AttendanceTracker({
                 placeholder="Buscar estudiante por nombre o cédula..."
               />
             </div>
+            {selectedBitacoraStudent && (() => {
+              const selStudent = students.find(s => s.id === selectedBitacoraStudent);
+              return selStudent ? (
+                <button
+                  onClick={() => setShowRepModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer self-end"
+                  title="Ver representante legal"
+                >
+                  <UserIcon className="h-4 w-4 text-slate-500" />
+                  <span className="text-sm text-slate-600">Representante</span>
+                </button>
+              ) : null;
+            })()}
           </div>
 
           {selectedBitacoraStudent && (() => {
@@ -986,7 +1002,7 @@ export default function AttendanceTracker({
                                       {att.observacion.gravedad}
                                     </span>
                                   )}
-                                  <span>{att.observacion?.texto}</span>
+                                   <span>{att.observacion?.texto}</span>
                                 </div>
                               </td>
                               <td className="py-3 px-4 text-center">
@@ -1632,6 +1648,52 @@ export default function AttendanceTracker({
         </div>
       </Modal>
 
+      {/* Representative Modal */}
+      <Modal isOpen={showRepModal} onClose={() => setShowRepModal(false)} title="Representante Legal">
+        {(() => {
+          const sel = students.find(s => s.id === selectedBitacoraStudent);
+          if (!sel) return <p className="text-slate-400">No hay estudiante seleccionado</p>;
+          return (
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-700">{sel.representativeName}</p>
+                    <p className="text-xs text-slate-400">Representante de {sel.firstName} {sel.lastName}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase">Cédula</span>
+                    <p className="text-slate-700">{sel.representativeCedula || '—'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase">Teléfono</span>
+                    <p className="text-slate-700">{sel.representativePhone || '—'}</p>
+                  </div>
+                  {sel.representativeEmail && (
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 uppercase">Correo</span>
+                      <p className="text-slate-700">{sel.representativeEmail}</p>
+                    </div>
+                  )}
+                  {sel.representativeAddress && (
+                    <div className="sm:col-span-2">
+                      <span className="text-xs font-bold text-slate-400 uppercase">Dirección</span>
+                      <p className="text-slate-700">{sel.representativeAddress}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+
     </div>
   );
 }
+

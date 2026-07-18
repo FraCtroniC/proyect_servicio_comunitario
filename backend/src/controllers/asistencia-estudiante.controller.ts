@@ -22,7 +22,7 @@ const MATRICULA_INCLUDES = [{
     { model: Estudiante, as: 'estudiante' },
     { model: Seccion, as: 'seccion' }
   ]
-}];
+}, { model: ObservacionEstudiante, as: 'observacion' }];
 
 export const AsistenciaEstudianteController = {
   listar: wrapAsync(async (req: Request, res: Response) => {
@@ -68,7 +68,7 @@ export const AsistenciaEstudianteController = {
       ]
     };
 
-    const include: any[] = [includeMatricula];
+    const include: any[] = [includeMatricula, { model: ObservacionEstudiante, as: 'observacion' }];
 
     const hasHorarioFilter = Object.keys(horarioWhere).length > 0
       || req.query.id_horario;
