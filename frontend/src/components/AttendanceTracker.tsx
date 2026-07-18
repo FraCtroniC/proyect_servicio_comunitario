@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen } from 'lucide-react';
+import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
@@ -31,6 +31,8 @@ interface AttendanceTrackerProps {
   onUpdateTeacherLog: (logId: string, clockOut: string) => void;
   onSyncInasistencias?: (ids_matricula: string[]) => void;
   onJustifyTeacherAbsence?: (logId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
+  onJustifyStudentAbsence?: (attendanceId: string, motivo: string, soporteDigital?: string) => Promise<boolean>;
+  onSaveObservacion?: (attendanceId: string, observacion: string) => Promise<boolean>;
   onDeleteAttendance?: (attendanceId: string) => void;
   onRefreshData?: () => Promise<void>;
   onFetchMiHorario?: (fecha?: string) => Promise<void>;
@@ -57,13 +59,26 @@ export default function AttendanceTracker({
   onUpdateTeacherLog,
   onSyncInasistencias,
   onJustifyTeacherAbsence,
+  onJustifyStudentAbsence,
+  onSaveObservacion,
   onDeleteAttendance,
   onRefreshData,
   onFetchMiHorario,
   onFetchHorarios
 }: AttendanceTrackerProps) {
   // Navigation
-  const [trackerTab, setTrackerTab] = useState<'students' | 'teachers' | 'miclase'>('students');
+  const [trackerTab, setTrackerTab] = useState<'students' | 'teachers' | 'miclase' | 'bitacora'>('students');
+
+  // Bitácora state
+  const [bitacoraTab, setBitacoraTab] = useState<'observaciones' | 'justificaciones'>('observaciones');
+  const [selectedBitacoraStudent, setSelectedBitacoraStudent] = useState<string>('');
+  const [bitacoraEditObs, setBitacoraEditObs] = useState<Attendance | null>(null);
+  const [bitacoraEditObsText, setBitacoraEditObsText] = useState('');
+  const [bitacoraEditObsLoading, setBitacoraEditObsLoading] = useState(false);
+  const [bitacoraEditJust, setBitacoraEditJust] = useState<Attendance | null>(null);
+  const [bitacoraEditJustMotivo, setBitacoraEditJustMotivo] = useState('');
+  const [bitacoraEditJustSoporte, setBitacoraEditJustSoporte] = useState('');
+  const [bitacoraEditJustLoading, setBitacoraEditJustLoading] = useState(false);
 
   // Student Attendance Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
@@ -91,6 +106,17 @@ export default function AttendanceTracker({
   // Justification Modal state
   const [teacherJustifyLog, setTeacherJustifyLog] = useState<TeacherScheduleLog | null>(null);
   const [justifyMotivo, setJustifyMotivo] = useState('');
+
+  // Student Justification Modal state
+  const [studentJustifyAtt, setStudentJustifyAtt] = useState<Attendance | null>(null);
+  const [studentJustifyMotivo, setStudentJustifyMotivo] = useState('');
+  const [studentJustifySoporte, setStudentJustifySoporte] = useState('');
+  const [studentJustifyLoading, setStudentJustifyLoading] = useState(false);
+
+  // Observation Modal state
+  const [obsModalAtt, setObsModalAtt] = useState<Attendance | null>(null);
+  const [obsModalText, setObsModalText] = useState('');
+  const [obsModalLoading, setObsModalLoading] = useState(false);
 
   
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -289,6 +315,18 @@ export default function AttendanceTracker({
         >
           <BookOpen className="h-4 w-4" />
           <span>Mi Clase</span>
+        </button>
+        <button
+          id="btn-att-bitacora"
+          onClick={() => setTrackerTab('bitacora')}
+          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+            trackerTab === 'bitacora' 
+              ? 'border-indigo-600 text-indigo-700' 
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          <span>Bitácora Estudiantil</span>
         </button>
         <button
           id="btn-att-teachers"
@@ -561,6 +599,19 @@ export default function AttendanceTracker({
                                         return;
                                       }
                                       if (isLoading) return;
+                                      if (flag === 'J') {
+                                        if (currentStatus === 'J' && todayAtt) {
+                                          const existingJust = todayAtt.justificaciones?.[0];
+                                          setStudentJustifyAtt(todayAtt);
+                                          setStudentJustifyMotivo(existingJust?.motivo || '');
+                                          setStudentJustifySoporte(existingJust?.soporte_digital || '');
+                                        } else {
+                                          setStudentJustifyAtt(todayAtt || { id: `temp-${student.id}-${selectedDate}`, studentId: student.id, date: selectedDate, academicYear: selectedYear, section: selectedSection, status: 'A' });
+                                          setStudentJustifyMotivo('');
+                                          setStudentJustifySoporte('');
+                                        }
+                                        return;
+                                      }
                                       setLoadingStudentId(student.id);
                                       try {
                                         await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, observaciones[student.id] || '', selectedSubject || undefined);
@@ -578,14 +629,24 @@ export default function AttendanceTracker({
                             </div>
                           </td>
                           <td className="py-3">
-                            <input
-                              type="text"
-                              value={observaciones[student.id] || ''}
-                              onChange={(e) => setObservaciones(prev => ({ ...prev, [student.id]: e.target.value }))}
-                              placeholder="Observación"
-                              className="w-24 text-xs p-1 bg-slate-50 border border-slate-200 rounded font-mono"
-                              maxLength={255}
-                            />
+                            {todayAtt ? (
+                              <button
+                                onClick={() => {
+                                  setObsModalAtt(todayAtt);
+                                  setObsModalText(todayAtt.observacion || observaciones[student.id] || '');
+                                }}
+                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                  (todayAtt.observacion || observaciones[student.id])
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
+                                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                                }`}
+                                title={todayAtt.observacion ? 'Ver/editar observación' : 'Agregar observación'}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 text-xs">—</span>
+                            )}
                           </td>
                           <td className="py-3 text-right">
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getAttendanceRateColor(rate)}`}>
@@ -774,6 +835,166 @@ export default function AttendanceTracker({
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/*************** BITÁCORA ESTUDIANTIL ***************/}
+      {trackerTab === 'bitacora' && (
+        <div id="bitacora-container" className="space-y-6">
+          {/* Header + Student Picker */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-wrap gap-4 items-center">
+            <div className="flex flex-col gap-1 w-96">
+              <span className="text-sm font-bold text-slate-400 uppercase">Seleccione Estudiante</span>
+              <SearchableSelect
+                options={students.filter(s => s.status === 'Activo').map(s => ({
+                  value: s.id,
+                  label: `[${s.academicYear}° Año "${s.section}"] - ${s.lastName}, ${s.firstName} (${s.cedula})`
+                }))}
+                value={selectedBitacoraStudent}
+                onChange={(val) => setSelectedBitacoraStudent(String(val))}
+                placeholder="Buscar estudiante por nombre o cédula..."
+              />
+            </div>
+          </div>
+
+          {selectedBitacoraStudent && (() => {
+            const studentAtts = attendance.filter(a => a.studentId === selectedBitacoraStudent);
+            const obsAtts = studentAtts.filter(a => a.observacion && a.observacion.trim());
+            const justAtts = studentAtts.filter(a => a.status === 'J' && a.justificaciones && a.justificaciones.length > 0);
+
+            return (
+              <>
+                {/* Sub-filters pills */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tipo:</span>
+                  {[
+                    { value: 'observaciones' as const, label: 'Observaciones', count: obsAtts.length, bg: 'bg-blue-50', activeBg: 'bg-blue-600', activeText: 'text-white' },
+                    { value: 'justificaciones' as const, label: 'Justificaciones', count: justAtts.length, bg: 'bg-amber-50', activeBg: 'bg-amber-600', activeText: 'text-white' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setBitacoraTab(opt.value)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                        bitacoraTab === opt.value
+                          ? `${opt.activeBg} ${opt.activeText} border-transparent shadow-sm`
+                          : `${opt.bg} text-slate-600 border-slate-200 hover:border-slate-300`
+                      }`}
+                    >
+                      {opt.label} ({opt.count})
+                    </button>
+                  ))}
+                </div>
+
+                {/* Observaciones Table */}
+                {bitacoraTab === 'observaciones' && (
+                  <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+                    {obsAtts.length > 0 ? (
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold text-xs tracking-wider">
+                            <th className="py-3 px-4">Fecha</th>
+                            <th className="py-3 px-4">Año / Sección</th>
+                            <th className="py-3 px-4">Estado</th>
+                            <th className="py-3 px-4">Observación</th>
+                            <th className="py-3 px-4 text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-700">
+                          {obsAtts.sort((a, b) => b.date.localeCompare(a.date)).map(att => (
+                            <tr key={att.id} className="hover:bg-slate-50/40 transition-colors">
+                              <td className="py-3 px-4 font-mono text-sm">{att.date}</td>
+                              <td className="py-3 px-4">{att.academicYear}° Año "{att.section}"</td>
+                              <td className="py-3 px-4">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                  att.status === 'P' ? 'bg-green-100 text-green-700' :
+                                  att.status === 'A' ? 'bg-rose-100 text-rose-700' :
+                                  'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {att.status === 'P' ? 'Presente' : att.status === 'A' ? 'Ausente' : 'Justificado'}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-sm max-w-xs">{att.observacion}</td>
+                              <td className="py-3 px-4 text-center">
+                                <button
+                                  onClick={() => {
+                                    setBitacoraEditObs(att);
+                                    setBitacoraEditObsText(att.observacion || '');
+                                  }}
+                                  className="p-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
+                                  title="Editar observación"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="py-12 text-center text-slate-400 font-medium">No hay observaciones registradas para este estudiante.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Justificaciones Table */}
+                {bitacoraTab === 'justificaciones' && (
+                  <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+                    {justAtts.length > 0 ? (
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold text-xs tracking-wider">
+                            <th className="py-3 px-4">Fecha</th>
+                            <th className="py-3 px-4">Año / Sección</th>
+                            <th className="py-3 px-4">Motivo</th>
+                            <th className="py-3 px-4">Soporte</th>
+                            <th className="py-3 px-4">Registrada</th>
+                            <th className="py-3 px-4 text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-700">
+                          {justAtts.sort((a, b) => b.date.localeCompare(a.date)).map(att => {
+                            const just = att.justificaciones?.[0];
+                            return (
+                              <tr key={att.id} className="hover:bg-slate-50/40 transition-colors">
+                                <td className="py-3 px-4 font-mono text-sm">{att.date}</td>
+                                <td className="py-3 px-4">{att.academicYear}° Año "{att.section}"</td>
+                                <td className="py-3 px-4 text-sm max-w-xs">{just?.motivo}</td>
+                                <td className="py-3 px-4 text-sm text-slate-500">{just?.soporte_digital || '—'}</td>
+                                <td className="py-3 px-4 text-xs text-slate-400 font-mono">{just?.created_at ? new Date(just.created_at).toLocaleDateString() : '—'}</td>
+                                <td className="py-3 px-4 text-center">
+                                  <button
+                                    onClick={() => {
+                                      setBitacoraEditJust(att);
+                                      setBitacoraEditJustMotivo(just?.motivo || '');
+                                      setBitacoraEditJustSoporte(just?.soporte_digital || '');
+                                    }}
+                                    className="p-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer"
+                                    title="Editar justificación"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="py-12 text-center text-slate-400 font-medium">No hay justificaciones registradas para este estudiante.</p>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          {!selectedBitacoraStudent && (
+            <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center">
+              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-400 font-medium">Seleccione un estudiante para ver su bitácora de observaciones y justificaciones.</p>
             </div>
           )}
         </div>
@@ -1019,6 +1240,237 @@ export default function AttendanceTracker({
               className="px-4 py-2 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
             >
               Guardar Justificación
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Student Justification Modal */}
+      <Modal isOpen={!!studentJustifyAtt} onClose={() => {
+        setStudentJustifyAtt(null);
+        setStudentJustifyMotivo('');
+        setStudentJustifySoporte('');
+      }} title={studentJustifyAtt?.justificaciones?.length ? "Editar Justificación Estudiante" : "Justificar Inasistencia Estudiante"}>
+        <div className="space-y-4">
+          {studentJustifyAtt && (
+            <p className="text-sm text-slate-500">
+              Estudiante: <strong>{students.find(s => s.id === studentJustifyAtt.studentId)?.firstName} {students.find(s => s.id === studentJustifyAtt.studentId)?.lastName}</strong>
+              {' '}&mdash; {studentJustifyAtt.date}
+            </p>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Motivo de la Justificación *</label>
+            <textarea
+              value={studentJustifyMotivo}
+              onChange={e => setStudentJustifyMotivo(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
+              placeholder="Ej. Cita médica, reposo, etc..."
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
+            <input
+              type="text"
+              value={studentJustifySoporte}
+              onChange={e => setStudentJustifySoporte(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+              placeholder="Referencia al documento físico o link"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button
+              onClick={() => {
+                setStudentJustifyAtt(null);
+                setStudentJustifyMotivo('');
+                setStudentJustifySoporte('');
+              }}
+              className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              disabled={studentJustifyLoading}
+              onClick={async () => {
+                if (!studentJustifyAtt) return;
+                if (!studentJustifyMotivo.trim()) {
+                  toast.error("El motivo es obligatorio.");
+                  return;
+                }
+                setStudentJustifyLoading(true);
+                try {
+                  if (onJustifyStudentAbsence) {
+                    const success = await onJustifyStudentAbsence(studentJustifyAtt.id, studentJustifyMotivo, studentJustifySoporte || undefined);
+                    if (success) {
+                      setStudentJustifyAtt(null);
+                      setStudentJustifyMotivo('');
+                      setStudentJustifySoporte('');
+                    }
+                  }
+                } finally {
+                  setStudentJustifyLoading(false);
+                }
+              }}
+              className={`px-4 py-2 text-base font-bold text-white rounded-lg transition-colors cursor-pointer ${studentJustifyLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            >
+              {studentJustifyLoading ? 'Guardando...' : 'Justificar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Student Observation Modal */}
+      <Modal isOpen={!!obsModalAtt} onClose={() => {
+        setObsModalAtt(null);
+        setObsModalText('');
+      }} title="Observación del Estudiante">
+        <div className="space-y-4">
+          {obsModalAtt && (
+            <p className="text-sm text-slate-500">
+              Estudiante: <strong>{students.find(s => s.id === obsModalAtt.studentId)?.firstName} {students.find(s => s.id === obsModalAtt.studentId)?.lastName}</strong>
+              {' '}&mdash; {obsModalAtt.date}
+            </p>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Observación</label>
+            <textarea
+              value={obsModalText}
+              onChange={e => setObsModalText(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[100px]"
+              placeholder="Escriba la observación del día para este estudiante..."
+              maxLength={255}
+            />
+            <p className="text-[10px] text-slate-400 text-right">{obsModalText.length}/255</p>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button
+              onClick={() => {
+                setObsModalAtt(null);
+                setObsModalText('');
+              }}
+              className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              disabled={obsModalLoading}
+              onClick={async () => {
+                if (!obsModalAtt) return;
+                setObsModalLoading(true);
+                try {
+                  if (onSaveObservacion) {
+                    const success = await onSaveObservacion(obsModalAtt.id, obsModalText);
+                    if (success) {
+                      setObsModalAtt(null);
+                      setObsModalText('');
+                    }
+                  }
+                } finally {
+                  setObsModalLoading(false);
+                }
+              }}
+              className={`px-4 py-2 text-base font-bold text-white rounded-lg transition-colors cursor-pointer ${obsModalLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            >
+              {obsModalLoading ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bitácora - Edit Observation Modal */}
+      <Modal isOpen={!!bitacoraEditObs} onClose={() => { setBitacoraEditObs(null); setBitacoraEditObsText(''); }} title="Editar Observación">
+        <div className="space-y-4">
+          {bitacoraEditObs && (
+            <p className="text-sm text-slate-500">
+              <strong>{students.find(s => s.id === bitacoraEditObs.studentId)?.firstName} {students.find(s => s.id === bitacoraEditObs.studentId)?.lastName}</strong>
+              {' '}&mdash; {bitacoraEditObs.date}
+            </p>
+          )}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Observación</label>
+            <textarea
+              value={bitacoraEditObsText}
+              onChange={e => setBitacoraEditObsText(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[100px]"
+              placeholder="Escriba la observación..."
+              maxLength={255}
+            />
+            <p className="text-[10px] text-slate-400 text-right">{bitacoraEditObsText.length}/255</p>
+          </div>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => { setBitacoraEditObs(null); setBitacoraEditObsText(''); }} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button
+              disabled={bitacoraEditObsLoading}
+              onClick={async () => {
+                if (!bitacoraEditObs) return;
+                setBitacoraEditObsLoading(true);
+                try {
+                  if (onSaveObservacion) {
+                    const success = await onSaveObservacion(bitacoraEditObs.id, bitacoraEditObsText);
+                    if (success) { setBitacoraEditObs(null); setBitacoraEditObsText(''); }
+                  }
+                } finally { setBitacoraEditObsLoading(false); }
+              }}
+              className={`px-4 py-2 text-base font-bold text-white rounded-lg transition-colors cursor-pointer ${bitacoraEditObsLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            >
+              {bitacoraEditObsLoading ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bitácora - Edit Justification Modal */}
+      <Modal isOpen={!!bitacoraEditJust} onClose={() => { setBitacoraEditJust(null); setBitacoraEditJustMotivo(''); setBitacoraEditJustSoporte(''); }} title="Editar Justificación">
+        <div className="space-y-4">
+          {bitacoraEditJust && (
+            <p className="text-sm text-slate-500">
+              <strong>{students.find(s => s.id === bitacoraEditJust.studentId)?.firstName} {students.find(s => s.id === bitacoraEditJust.studentId)?.lastName}</strong>
+              {' '}&mdash; {bitacoraEditJust.date}
+            </p>
+          )}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Motivo *</label>
+            <textarea
+              value={bitacoraEditJustMotivo}
+              onChange={e => setBitacoraEditJustMotivo(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg min-h-[80px]"
+              placeholder="Motivo de la justificación..."
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 uppercase">Soporte Digital (Opcional)</label>
+            <input
+              type="text"
+              value={bitacoraEditJustSoporte}
+              onChange={e => setBitacoraEditJustSoporte(e.target.value)}
+              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+              placeholder="Referencia al documento o link"
+            />
+          </div>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onClick={() => { setBitacoraEditJust(null); setBitacoraEditJustMotivo(''); setBitacoraEditJustSoporte(''); }} className="px-4 py-2 text-base text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Cancelar</button>
+            <button
+              disabled={bitacoraEditJustLoading}
+              onClick={async () => {
+                if (!bitacoraEditJust) return;
+                if (!bitacoraEditJustMotivo.trim()) { toast.error("El motivo es obligatorio."); return; }
+                setBitacoraEditJustLoading(true);
+                try {
+                  if (onJustifyStudentAbsence) {
+                    const success = await onJustifyStudentAbsence(bitacoraEditJust.id, bitacoraEditJustMotivo, bitacoraEditJustSoporte || undefined);
+                    if (success) { setBitacoraEditJust(null); setBitacoraEditJustMotivo(''); setBitacoraEditJustSoporte(''); }
+                  }
+                } finally { setBitacoraEditJustLoading(false); }
+              }}
+              className={`px-4 py-2 text-base font-bold text-white rounded-lg transition-colors cursor-pointer ${bitacoraEditJustLoading ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            >
+              {bitacoraEditJustLoading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>

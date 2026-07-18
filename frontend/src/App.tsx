@@ -43,7 +43,8 @@ import {
   SchoolPeriod,
   Section,
   Docente,
-  SubjectSchedule
+  SubjectSchedule,
+  JustificacionEstudiante
 } from './types';
 
 import { api } from './services/api';
@@ -455,6 +456,21 @@ export default function App() {
           }
 
           if (Array.isArray(asistenciasEstudiantesData)) {
+            const justificacionesData = await api.get<any[]>('/api/justificaciones-estudiantes').catch(() => []);
+            const justMap = new Map<number, JustificacionEstudiante[]>();
+            if (Array.isArray(justificacionesData)) {
+              justificacionesData.forEach((j: any) => {
+                const key = j.id_asistencia_est;
+                if (!justMap.has(key)) justMap.set(key, []);
+                justMap.get(key)!.push({
+                  id: j.id_justificacion_est,
+                  id_asistencia_est: j.id_asistencia_est,
+                  motivo: j.motivo || '',
+                  soporte_digital: j.soporte_digital || null,
+                  created_at: j.created_at,
+                });
+              });
+            }
             setAttendance(asistenciasEstudiantesData.map((a: any) => ({
               id: String(a.id_asistencia_est),
               studentId: String(a.matricula?.id_estudiante || ''),
@@ -462,7 +478,9 @@ export default function App() {
               date: a.fecha,
               academicYear: a.matricula?.seccion?.id_grado || 1,
               section: a.matricula?.seccion?.letra || 'A',
-              status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P')
+              status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P'),
+              observacion: a.observacion || undefined,
+              justificaciones: justMap.get(a.id_asistencia_est) || [],
             })));
           }
         } catch (error: any) {
@@ -999,6 +1017,21 @@ export default function App() {
       }
 
       if (Array.isArray(asistenciasEstudiantesData)) {
+        const justificacionesData = await api.get<any[]>('/api/justificaciones-estudiantes').catch(() => []);
+        const justMap = new Map<number, JustificacionEstudiante[]>();
+        if (Array.isArray(justificacionesData)) {
+          justificacionesData.forEach((j: any) => {
+            const key = j.id_asistencia_est;
+            if (!justMap.has(key)) justMap.set(key, []);
+            justMap.get(key)!.push({
+              id: j.id_justificacion_est,
+              id_asistencia_est: j.id_asistencia_est,
+              motivo: j.motivo || '',
+              soporte_digital: j.soporte_digital || null,
+              created_at: j.created_at,
+            });
+          });
+        }
         setAttendance(asistenciasEstudiantesData.map((a: any) => ({
           id: String(a.id_asistencia_est),
           studentId: String(a.matricula?.id_estudiante || ''),
@@ -1006,7 +1039,9 @@ export default function App() {
           date: a.fecha,
           academicYear: a.matricula?.seccion?.id_grado || 1,
           section: a.matricula?.seccion?.letra || 'A',
-          status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P')
+          status: a.estatus === 'Ausente' ? 'A' : (a.estatus === 'Justificado' ? 'J' : 'P'),
+          observacion: a.observacion || undefined,
+          justificaciones: justMap.get(a.id_asistencia_est) || [],
         })));
       }
     } catch (e) {
@@ -1084,6 +1119,49 @@ export default function App() {
     } catch (e: any) {
       console.error('Error al guardar asistencia estudiantil', e);
       toast.error('Error al guardar asistencia: ' + (e?.response?.data?.error?.message || e.message));
+    }
+  };
+
+  const handleJustifyStudentAbsence = async (attendanceId: string, motivo: string, soporteDigital?: string): Promise<boolean> => {
+    try {
+      const realId = Number(attendanceId.replace(/^[a-zA-Z]+-/, ''));
+      const payload: any = { id_asistencia_est: realId, motivo };
+      if (soporteDigital) payload.soporte_digital = soporteDigital;
+      const resp = await api.post<any>('/api/justificaciones-estudiantes', payload);
+      const newJust: JustificacionEstudiante = {
+        id: resp.id_justificacion_est || resp.id,
+        id_asistencia_est: realId,
+        motivo,
+        soporte_digital: soporteDigital || null,
+        created_at: resp.created_at || new Date().toISOString(),
+      };
+      setAttendance(p => p.map(a => {
+        if (a.id === attendanceId) {
+          const currentJusts = a.justificaciones || [];
+          return { ...a, status: 'J' as const, justificaciones: [...currentJusts, newJust] };
+        }
+        return a;
+      }));
+      toast.success('Justificación registrada');
+      return true;
+    } catch (e: any) {
+      console.error('Error al crear justificación estudiante', e);
+      toast.error('Error al justificar: ' + (e?.response?.data?.error?.message || e.message));
+      return false;
+    }
+  };
+
+  const handleSaveObservacion = async (attendanceId: string, observacion: string): Promise<boolean> => {
+    try {
+      const realId = attendanceId.replace(/^[a-zA-Z]+-/, '');
+      await api.patch(`/api/asistencias-estudiantes/${realId}`, { observacion: observacion || null });
+      setAttendance(p => p.map(a => a.id === attendanceId ? { ...a, observacion: observacion || undefined } : a));
+      toast.success('Observación guardada');
+      return true;
+    } catch (e: any) {
+      console.error('Error al guardar observación', e);
+      toast.error('Error al guardar observación: ' + (e?.response?.data?.error?.message || e.message));
+      return false;
     }
   };
 
@@ -1752,6 +1830,8 @@ export default function App() {
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
+                  onJustifyStudentAbsence={handleJustifyStudentAbsence}
+                  onSaveObservacion={handleSaveObservacion}
                   onDeleteAttendance={handleDeleteAttendance}
                   onRefreshData={refreshAttendance}
                   onFetchMiHorario={fetchMiHorario}

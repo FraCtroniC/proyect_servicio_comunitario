@@ -143,6 +143,8 @@ export interface Attendance {
   status: 'P' | 'A' | 'J'; // Presente, Ausente, Justificado
   subjectId?: string;
   horarioId?: string;    // id_horario from HorarioDocente
+  observacion?: string;
+  justificaciones?: JustificacionEstudiante[];
 }
 
 export interface SubjectSchedule {
@@ -175,6 +177,14 @@ export interface TeacherScheduleLog {
 export interface JustificacionDocente {
   id: number;
   id_asistencia: number;
+  motivo: string;
+  soporte_digital: string | null;
+  created_at: string;
+}
+
+export interface JustificacionEstudiante {
+  id: number;
+  id_asistencia_est: number;
   motivo: string;
   soporte_digital: string | null;
   created_at: string;
