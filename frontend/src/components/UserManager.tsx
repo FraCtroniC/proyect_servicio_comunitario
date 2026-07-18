@@ -277,6 +277,13 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
     return esp ? esp.nombre : '';
   };
 
+  const baseFilteredUsers = users.filter(u => {
+    const searchLower = filterName.toLowerCase();
+    const matchName = `${u.name} ${u.cedula} ${u.email} ${u.username}`.toLowerCase().includes(searchLower);
+    const matchRole = filterRole ? u.role === filterRole : true;
+    return matchName && matchRole;
+  });
+
   return (
     <>
       <div className="space-y-8 max-w-[2200px] mx-auto p-2 md:p-4 selection:bg-indigo-100 selection:text-indigo-900">
@@ -399,7 +406,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-base font-bold text-slate-800 tracking-tight">Cuentas de Acceso del Sistema</h3>
             <div className="flex items-center gap-4">
-              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Total Cuentas: {users.length}</span>
+              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Total Cuentas: {baseFilteredUsers.length}</span>
               {canCreate && (
                 <button
                   onClick={openAddModal}
@@ -439,8 +446,8 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Estado:</span>
             {[
-              { value: 'active' as const, label: 'Activos', count: users.filter(u => u.active).length, bg: 'bg-green-50', activeBg: 'bg-green-600', activeText: 'text-white' },
-              { value: 'inactive' as const, label: 'Inactivos', count: users.filter(u => !u.active).length, bg: 'bg-red-50', activeBg: 'bg-red-500', activeText: 'text-white' },
+              { value: 'active' as const, label: 'Activos', count: baseFilteredUsers.filter(u => u.active).length, bg: 'bg-green-50', activeBg: 'bg-green-600', activeText: 'text-white' },
+              { value: 'inactive' as const, label: 'Inactivos', count: baseFilteredUsers.filter(u => !u.active).length, bg: 'bg-red-50', activeBg: 'bg-red-500', activeText: 'text-white' },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -458,13 +465,10 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           </div>
 
           {(() => {
-            const filteredUsers = users
+            const filteredUsers = baseFilteredUsers
               .filter(u => {
-                const searchLower = filterName.toLowerCase();
-                const matchName = `${u.name} ${u.cedula} ${u.email} ${u.username}`.toLowerCase().includes(searchLower);
-                const matchRole = filterRole ? u.role === filterRole : true;
                 const matchStatus = filterStatus === 'active' ? u.active : !u.active;
-                return matchName && matchRole && matchStatus;
+                return matchStatus;
               })
               .sort((a, b) => (a.active === b.active ? 0 : a.active ? -1 : 1));
 
