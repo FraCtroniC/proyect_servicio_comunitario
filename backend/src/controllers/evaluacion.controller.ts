@@ -84,10 +84,13 @@ export const EvaluacionController = {
 
     for (const ex of existingEvals) {
       if (!receivedIds.includes(ex.id_evaluacion)) {
-        // Esta evaluación fue eliminada en la UI
-        // Primero eliminar sus notas parciales para evitar errores de llave foránea
-        await NotaParcial.destroy({ where: { id_evaluacion: ex.id_evaluacion } });
-        // Luego eliminar la evaluación
+        // Verificar si la evaluación tiene notas parciales antes de eliminar
+        const notasCount = await NotaParcial.count({ where: { id_evaluacion: ex.id_evaluacion } });
+        if (notasCount > 0) {
+          // No eliminar evaluaciones que tengan notas asociadas
+          continue;
+        }
+        // Eliminar la evaluación solo si no tiene notas
         await ex.destroy();
       }
     }

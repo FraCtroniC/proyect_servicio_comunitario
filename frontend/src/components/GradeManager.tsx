@@ -368,6 +368,10 @@ export default function GradeManager({
     setPlanEvaluations(updated);
   };
 
+  const evaluationHasGrades = (evalId: string): boolean => {
+    return grades.some(g => g.evaluationId === evalId);
+  };
+
   const handleSavePlan = () => {
     const sum = planEvaluations.reduce((acc, curr) => acc + (Number(curr.percentage) || 0), 0);
     const hasZero = planEvaluations.some(ev => !ev.percentage || ev.percentage <= 0);
@@ -660,7 +664,7 @@ export default function GradeManager({
                       />
                       <span className="text-sm font-bold text-slate-500">%</span>
                     </div>
-                    {planEvaluations.length > 2 && (
+                    {planEvaluations.length > 1 && !evaluationHasGrades(ev.id) && (
                       <button 
                         type="button" 
                         onClick={() => handleRemovePlanEvaluation(idx)} 
@@ -668,6 +672,11 @@ export default function GradeManager({
                       >
                         <Trash className="h-4.5 w-4.5" />
                       </button>
+                    )}
+                    {evaluationHasGrades(ev.id) && (
+                      <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0 whitespace-nowrap">
+                        Tiene notas
+                      </span>
                     )}
                   </div>
                 ))}
