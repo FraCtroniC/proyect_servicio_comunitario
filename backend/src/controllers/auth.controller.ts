@@ -280,9 +280,19 @@ export const AuthController = {
     }
 
     const tokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
-    const storedToken = await RefreshToken.findOne({
-      where: { token_hash: tokenHash, revoked_at: null },
-    });
+
+    let storedToken;
+    try {
+      storedToken = await RefreshToken.findOne({
+        where: { token_hash: tokenHash, revoked_at: null },
+      });
+    } catch (err: any) {
+      if (err.name === 'SequelizeDatabaseError' || err.original?.code === 'ECONNRESET') {
+        clearAuthCookies(res);
+        throw new AppError('Sesión expirada, inicie sesión nuevamente', 401);
+      }
+      throw err;
+    }
 
     if (!storedToken || storedToken.expires_at < new Date()) {
       clearAuthCookies(res);

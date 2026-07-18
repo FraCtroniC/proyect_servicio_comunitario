@@ -1,5 +1,21 @@
 import { Options } from 'sequelize';
 
+function createPoolConfig(max: number, min: number): Options['pool'] {
+  return {
+    max,
+    min,
+    acquire: 30000,
+    idle: 10000,
+    validate: (connection: any) => {
+      try {
+        return connection.query('SELECT 1') !== null;
+      } catch {
+        return false;
+      }
+    },
+  };
+}
+
 export const databaseConfig: Record<string, Options> = {
   development: {
     dialect: 'postgres',
@@ -9,12 +25,7 @@ export const databaseConfig: Record<string, Options> = {
         rejectUnauthorized: false, // Requerido para conectar con Neon DB localmente sin certificados locales
       },
     },
-    pool: {
-      max: 10,
-      min: 2,
-      acquire: 30000,
-      idle: 10000,
-    },
+    pool: createPoolConfig(10, 2),
     logging: false,
   },
   test: {
@@ -25,12 +36,7 @@ export const databaseConfig: Record<string, Options> = {
         rejectUnauthorized: false,
       },
     },
-    pool: {
-      max: 10,
-      min: 2,
-      acquire: 30000,
-      idle: 10000,
-    },
+    pool: createPoolConfig(10, 2),
     logging: false,
   },
   production: {
@@ -41,12 +47,7 @@ export const databaseConfig: Record<string, Options> = {
         rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
       },
     },
-    pool: {
-      max: 20,
-      min: 5,
-      acquire: 30000,
-      idle: 10000,
-    },
+    pool: createPoolConfig(20, 5),
     logging: false,
   },
 };
