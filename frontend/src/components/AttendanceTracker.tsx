@@ -135,8 +135,8 @@ export default function AttendanceTracker({
   const currentDocente = docentes.find(d => 
     (currentUser?.teacherId && d.id === currentUser.teacherId) ||
     (currentUser?.cedula && d.cedula === currentUser.cedula) ||
-    (currentUser?.name && `${d.firstName} ${d.lastName}`.toLowerCase().includes(currentUser.name.toLowerCase())) ||
-    (currentUser?.name && currentUser.name.toLowerCase().includes(d.firstName.toLowerCase()))
+    (currentUser?.name && d.firstName && d.lastName && `${d.firstName} ${d.lastName}`.toLowerCase().includes(currentUser.name.toLowerCase())) ||
+    (currentUser?.name && d.firstName && currentUser.name.toLowerCase().includes(d.firstName.toLowerCase()))
   );
   
   const myTeacherId = currentUser?.teacherId || currentDocente?.id;
@@ -406,8 +406,8 @@ export default function AttendanceTracker({
                     { value: '', label: 'Todos los docentes' },
                     ...docentes
                       .filter(d => d.status === 'Activo')
-                      .sort((a, b) => a.lastName.localeCompare(b.lastName))
-                      .map(d => ({ value: d.id, label: `${d.lastName}, ${d.firstName}` }))
+                      .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || ''))
+                      .map(d => ({ value: d.id, label: `${d.lastName || ''}, ${d.firstName || ''}` }))
                   ]}
                   value={selectedTeacher}
                   onChange={(val) => setSelectedTeacher(String(val))}
@@ -430,7 +430,7 @@ export default function AttendanceTracker({
                   })
                   .sort((a: any, b: any) => (a.numero_bloque || 0) - (b.numero_bloque || 0))
                   .map((b: any) => (
-                    <option key={b.id_bloque} value={b.id_bloque}>
+                    <option key={b.id_bloque || b.numero_bloque || `${b.hora_inicio}-${b.hora_fin}`} value={b.id_bloque}>
                       {b.numero_bloque ? `${b.numero_bloque}°` : ''} {b.hora_inicio?.substring(0,5)} - {b.hora_fin?.substring(0,5)}
                     </option>
                   ))}

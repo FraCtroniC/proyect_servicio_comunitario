@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface Option {
@@ -124,9 +124,9 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
         >
           <div className="overflow-y-auto p-1 custom-scrollbar" style={{ maxHeight: '200px' }}>
             {visibleOptions.length > 0 ? (
-              visibleOptions.map((option) => (
+              visibleOptions.map((option, idx) => (
                 <div
-                  key={option.value}
+                  key={option.value || `opt-${idx}`}
                   className={`p-2 text-base cursor-pointer transition-colors ${
                     option.disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'hover:bg-indigo-50 hover:text-indigo-700'
                   } ${

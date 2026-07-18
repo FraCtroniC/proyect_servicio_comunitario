@@ -1555,6 +1555,7 @@ export default function App() {
         <AnimatePresence id="mobile-presence">
           {isMobileMenuOpen && (
             <motion.div
+              key="mobile-backdrop"
               id="mobile-drawer-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1566,6 +1567,7 @@ export default function App() {
           )}
           {isMobileMenuOpen && (
             <motion.div
+              key="mobile-drawer"
               id="mobile-menu-drawer"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
