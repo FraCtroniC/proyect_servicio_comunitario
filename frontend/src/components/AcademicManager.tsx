@@ -431,7 +431,7 @@ export default function AcademicManager({
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Aula Base</label>
               <SearchableSelect
                 options={(classrooms || []).filter(c => c.type === 'Teórica').map(c => {
-                  const isTaken = sections.some(s => s.homeClassroomId === c.id && s.id !== editingSection?.id);
+                  const isTaken = sections.some(s => s.homeClassroomId === c.id && s.id !== editingSection?.id && s.periodId === secPeriodo);
                   return {
                     value: c.id,
                     label: `${c.name} (${c.capacity} cap.) ${isTaken ? '- Ya asignada' : ''}`,
