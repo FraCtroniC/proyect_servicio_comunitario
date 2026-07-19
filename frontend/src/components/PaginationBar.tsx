@@ -7,11 +7,12 @@ interface PaginationBarProps {
   total: number;
   pages: number;
   loading?: boolean;
+  showLimitSelector?: boolean;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
 }
 
-export function PaginationBar({ page, limit, total, pages, loading, onPageChange, onLimitChange }: PaginationBarProps) {
+export function PaginationBar({ page, limit, total, pages, loading, showLimitSelector = true, onPageChange, onLimitChange }: PaginationBarProps) {
   if (total === 0) return null;
 
   const from = (page - 1) * limit + 1;
@@ -72,17 +73,19 @@ export function PaginationBar({ page, limit, total, pages, loading, onPageChange
           <ChevronRight className="w-4 h-4" />
         </button>
 
-        <select
-          value={limit}
-          onChange={(e) => onLimitChange(Number(e.target.value))}
-          disabled={loading}
-          className="ml-2 border border-slate-300 rounded px-2 py-1 text-xs font-semibold text-slate-600 focus:outline-none cursor-pointer"
-        >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
+        {showLimitSelector && (
+          <select
+            value={limit}
+            onChange={(e) => onLimitChange(Number(e.target.value))}
+            disabled={loading}
+            className="ml-2 border border-slate-300 rounded px-2 py-1 text-xs font-semibold text-slate-600 focus:outline-none cursor-pointer"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        )}
       </div>
     </div>
   );

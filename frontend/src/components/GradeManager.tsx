@@ -12,6 +12,7 @@ import { generateBoletinPDF } from '../utils/pdfGenerator';
 import { exportGradesToExcel } from '../utils/excelGenerator';
 import { api } from '../services/api';
 import { SearchableSelect } from './SearchableSelect';
+import { PaginationBar } from './PaginationBar';
 
 interface GradeManagerProps {
   students: Student[];
@@ -70,12 +71,21 @@ export default function GradeManager({
   // Audit logs pagination
   const [visibleAuditLogsCount, setVisibleAuditLogsCount] = useState(3);
 
+  // Grading table pagination
+  const [gradePage, setGradePage] = useState(1);
+  const GRADE_PAGE_LIMIT = 10;
+
   // Sync selectedSubjectId with loaded subjects
   useEffect(() => {
     if (subjects.length > 0 && (!selectedSubjectId || !subjects.find(s => s.id === selectedSubjectId))) {
       setSelectedSubjectId(subjects[0].id);
     }
   }, [subjects, selectedSubjectId]);
+
+  // Reset grade page when filters change
+  useEffect(() => {
+    setGradePage(1);
+  }, [selectedYear, selectedSection, selectedSubjectId, selectedLapso]);
 
   // Sections available for the selected year (from active period)
   const availableSections = useMemo(() => {
@@ -332,6 +342,17 @@ export default function GradeManager({
 
   const activeSectionStudents = students.filter(s => s.academicYear === selectedYear && s.section === selectedSection && s.status === 'Activo');
 
+  const gradeTotalPages = Math.ceil(activeSectionStudents.length / GRADE_PAGE_LIMIT);
+  const gradeOffset = (gradePage - 1) * GRADE_PAGE_LIMIT;
+  const paginatedGradeStudents = activeSectionStudents.slice(gradeOffset, gradeOffset + GRADE_PAGE_LIMIT);
+
+  const gradeMeta = {
+    total: activeSectionStudents.length,
+    page: gradePage,
+    limit: GRADE_PAGE_LIMIT,
+    pages: gradeTotalPages,
+  };
+
   // Load plan evaluations for editing
   const handleStartModifyPlan = () => {
     if (activePlan) {
@@ -407,15 +428,15 @@ export default function GradeManager({
     setUnsavedChanges(prev => ({ ...prev, [`${stdId}-${evId}`]: true }));
     
     if (moveToNext) {
-      const currentIndex = activeSectionStudents.findIndex(s => s.id === stdId);
-      if (currentIndex >= 0 && currentIndex < activeSectionStudents.length - 1) {
-        const nextStudent = activeSectionStudents[currentIndex + 1];
+      const currentIndex = paginatedGradeStudents.findIndex(s => s.id === stdId);
+      if (currentIndex >= 0 && currentIndex < paginatedGradeStudents.length - 1) {
+        const nextStudent = paginatedGradeStudents[currentIndex + 1];
         const nextScoreRecord = grades.find(g => g.studentId === nextStudent.id && g.subjectId === selectedSubjectId && g.lapso === selectedLapso && g.evaluationId === evId);
         
         setEditingGradeCell({ studentId: nextStudent.id, evaluationId: evId });
         setTempGradeValue(nextScoreRecord ? nextScoreRecord.score.toString() : '');
       } else {
-        setEditingGradeCell(null); // Reached the end of the list
+        setEditingGradeCell(null);
       }
     } else {
       setEditingGradeCell(null);
@@ -764,8 +785,8 @@ export default function GradeManager({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150/45 font-medium text-slate-700">
-                  {activeSectionStudents.length > 0 ? (
-                    activeSectionStudents.map(student => {
+                  {paginatedGradeStudents.length > 0 ? (
+                    paginatedGradeStudents.map(student => {
                       const avgObj = activePlan 
                         ? calculateEvaluationAverage(grades, activePlan.evaluations, student.id, selectedSubjectId, selectedLapso)
                         : { raw: 0, rounded: 0 };
@@ -863,6 +884,18 @@ export default function GradeManager({
                 </tbody>
               </table>
             </div>
+
+            {activeSectionStudents.length > GRADE_PAGE_LIMIT && (
+              <PaginationBar
+                page={gradeMeta.page}
+                limit={gradeMeta.limit}
+                total={gradeMeta.total}
+                pages={gradeMeta.pages}
+                showLimitSelector={false}
+                onPageChange={setGradePage}
+                onLimitChange={() => {}}
+              />
+            )}
           </div>
 
           {/* Historial de Modificaciones Card */}
