@@ -575,7 +575,8 @@ export default function App() {
         fecha_nac: newUser.dateOfBirth || undefined,
         id_especialidad: newUser.id_especialidad || undefined,
       };
-      await api.post<any>('/api/usuarios', dto);
+      const created = await api.post<any>('/api/usuarios', dto);
+      setUsers(prev => [mapUsuarioToUser(created), ...prev]);
     } catch (e: any) {
       console.error('Error al crear usuario:', e);
       const err = new Error('Error al crear usuario') as any;
@@ -600,7 +601,8 @@ export default function App() {
       if (data.dateOfBirth) dto.fecha_nac = data.dateOfBirth;
       if (data.id_especialidad !== undefined) dto.id_especialidad = data.id_especialidad;
 
-      await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
+      const updated = await api.patch<any>(`/api/usuarios/${stripId(userId)}`, dto);
+      setUsers(prev => prev.map(u => u.id === userId ? mapUsuarioToUser(updated) : u));
     } catch (e: any) {
       console.error(e);
       const details = e.details;
@@ -619,7 +621,8 @@ export default function App() {
     try {
       const user = users.find(u => u.id === userId);
       if (user) {
-        await api.patch(`/api/usuarios/${stripId(userId)}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
+        const updated = await api.patch<any>(`/api/usuarios/${stripId(userId)}`, { estatus: user.active ? 'Inactivo' : 'Activo' });
+        setUsers(prev => prev.map(u => u.id === userId ? mapUsuarioToUser(updated) : u));
       }
     } catch (e: any) {
       console.error(e);
@@ -749,14 +752,14 @@ export default function App() {
     }
 
     // 2. Create the plan_estudio record
-    await api.post<any>('/api/plan-estudio', {
+    const planResp = await api.post<any>('/api/plan-estudio', {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
       posicion: posicion,
       id_tipo_plan: id_tipo_plan
     });
-    // State updates via WebSocket
+    setStudyPlans(prev => [...prev, mapPlanToStudyPlanItem(planResp)]);
   };
   const handleUpdateStudyPlanItem = async (id: string, name: string, year: number, codigo: string, posicion: number, tipoCalificacion: string, id_tipo_plan: number) => {
     // 1. Ensure subject exists or create it
@@ -772,20 +775,20 @@ export default function App() {
     }
 
     // 2. Update the plan_estudio record
-    await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
+    const planResp = await api.patch<any>(`/api/plan-estudio/${stripId(id)}`, {
       id_asignatura: Number(subjectId),
       id_grado: year,
       codigo_asignatura: codigo,
       posicion: posicion,
       id_tipo_plan: id_tipo_plan
     });
-    // State updates via WebSocket
+    setStudyPlans(prev => prev.map(sp => sp.id === stripId(id) ? mapPlanToStudyPlanItem(planResp) : sp));
   };
 
   const handleDeleteStudyPlanItem = async (id: string) => {
     try {
       await api.delete(`/api/plan-estudio/${stripId(id)}`);
-      // State updates via WebSocket
+      setStudyPlans(prev => prev.filter(sp => sp.id !== stripId(id)));
     } catch (e) {
       console.error(e);
       toast.error('Error al eliminar la materia del plan de estudio');
@@ -840,6 +843,7 @@ export default function App() {
         fecha_inicio: fecha_inicio || null,
         fecha_fin: fecha_fin || null,
       });
+      setPeriods(prev => [...prev, mapPeriodoToSchoolPeriod(resp)]);
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'Error al crear periodo escolar');
@@ -849,7 +853,8 @@ export default function App() {
 
   const handleUpdatePeriodStatus = async (id: string, newStatus: 'Activo' | 'Cerrado' | 'Planificación') => {
     try {
-      await api.patch(`/api/periodos/${stripId(id)}`, { estatus: newStatus });
+      const updated = await api.patch<any>(`/api/periodos/${stripId(id)}`, { estatus: newStatus });
+      setPeriods(prev => prev.map(p => p.id === String(updated.id_periodo) ? mapPeriodoToSchoolPeriod(updated) : p));
     } catch (e) {
       console.error(e);
       toast.error('Error al actualizar periodo escolar');
@@ -859,7 +864,8 @@ export default function App() {
 
   const handleEditPeriod = async (id: string, data: { nombre?: string; estatus?: string; fecha_inicio?: string | null; fecha_fin?: string | null }) => {
     try {
-      await api.patch(`/api/periodos/${stripId(id)}`, data);
+      const updated = await api.patch<any>(`/api/periodos/${stripId(id)}`, data);
+      setPeriods(prev => prev.map(p => p.id === String(updated.id_periodo) ? mapPeriodoToSchoolPeriod(updated) : p));
     } catch (e) {
       console.error(e);
       toast.error('Error al editar periodo escolar');
@@ -881,6 +887,8 @@ export default function App() {
       if (homeClassroomId && !newSection.homeClassroomId) {
         newSection.homeClassroomId = homeClassroomId;
       }
+      setSections(prev => [...prev, newSection]);
+      toast.success(`Sección "${newSection.grade}° ${newSection.letter}" creada exitosamente.`);
       return newSection;
     } catch (e: any) {
       console.error('Error al crear sección:', e);
@@ -899,7 +907,8 @@ export default function App() {
       if (data.homeClassroomId !== undefined) payload.id_aula = Number(data.homeClassroomId.replace(/\D/g, '')) || null;
       if (data.capacityMax !== undefined) payload.capacidad_maxima = data.capacityMax || null;
 
-      await api.patch(`/api/secciones/${sectionId}`, payload);
+      const updated = await api.patch<any>(`/api/secciones/${sectionId}`, payload);
+      setSections(prev => prev.map(s => s.id === sectionId ? mapSeccionToSection(updated) : s));
     } catch (e: any) {
       console.error('Error al actualizar sección:', e);
       const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
@@ -910,6 +919,7 @@ export default function App() {
   const handleDeleteSection = async (sectionId: string) => {
     try {
       await api.delete(`/api/secciones/${sectionId}`);
+      setSections(prev => prev.filter(s => s.id !== sectionId));
     } catch (e: any) {
       console.error('Error al eliminar sección:', e);
       const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
@@ -1457,6 +1467,7 @@ export default function App() {
       };
 
       const created = await api.post<any>('/api/horarios', payload);
+      setScheduleEvents(prev => [...prev, mapHorarioToScheduleEvent(created)]);
     } catch (e: any) {
       console.error('Error al crear horario:', e);
       toast.error('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
@@ -1492,7 +1503,8 @@ export default function App() {
         payload.id_docente = user?.teacherId ? Number(user.teacherId) : Number(evt.teacherId.replace(/\D/g, '')) || 1;
       }
 
-      await api.patch(`/api/horarios/${id}`, payload);
+      const updated = await api.patch<any>(`/api/horarios/${id}`, payload);
+      setScheduleEvents(prev => prev.map(e => e.id === String(id) ? mapHorarioToScheduleEvent(updated) : e));
     } catch (e: any) {
       console.error('Error al actualizar horario:', e);
       toast.error('Error al actualizar horario en BD: ' + (e.message || 'Error desconocido'));
@@ -1504,6 +1516,7 @@ export default function App() {
       const id = Number(evtId.replace(/\D/g, ''));
       if (id) {
         await api.delete(`/api/horarios/${id}`);
+        setScheduleEvents(prev => prev.filter(e => e.id !== String(id)));
         toast.success('Asignación eliminada con éxito');
       }
     } catch (e: any) {
@@ -1513,13 +1526,16 @@ export default function App() {
   };
 
   const handleAddClassroom = async (room: Classroom) => {
-    await api.post<any>('/api/aulas', {
+    const res = await api.post<any>('/api/aulas', {
       nombre_codigo: room.name,
       capacidad: room.capacity,
       tipo_espacio: room.type,
       ubicacion: room.location,
       estatus: 'Activo'
     });
+    if (res?.data) {
+      setClassrooms(prev => [mapAulaToClassroom(res.data), ...prev]);
+    }
   };
 
   const handleEditClassroom = async (roomId: string, data: Partial<Classroom>) => {
@@ -1531,7 +1547,12 @@ export default function App() {
       if (data.type) payload.tipo_espacio = data.type;
       if (data.location !== undefined) payload.ubicacion = data.location;
 
-      await api.patch<any>(`/api/aulas/${id}`, payload);
+      const res = await api.patch<any>(`/api/aulas/${id}`, payload);
+      if (res?.data) {
+        setClassrooms(prev => prev.map(c =>
+          c.id === String(id) ? mapAulaToClassroom(res.data) : c
+        ));
+      }
     }
   };
 
@@ -1539,6 +1560,7 @@ export default function App() {
     const id = Number(roomId.replace(/\D/g, ''));
     if (id) {
       await api.delete(`/api/aulas/${id}`);
+      setClassrooms(prev => prev.filter(c => c.id !== String(id)));
     }
   };
 

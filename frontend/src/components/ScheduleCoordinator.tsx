@@ -273,9 +273,9 @@ export default function ScheduleCoordinator({
     // Create Schedule item
     const newEvent: ScheduleEvent = {
       id: editingEvent || ('ev-' + Date.now()),
-      day: formDay,
+      day: formDay as ScheduleEvent['day'],
       timeBlock: formBlock,
-      year: formYear,
+      year: formYear as AcademicYear,
       section: formSection,
       subjectId: formSubjectId,
       teacherId: formTeacherId,
@@ -576,7 +576,7 @@ export default function ScheduleCoordinator({
               <div id="block-form-sub" className="space-y-0.5">
                 <label className="text-xs font-bold text-slate-400 uppercase">Asignatura</label>
                 <SearchableSelect
-                  options={subjects.filter(s => s.years.includes(formYear)).map(s => ({ value: s.id, label: s.name }))}
+                  options={subjects.filter(s => s.years.includes(formYear as AcademicYear)).map(s => ({ value: s.id, label: s.name }))}
                   value={formSubjectId}
                   onChange={(val) => setFormSubjectId(String(val))}
                   placeholder="Seleccionar..."

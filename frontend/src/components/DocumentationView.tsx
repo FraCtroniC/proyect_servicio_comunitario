@@ -55,7 +55,7 @@ function LoadingFallback() {
   );
 }
 
-const componentMap: Record<TabId, React.LazyExoticComponent<() => JSX.Element>> = {
+const componentMap: Record<TabId, React.LazyExoticComponent<React.ComponentType<any>>> = {
   login: LoginDocs,
   dashboard: DashboardDocs,
   periods: PeriodsDocs,

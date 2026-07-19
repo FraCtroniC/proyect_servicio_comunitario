@@ -21,7 +21,7 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
 
     const socket = io('/', {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
     });
 
     socket.on('connect', () => console.log('[WS] Conectado'));

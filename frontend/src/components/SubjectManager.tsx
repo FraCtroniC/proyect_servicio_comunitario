@@ -512,7 +512,7 @@ export default function SubjectManager({ studyPlans, studyPlanVersions, currentU
               Cancelar
             </button>
             <button
-              onClick={() => planToDelete && handleDeleteStudyPlanItem && (handleDeleteStudyPlanItem(planToDelete.id), setIsDeleteModalOpen(false))}
+              onClick={() => planToDelete && onDeleteStudyPlanItem && (onDeleteStudyPlanItem(planToDelete.id), setIsDeleteModalOpen(false))}
               className="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors cursor-pointer"
             >
               Sí, eliminar materia

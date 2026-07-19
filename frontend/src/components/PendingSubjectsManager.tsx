@@ -300,7 +300,7 @@ export default function PendingSubjectsManager({
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-700">{asig?.nombre || 'Desconocida'}</span>
+                        <span className="font-semibold text-slate-700">{(asig as any)?.nombre || 'Desconocida'}</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-slate-600 font-medium bg-slate-100 inline-block px-2 py-0.5 rounded mb-1">
@@ -503,7 +503,7 @@ export default function PendingSubjectsManager({
               <div className="text-center bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
                 <p className="text-sm text-slate-500 font-bold uppercase">Materia Pendiente</p>
                 <p className="font-bold text-indigo-700">
-                  {selectedPending.asignatura?.nombre || 'Asignatura'}
+                  {(selectedPending.asignatura as any)?.nombre || 'Asignatura'}
                 </p>
               </div>
 

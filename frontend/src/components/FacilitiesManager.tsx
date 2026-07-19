@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { Home, PlusCircle, Trash, Shield, AlertTriangle, Cpu, Radio, ShieldCheck, MapPin, Users, CalendarDays, Edit3, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Home, PlusCircle, Trash, Shield, AlertTriangle, Cpu, Radio, ShieldCheck, MapPin, Users, CalendarDays, Edit3, Trash2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Classroom, ScheduleEvent, UserRole, Section, Student } from '../types';
 import { Modal } from './Modal';
@@ -45,6 +45,16 @@ export default function FacilitiesManager({
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<Classroom | null>(null);
   const [visibleCount, setVisibleCount] = useState(8);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isModalOpen && successTimerRef.current) {
+      clearTimeout(successTimerRef.current);
+      successTimerRef.current = null;
+    }
+    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+  }, [isModalOpen]);
 
   const isDuplicateName = name.trim() !== '' && classrooms.some(
     c => c.name.toUpperCase() === name.toUpperCase() && c.id !== editingRoomId
@@ -61,6 +71,7 @@ export default function FacilitiesManager({
     setEditingRoomId(null);
     setErrorMsg('');
     setFieldErrors({});
+    setSuccessMsg('');
     setIsModalOpen(true);
   };
 
@@ -73,6 +84,7 @@ export default function FacilitiesManager({
     setEditingRoomId(room.id);
     setErrorMsg('');
     setFieldErrors({});
+    setSuccessMsg('');
     setIsModalOpen(true);
   };
 
@@ -85,6 +97,7 @@ export default function FacilitiesManager({
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (editingRoomId) {
         await onEditClassroom(editingRoomId, {
@@ -94,6 +107,7 @@ export default function FacilitiesManager({
           location
         });
         setSuccessMsg(`Aula física "${name}" editada con éxito.`);
+        toast.success(`Aula física "${name}" editada con éxito.`);
       } else {
         const newRoom: Classroom = {
           id: 'rm-' + Date.now(),
@@ -103,7 +117,8 @@ export default function FacilitiesManager({
           location
         };
         await onAddClassroom(newRoom);
-        setSuccessMsg(`Aula física "${newRoom.name}" agregada con éxito.`);
+        setSuccessMsg(`Aula física "${newRoom.name}" registrada exitosamente.`);
+        toast.success(`Aula física "${newRoom.name}" registrada exitosamente.`);
       }
 
       setErrorMsg('');
@@ -111,7 +126,7 @@ export default function FacilitiesManager({
       setName('');
       setCapacity(30);
       setLocation('Planta Baja');
-      setIsModalOpen(false);
+      successTimerRef.current = setTimeout(() => setIsModalOpen(false), 1500);
     } catch (err: any) {
       const details = err.details;
       if (details && typeof details === 'object') {
@@ -119,6 +134,8 @@ export default function FacilitiesManager({
       } else {
         setErrorMsg(err.message || 'Error al guardar el aula.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,6 +331,7 @@ export default function FacilitiesManager({
               onClick={() => {
                 if (roomToDelete) {
                   onRemoveClassroom(roomToDelete.id);
+                  toast.success(`Aula física "${roomToDelete.name}" desincorporada exitosamente.`);
                   setRoomToDelete(null);
                 }
               }}
@@ -432,10 +450,16 @@ export default function FacilitiesManager({
 
             <button
               type="submit"
-              disabled={isDuplicateName || !name.trim()}
-              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
+              disabled={isDuplicateName || !name.trim() || isSubmitting}
+              className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400 flex items-center justify-center gap-2"
             >
-              {isDuplicateName ? 'Nombre ya existe' : 'Registrar Aula en Inventario'}
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> {editingRoomId ? 'Guardando...' : 'Registrando...'}</>
+              ) : isDuplicateName ? (
+                'Nombre ya existe'
+              ) : (
+                editingRoomId ? 'Guardar Cambios' : 'Registrar Aula en Inventario'
+              )}
             </button>
           </form>
         )}

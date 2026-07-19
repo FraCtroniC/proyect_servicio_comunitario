@@ -98,7 +98,7 @@ export default function StudentManager({ students, sections, classrooms, current
     setSelectedStudent(s);
     setIsProfileModalOpen(true);
     try {
-      const res = await api.materiasPendientes.getByStudent(s.id);
+      const res = await api.materiasPendientes.getByStudent(s.id) as any[];
       setPendingSubjects(res);
     } catch (e) {
       console.error(e);
@@ -990,7 +990,7 @@ export default function StudentManager({ students, sections, classrooms, current
                   {pendingSubjects.map(mp => (
                     <li key={mp.id_materia_pendiente} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
                       <div>
-                        <span className="font-bold text-slate-800 text-sm block">{mp.asignatura?.nombre || mp.asignatura?.name || 'Asignatura'}</span>
+                        <span className="font-bold text-slate-800 text-sm block">{(mp.asignatura as any)?.nombre || (mp.asignatura as any)?.name || 'Asignatura'}</span>
                         <span className="text-xs text-slate-500">Periodo de Arrastre: {mp.id_periodo}</span>
                       </div>
                       <div className="text-right">
