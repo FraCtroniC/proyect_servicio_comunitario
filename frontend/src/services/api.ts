@@ -146,6 +146,32 @@ initCsrf();
 
 export const api = {
   get: <T>(url: string, params?: Record<string, any>) => request<T>(url, { method: 'GET', params }),
+  getRaw: async <T>(url: string, params?: Record<string, any>): Promise<T> => {
+    const headers = new Headers();
+    const token = getSessionToken();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) searchParams.append(key, String(val));
+      });
+    }
+    const qs = searchParams.toString();
+    let finalUrl = qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
+
+    let res = await fetch(finalUrl, { headers, credentials: 'include' });
+
+    if (res.status === 401) {
+      const newToken = await refreshSession();
+      if (newToken) {
+        headers.set('Authorization', `Bearer ${newToken}`);
+        res = await fetch(finalUrl, { headers, credentials: 'include' });
+      }
+    }
+
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    return res.json();
+  },
   post: <T>(url: string, body?: any) =>
     request<T>(url, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(url: string, body?: any) =>

@@ -3,6 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number; pages: number };
+}
+
 export type UserRole = 'super_admin' | 'control_estudios' | 'coordinador' | 'docente';
 
 export interface User {
