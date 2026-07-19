@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { Layers, UserPlus, Filter, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Layers, UserPlus, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Student, AcademicYear, UserRole, MateriaPendiente, Section } from '../types';
+import { Student, AcademicYear, UserRole, MateriaPendiente, Section, PaginatedResponse } from '../types';
 import { generateConstanciaEstudio } from '../utils/pdfGenerator';
 import { exportStudentsToExcel } from '../utils/excelGenerator';
 import { Modal } from './Modal';
@@ -14,6 +14,8 @@ import { api } from '../services/api';
 import { getStates, getMunicipalities, getParishes } from '../utils/venezuela';
 import { SearchableSelect } from './SearchableSelect';
 import { calculateAge, validateAgeForYear } from '../utils/ageValidation';
+import { PaginationBar } from './PaginationBar';
+import { mapEstudianteToStudent } from '../services/mappers';
 
 interface StudentManagerProps {
   students: Student[];
@@ -30,9 +32,18 @@ interface StudentManagerProps {
 
 export default function StudentManager({ students, sections, classrooms, currentUserRole, representatives, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending, onRefreshData }: StudentManagerProps) {
   // Filters
-  const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(5); // Default showing 5th year for rich showcase
-  const [selectedSection, setSelectedSection] = useState<string>('A');
+  const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(0);
+  const [selectedSection, setSelectedSection] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [paginatedStudents, setPaginatedStudents] = useState<Student[]>([]);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, pages: 0 });
+  const [loading, setLoading] = useState(false);
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Register Form states
   const [firstName, setFirstName] = useState('');
@@ -93,6 +104,43 @@ export default function StudentManager({ students, sections, classrooms, current
       onRefreshData();
     }
   }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setPage(1);
+    }, 350);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [searchQuery]);
+
+  // Fetch paginated students
+  const fetchPage = useCallback(async (pageNum: number, pageLimit: number, busqueda: string, year: AcademicYear | 0, section: string) => {
+    setLoading(true);
+    try {
+      const params: Record<string, any> = { page: pageNum, limit: pageLimit };
+      if (busqueda.trim()) params.busqueda = busqueda.trim();
+      if (year !== 0) params.year = year;
+      if (section !== 'Todos') params.section = section;
+
+      const res = await api.getRaw<PaginatedResponse<any>>('/api/estudiantes', params);
+
+      setPaginatedStudents(
+        res.data.map((s: any) => mapEstudianteToStudent(s, s.matriculas || [], s.matriculas?.map((m: any) => m.seccion).filter(Boolean) || []))
+      );
+      setMeta(res.meta);
+    } catch (e) {
+      console.error('Error al cargar estudiantes paginados:', e);
+      toast.error('Error al cargar la lista de estudiantes.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPage(page, limit, searchDebounced, selectedYear, selectedSection);
+  }, [page, limit, searchDebounced, selectedYear, selectedSection, fetchPage]);
 
   const handleOpenProfile = async (s: Student) => {
     setSelectedStudent(s);
@@ -209,22 +257,6 @@ export default function StudentManager({ students, sections, classrooms, current
     setFormSuccess('');
     setIsStudentModalOpen(true);
   };
-
-  // Filter students array
-  const filteredStudents = students.filter(s => {
-    const matchesYear = selectedYear === 0 ? true : s.academicYear === selectedYear;
-    const matchesSection = selectedSection === 'Todos' ? true : s.section === selectedSection;
-    
-    const fullName = `${s.firstName} ${s.lastName}`.toLowerCase();
-    const query = searchQuery.toLowerCase();
-    const matchesSearch = fullName.includes(query) || s.cedula.toLowerCase().includes(query) || s.representativeName.toLowerCase().includes(query);
-
-    return matchesYear && matchesSection && matchesSearch;
-  }).sort((a, b) => {
-    const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
-    const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
-    return nameA.localeCompare(nameB);
-  });
 
   const validateName = (val: string) => /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]*$/.test(val);
   const validateNumber = (val: string) => /^[0-9-]*$/.test(val);
@@ -478,7 +510,7 @@ export default function StudentManager({ students, sections, classrooms, current
         </div>
         <div className="flex items-center gap-1.5 mt-3 md:mt-0 text-sm bg-indigo-50 border border-indigo-100/50 p-2.5 rounded-xl text-indigo-800">
           <Users className="h-4.5 w-4.5 shrink-0" />
-          <span>Matrícula Total: <strong>{students.length}</strong> alumnos ({students.filter(s => s.status === 'Activo').length} Activos)</span>
+          <span>Matrícula Total: <strong>{meta.total}</strong> alumnos</span>
         </div>
       </div>
 
@@ -489,70 +521,76 @@ export default function StudentManager({ students, sections, classrooms, current
         <div id="student-explorer-panel" className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-xs">
           
           {/* Controls Bar */}
-          <div id="explorer-filters-bar" className="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
-            <div id="explorer-filter-icon" className="flex items-center gap-1 text-sm font-semibold text-slate-500 shrink-0">
-              <Filter className="h-4 w-4" />
-              <span>Filtros:</span>
+          <div id="explorer-filters-bar" className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
+            {/* Row 1: Search + Year tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <input
+                type="text"
+                placeholder="Buscar por Nombre, Cédula..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-0 flex-1 sm:max-w-xs"
+              />
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-sm font-semibold text-slate-500">Año:</span>
+                <div className="flex bg-slate-200/60 p-1 rounded-lg overflow-x-auto hide-scrollbar">
+                  {[0, 1, 2, 3, 4, 5].map((y) => (
+                    <button
+                      key={y}
+                      onClick={() => { setSelectedYear(y as AcademicYear | 0); setSelectedSection('Todos'); setPage(1); }}
+                      className={`flex-1 md:flex-none px-4 py-1.5 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap cursor-pointer ${
+                        selectedYear === y
+                          ? 'bg-white text-indigo-600 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                      }`}
+                    >
+                      {y === 0 ? 'Todos' : `${y}° Año`}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Year filter dropdown */}
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear | 0)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-            >
-              <option value={0}>Todos los Años (1°-5to)</option>
-              <option value={1}>1er Año (General)</option>
-              <option value={2}>2do Año (General)</option>
-              <option value={3}>3er Año (General)</option>
-              <option value={4}>4to Año (Soberanía)</option>
-              <option value={5}>5to Año (Soberanía)</option>
-            </select>
-
-            {/* Section filter */}
-            <select
-              value={selectedSection}
-              onChange={(e) => setSelectedSection(e.target.value)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
-            >
-              <option value="Todos">Todas las Secciones</option>
-              {Array.from(new Set(sections
-                .filter(s => selectedYear === 0 || s.grade === selectedYear)
-                .map(s => s.letter.trim().toUpperCase())))
-                .sort((a, b) => a.localeCompare(b))
-                .map(letter => (
-                  <option key={`filter-${letter}`} value={letter}>
-                    Sección "{letter}"
-                  </option>
+            {/* Row 2: Action buttons + Section tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => exportStudentsToExcel(paginatedStudents)}
+                  className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  Exportar Nómina
+                </button>
+                {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
+                  <button
+                    onClick={handleOpenCreate}
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Matricular Alumno
+                  </button>
+                )}
+              </div>
+              <div className="flex bg-slate-200/60 p-1 rounded-lg overflow-x-auto hide-scrollbar shrink-0">
+                {['Todos', ...Array.from(new Set(
+                  sections
+                    .filter(s => selectedYear === 0 || s.grade === selectedYear)
+                    .map(s => s.letter.trim().toUpperCase())
+                )).sort((a, b) => a.localeCompare(b))].map((letter) => (
+                  <button
+                    key={letter}
+                    onClick={() => { setSelectedSection(letter); setPage(1); }}
+                    className={`flex-1 md:flex-none px-4 py-1.5 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap cursor-pointer ${
+                      selectedSection === letter
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    }`}
+                  >
+                    {letter === 'Todos' ? 'Todas' : letter}
+                  </button>
                 ))}
-            </select>
-
-            {/* Text Search input */}
-            <input
-              type="text"
-              placeholder="Buscar por Nombre, Cédula, Rep..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-sm p-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500 min-w-0 flex-1 sm:flex-none sm:min-w-[200px]"
-            />
-            
-            <button
-              onClick={() => exportStudentsToExcel(filteredStudents)}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              Exportar Nómina
-            </button>
-
-            {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
-              <button
-                onClick={handleOpenCreate}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-              >
-                <UserPlus className="w-4 h-4" />
-                Matricular Alumno
-              </button>
-            )}
+              </div>
+            </div>
           </div>
 
           {/* Student list layout */}
@@ -569,8 +607,14 @@ export default function StudentManager({ students, sections, classrooms, current
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/60 font-medium text-slate-750">
-                {filteredStudents.length > 0 ? (
-                  filteredStudents.map(s => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
+                      Cargando estudiantes...
+                    </td>
+                  </tr>
+                ) : paginatedStudents.length > 0 ? (
+                  paginatedStudents.map(s => (
                     <tr id={`std-row-${s.id}`} key={s.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-3 font-mono font-bold text-slate-700 text-sm whitespace-nowrap">{s.cedula}</td>
                       <td className="py-3 min-w-[150px]">
@@ -633,6 +677,16 @@ export default function StudentManager({ students, sections, classrooms, current
               </tbody>
             </table>
           </div>
+
+          <PaginationBar
+            page={meta.page}
+            limit={meta.limit}
+            total={meta.total}
+            pages={meta.pages}
+            loading={loading}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
         </div>
       </div>
 
