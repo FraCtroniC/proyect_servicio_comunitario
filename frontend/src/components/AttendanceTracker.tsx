@@ -246,6 +246,30 @@ export default function AttendanceTracker({
           .map(e => e.day)
       ));
 
+  const getMostRecentValidDate = (validDays: string[], fromDate: string): string => {
+    if (validDays.length === 0) return fromDate;
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const d = new Date(fromDate + 'T12:00:00');
+    for (let i = 0; i < 7; i++) {
+      const dayName = dayNames[d.getDay()];
+      if (validDays.includes(dayName as any)) {
+        return d.toISOString().split('T')[0];
+      }
+      d.setDate(d.getDate() - 1);
+    }
+    return fromDate;
+  };
+
+  useEffect(() => {
+    if (validDaysForClass.length > 0) {
+      const recalculated = getMostRecentValidDate(validDaysForClass, maxDate);
+      setSelectedDate(prev => {
+        if (prev !== recalculated) return recalculated;
+        return prev;
+      });
+    }
+  }, [validDaysForClass.join(','), maxDate]);
+
   useEffect(() => {
     if (allowedBlocksForClass.length > 0 && (!selectedBlock || !allowedBlocksForClass.includes(selectedBlock))) {
       setSelectedBlock(allowedBlocksForClass[0]);
