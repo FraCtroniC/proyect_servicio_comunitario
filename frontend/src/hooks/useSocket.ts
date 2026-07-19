@@ -19,7 +19,11 @@ export function useSocket(isLoggedIn: boolean, onEvent: (event: string, data: an
     const token = getSessionToken();
     if (!token) return;
 
-    const socket = io('/', {
+    const backendUrl = window.location.hostname === 'localhost'
+      ? '/'
+      : 'https://backend-sc-tbkn.onrender.com';
+
+    const socket = io(backendUrl, {
       auth: { token },
       transports: ['polling', 'websocket'],
     });
