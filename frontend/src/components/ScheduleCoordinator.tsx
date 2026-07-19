@@ -8,13 +8,14 @@ import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Calendar, Trash, AlertTriangle, CheckCircle, PlusCircle, ShieldAlert, Filter, Edit2, XCircle, User as UserIcon, MapPin, BookOpen, Trash2, Download } from 'lucide-react';
-import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente, SchoolPeriod } from '../types';
+import { ScheduleEvent, AcademicYear, Subject, User, Classroom, UserRole, Section, Docente, SchoolPeriod, StudyPlanItem } from '../types';
 import { SearchableSelect } from './SearchableSelect';
 import { Modal } from './Modal';
 
 interface ScheduleCoordinatorProps {
   scheduleEvents: ScheduleEvent[];
   subjects: Subject[];
+  studyPlans?: StudyPlanItem[];
   users: User[];
   docentes: Docente[];
   classrooms: Classroom[];
@@ -31,6 +32,7 @@ interface ScheduleCoordinatorProps {
 export default function ScheduleCoordinator({
   scheduleEvents,
   subjects,
+  studyPlans = [],
   users,
   docentes,
   classrooms,
@@ -576,7 +578,14 @@ export default function ScheduleCoordinator({
               <div id="block-form-sub" className="space-y-0.5">
                 <label className="text-xs font-bold text-slate-400 uppercase">Asignatura</label>
                 <SearchableSelect
-                  options={subjects.filter(s => s.years.includes(formYear as AcademicYear)).map(s => ({ value: s.id, label: s.name }))}
+                  options={subjects
+                    .filter(s => s.years.includes(formYear as AcademicYear))
+                    .map(s => {
+                      const sp = studyPlans.find(p => p.subjectId === s.id && Number(p.year) === formYear);
+                      return { ...s, position: sp?.posicion ?? 999 };
+                    })
+                    .sort((a, b) => a.position - b.position)
+                    .map(s => ({ value: s.id, label: s.name }))}
                   value={formSubjectId}
                   onChange={(val) => setFormSubjectId(String(val))}
                   placeholder="Seleccionar..."

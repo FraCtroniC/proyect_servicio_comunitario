@@ -453,14 +453,21 @@ export default function App() {
           setDocentes(parsedDocentes);
           setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));
-          setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
+          
+          // FILTER FOR PLAN 31059
+          const parsedTipoPlanes = Array.isArray(tipoPlanesData) ? tipoPlanesData : ((tipoPlanesData as any)?.data || []);
+          const targetPlanType = parsedTipoPlanes.find((t: any) => String(t.nombre).includes('31059'));
+          const targetPlanId = targetPlanType ? targetPlanType.id_tipo_plan : 2; // Default to 2 if not found
+          const filteredPlanesData = planesData.filter((p: any) => String(p.id_tipo_plan) === String(targetPlanId));
 
-          const studyPlansList = planesData.map(mapPlanToStudyPlanItem);
+          setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, filteredPlanesData)));
+
+          const studyPlansList = filteredPlanesData.map(mapPlanToStudyPlanItem);
           setStudyPlans(studyPlansList);
-          setStudyPlanVersions(Array.isArray(tipoPlanesData) ? tipoPlanesData : ((tipoPlanesData as any)?.data || []));
+          setStudyPlanVersions(parsedTipoPlanes);
 
           const dbEvaluationsList = (Array.isArray((evaluacionesPlanesResp as any)?.data) ? (evaluacionesPlanesResp as any).data : (Array.isArray(evaluacionesPlanesResp) ? evaluacionesPlanesResp : [])) || [];
-          const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, planesData, seccionesMap);
+          const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, filteredPlanesData, seccionesMap);
 
           setEvaluationPlans(dbPlans);
 
@@ -2042,6 +2049,7 @@ export default function App() {
                 <ScheduleCoordinator
                   scheduleEvents={scheduleEvents}
                   subjects={subjects}
+                  studyPlans={studyPlans}
                   users={users}
                   docentes={docentes}
                   classrooms={classrooms}
