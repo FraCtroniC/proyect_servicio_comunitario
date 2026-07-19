@@ -561,7 +561,7 @@ export default function StudentManager({ students, sections, classrooms, current
                   <Download className="w-4 h-4" />
                   Exportar Nómina
                 </button>
-                {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
+                {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                   <button
                     onClick={handleOpenCreate}
                     className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
@@ -633,13 +633,15 @@ export default function StudentManager({ students, sections, classrooms, current
                       </td>
 {['super_admin', 'control_estudios', 'coordinador'].includes(currentUserRole) && (
               <td className="py-3 text-right flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenEdit(s)}
-                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
-                            title="Editar Registro"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                          </button>
+                          {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+                            <button
+                              onClick={() => handleOpenEdit(s)}
+                              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                              title="Editar Registro"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                          )}
                           <button
                             onClick={() => onNavigateToPending ? onNavigateToPending(s.id) : handleOpenProfile(s)}
                             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
@@ -654,15 +656,17 @@ export default function StudentManager({ students, sections, classrooms, current
                           >
                             <FileText className="h-4 w-4" />
                           </button>
-                          <select
-                            value={s.status}
-                            onChange={(e) => onUpdateStudentStatus(s.id, e.target.value as 'Activo' | 'Inactivo' | 'Retirado')}
-                            className="bg-white border border-slate-200 text-xs rounded p-1.5 font-semibold focus:outline-hidden cursor-pointer"
-                          >
-                            <option value="Activo">Activar</option>
-                            <option value="Inactivo">Pasar Inactivo</option>
-                            <option value="Retirado">Marcar Retirado</option>
-                          </select>
+                          {['super_admin', 'control_estudios'].includes(currentUserRole) && (
+                            <select
+                              value={s.status}
+                              onChange={(e) => onUpdateStudentStatus(s.id, e.target.value as 'Activo' | 'Inactivo' | 'Retirado')}
+                              className="bg-white border border-slate-200 text-xs rounded p-1.5 font-semibold focus:outline-hidden cursor-pointer"
+                            >
+                              <option value="Activo">Activar</option>
+                              <option value="Inactivo">Pasar Inactivo</option>
+                              <option value="Retirado">Marcar Retirado</option>
+                            </select>
+                          )}
                         </td>
                       )}
                     </tr>

@@ -8,5 +8,6 @@ export const periodoEscolarRoutes = Router();
 periodoEscolarRoutes.get('/', PeriodoEscolarController.listar);
 periodoEscolarRoutes.get('/:id', PeriodoEscolarController.obtenerPorId);
 periodoEscolarRoutes.post('/', authorize('Administrador', 'Control de Estudios'), validateCrearPeriodoEscolar, PeriodoEscolarController.crear);
+periodoEscolarRoutes.post('/:id/cierre-anual', authorize('Administrador', 'Control de Estudios'), PeriodoEscolarController.cierreAnual);
 periodoEscolarRoutes.patch('/:id', authorize('Administrador', 'Control de Estudios'), PeriodoEscolarController.actualizar);
 periodoEscolarRoutes.delete('/:id', authorize('Administrador'), PeriodoEscolarController.eliminar);

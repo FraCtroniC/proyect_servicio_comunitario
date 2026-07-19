@@ -328,5 +328,71 @@ export const generateSectionsPDF = (
     }
   });
 
-  doc.save(`Reporte_Secciones_${new Date().toISOString().split('T')[0]}.pdf`);
+};
+
+export const generateResumenFinalNotasPDF = (
+  section: Section,
+  students: Student[],
+  subjects: Subject[],
+  grades: Grade[],
+  evaluationPlans: EvaluationPlan[]
+) => {
+  const doc = new jsPDF('l', 'pt', 'legal'); 
+  
+  // Header
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('REPÚBLICA BOLIVARIANA DE VENEZUELA', doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+  doc.text('MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN', doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+  doc.text('LICEO ESTILITA OROZCO', doc.internal.pageSize.getWidth() / 2, 80, { align: 'center' });
+
+  doc.setFontSize(12);
+  doc.text(`RESUMEN FINAL DE NOTAS - ${section.grade}° AÑO "${section.letter}"`, doc.internal.pageSize.getWidth() / 2, 110, { align: 'center' });
+
+  // Filter subjects for this year
+  const yearSubjects = subjects.filter(sub => sub.years.includes(section.grade));
+  const subjectHeaders = yearSubjects.map(s => s.shortName || s.name.substring(0,3).toUpperCase());
+
+  // Prepare table data
+  const tableData = students.map((student, index) => {
+    let reprobadasCount = 0;
+    const row = [
+      (index + 1).toString(),
+      student.cedula,
+      `${student.lastName} ${student.firstName}`
+    ];
+
+    yearSubjects.forEach(sub => {
+      const { rounded } = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sub.id, section.grade, section.letter);
+      const isCualitativa = sub.tipoCalificacion === 'Cualitativo';
+      row.push(isCualitativa ? gradeToLiteral(rounded) : rounded.toString());
+      if (rounded < 10 && rounded >= 1) reprobadasCount++;
+    });
+
+    const status = reprobadasCount > 0 ? `Pendiente (${reprobadasCount})` : 'Promovido';
+    row.push(status);
+    return row;
+  });
+
+  // Render Table
+  autoTable(doc, {
+    startY: 140,
+    head: [['N°', 'Cédula', 'Apellidos y Nombres', ...subjectHeaders, 'Condición Final']],
+    body: tableData,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+    columnStyles: {
+      0: { cellWidth: 25, halign: 'center' },
+      1: { cellWidth: 70 },
+      2: { cellWidth: 150 }
+    }
+  });
+
+  // Footer
+  const finalY = (doc as any).lastAutoTable.finalY + 40;
+  doc.text('________________________________', doc.internal.pageSize.getWidth() / 2, finalY + 40, { align: 'center' });
+  doc.text('Director(a) / Control de Estudio', doc.internal.pageSize.getWidth() / 2, finalY + 55, { align: 'center' });
+
+  doc.save(`Resumen_Final_${section.grade}_${section.letter}.pdf`);
 };

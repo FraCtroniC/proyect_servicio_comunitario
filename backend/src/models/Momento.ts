@@ -3,6 +3,7 @@ import { Model, DataTypes, Sequelize } from 'sequelize';
 export class Momento extends Model {
   declare id_momento: number;
   declare id_periodo: number;
+  declare estatus: string;
   declare descripcion: string | null;
   declare readonly created_at: Date;
   declare readonly updated_at: Date | null;
@@ -28,6 +29,11 @@ export function initMomento(sequelize: Sequelize): typeof Momento {
           model: 'periodos_escolares',
           key: 'id_periodo',
         },
+      },
+      estatus: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'Abierto',
       },
       descripcion: {
         type: DataTypes.STRING(20),

@@ -31,6 +31,14 @@ export const MomentoController = {
       return;
     }
     await record.update(req.body);
+
+    const { PeriodoEscolar } = require('../models/PeriodoEscolar');
+    const { getIO } = require('../socket');
+    const resultWithMomentos = await PeriodoEscolar.findByPk(record.id_periodo, { include: [{ model: Momento, as: 'momentos' }] });
+    if (resultWithMomentos) {
+      getIO().emit('periodo:update', { data: resultWithMomentos });
+    }
+
     res.json({ data: record });
   }),
 

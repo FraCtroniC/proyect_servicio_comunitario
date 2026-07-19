@@ -658,7 +658,7 @@ export default function AttendanceTracker({
                                 const isLoading = loadingStudentId === student.id;
                                 
                                 const getFlagTheme = (f: 'P' | 'A' | 'J') => {
-                                  if (isLoading || !selectedSubject) return 'bg-slate-100 text-slate-400 cursor-not-allowed';
+                                  if (isLoading || !selectedSubject || currentUserRole === 'docente' || currentUserRole === 'coordinador') return 'bg-slate-100 text-slate-400 cursor-not-allowed';
                                   if (f === 'P') return isSelected ? 'bg-green-600 text-white' : 'bg-slate-50 hover:bg-green-50 text-slate-500';
                                   if (f === 'A') return isSelected ? 'bg-rose-600 text-white' : 'bg-slate-50 hover:bg-rose-50 text-slate-500';
                                   return isSelected ? 'bg-amber-600 text-white' : 'bg-slate-50 hover:bg-amber-50 text-slate-500';
@@ -668,14 +668,14 @@ export default function AttendanceTracker({
                                   <button
                                     id={`att-flag-${student.id}-${flag}`}
                                     key={flag}
-                                    disabled={isLoading || !selectedSubject}
+                                    disabled={isLoading || !selectedSubject || currentUserRole === 'docente' || currentUserRole === 'coordinador'}
                                     onClick={async () => {
                                       if (!selectedSubject) {
                                         toast.error("Debe seleccionar una materia para registrar asistencia.");
                                         return;
                                       }
-                                      if (currentUserRole !== 'super_admin' && currentUserRole !== 'docente' && currentUserRole !== 'control_estudios') {
-                                        toast.error("Error: Solo los docentes o el cuerpo de Control de Estudios pueden pasar asistencia.");
+                                      if (currentUserRole !== 'super_admin' && currentUserRole !== 'control_estudios') {
+                                        toast.error("Error: Solo el cuerpo de Control de Estudios puede modificar la asistencia.");
                                         return;
                                       }
                                       if (isLoading) return;
@@ -870,6 +870,7 @@ export default function AttendanceTracker({
                               {(['P', 'A', 'J'] as const).map(flag => {
                                 const isSelected = currentStatus === flag;
                                 const getFlagTheme = (f: 'P' | 'A' | 'J') => {
+                                  if (currentUserRole === 'docente' || currentUserRole === 'coordinador') return 'bg-slate-100 text-slate-400 cursor-not-allowed';
                                   if (f === 'P') return isSelected ? 'bg-green-600 text-white' : 'bg-slate-50 hover:bg-green-50 text-slate-500';
                                   if (f === 'A') return isSelected ? 'bg-rose-600 text-white' : 'bg-slate-50 hover:bg-rose-50 text-slate-500';
                                   return isSelected ? 'bg-amber-600 text-white' : 'bg-slate-50 hover:bg-amber-50 text-slate-500';
@@ -878,9 +879,9 @@ export default function AttendanceTracker({
                                 return (
                                   <button
                                     key={flag}
-                                    disabled={loadingStudentId === String(est.id_estudiante)}
+                                    disabled={loadingStudentId === String(est.id_estudiante) || currentUserRole === 'docente' || currentUserRole === 'coordinador'}
                                     onClick={async () => {
-                                      if (currentUserRole !== 'super_admin' && currentUserRole !== 'docente' && currentUserRole !== 'control_estudios') {
+                                      if (currentUserRole !== 'super_admin' && currentUserRole !== 'control_estudios') {
                                         toast.error("No tienes permisos para pasar asistencia.");
                                         return;
                                       }

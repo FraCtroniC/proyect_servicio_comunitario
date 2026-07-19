@@ -454,20 +454,18 @@ export default function App() {
           setStudents(estudiantesData.map((s: any) => mapEstudianteToStudent(s, Array.isArray(matriculasData) ? matriculasData : (matriculasData as any)?.data || [], Array.isArray(seccionesData) ? seccionesData : [], activePeriodId)));
           setClassrooms(aulasData.map(mapAulaToClassroom));
           
-          // FILTER FOR PLAN 31059
+          // The user requested to filter the subjects in schedule module to only show Plan 31059.
+          // We will map all subjects and study plans, but Schedule module should filter them.
           const parsedTipoPlanes = Array.isArray(tipoPlanesData) ? tipoPlanesData : ((tipoPlanesData as any)?.data || []);
-          const targetPlanType = parsedTipoPlanes.find((t: any) => String(t.nombre).includes('31059'));
-          const targetPlanId = targetPlanType ? targetPlanType.id_tipo_plan : 2; // Default to 2 if not found
-          const filteredPlanesData = planesData.filter((p: any) => String(p.id_tipo_plan) === String(targetPlanId));
+          
+          setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, planesData)));
 
-          setSubjects(asignaturasData.map((a: any) => mapAsignaturaToSubject(a, filteredPlanesData)));
-
-          const studyPlansList = filteredPlanesData.map(mapPlanToStudyPlanItem);
+          const studyPlansList = planesData.map(mapPlanToStudyPlanItem);
           setStudyPlans(studyPlansList);
           setStudyPlanVersions(parsedTipoPlanes);
 
           const dbEvaluationsList = (Array.isArray((evaluacionesPlanesResp as any)?.data) ? (evaluacionesPlanesResp as any).data : (Array.isArray(evaluacionesPlanesResp) ? evaluacionesPlanesResp : [])) || [];
-          const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, filteredPlanesData, seccionesMap);
+          const dbPlans = mapEvaluacionesDbToPlans(dbEvaluationsList, planesData, seccionesMap);
 
           setEvaluationPlans(dbPlans);
 
@@ -869,6 +867,18 @@ export default function App() {
     }
   };
 
+  const handleUpdateMomentoStatus = async (id_momento: number, newStatus: 'Abierto' | 'Cerrado') => {
+    try {
+      await api.patch<any>(`/api/momentos/${id_momento}`, { estatus: newStatus });
+      // La actualización se reflejará vía websocket `periodo:update` emitido por momento.controller.ts
+      toast.success(`Lapso ${newStatus === 'Abierto' ? 'Abierto' : 'Cerrado'} exitosamente`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al actualizar estatus del lapso');
+      throw e;
+    }
+  };
+
   const handleEditPeriod = async (id: string, data: { nombre?: string; estatus?: string; fecha_inicio?: string | null; fecha_fin?: string | null }) => {
     try {
       const updated = await api.patch<any>(`/api/periodos/${stripId(id)}`, data);
@@ -876,6 +886,20 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Error al editar periodo escolar');
+      throw e;
+    }
+  };
+
+  const handleCierreAnual = async (id: string) => {
+    try {
+      const response = await api.post<any>(`/api/periodos/${stripId(id)}/cierre-anual`);
+      toast.success(response.message || 'Cierre de año escolar completado');
+      if (response.data) {
+        setPeriods(prev => prev.map(p => p.id === String(response.data.id_periodo) ? mapPeriodoToSchoolPeriod(response.data) : p));
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Error al cerrar el año escolar: ' + (e?.response?.data?.error?.message || e.message));
       throw e;
     }
   };
@@ -999,11 +1023,20 @@ export default function App() {
 
       const seccion = sections.find(s => s.grade === year && s.letter === section);
       const realSectionId = seccion ? Number(seccion.id) : 1;
+      
+      const activePeriod = periods.find(p => p.status === 'Activo');
+      let realMomentoId = lap;
+      if (activePeriod && activePeriod.momentos && activePeriod.momentos.length > 0) {
+        const sortedMomentos = [...activePeriod.momentos].sort((a, b) => a.id_momento - b.id_momento);
+        if (sortedMomentos[lap - 1]) {
+          realMomentoId = sortedMomentos[lap - 1].id_momento;
+        }
+      }
 
       const payload = {
         id_plan: realPlanId,
         id_seccion: realSectionId,
-        id_momento: lap,
+        id_momento: realMomentoId,
         evaluaciones: evaluations.map(e => ({
           id_evaluacion: e.id && !String(e.id).includes('-') ? Number(e.id) : null,
           descripcion: e.name,
@@ -1591,7 +1624,7 @@ export default function App() {
       group: 'Planificación Académica',
       items: [
         { id: 'subjects', label: 'Plan de Estudio', icon: Book, allowedRoles: ['super_admin', 'control_estudios'] },
-        { id: 'schedule', label: 'Programacion Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'docente'] }
+        { id: 'schedule', label: 'Programacion Horaria', icon: ClipboardCheck, allowedRoles: ['super_admin', 'control_estudios', 'docente', 'coordinador'] }
       ]
     },
     {
@@ -1981,7 +2014,9 @@ export default function App() {
                   currentUserRole={currentUserRole}
                   onAddPeriod={handleAddPeriod}
                   onUpdatePeriodStatus={handleUpdatePeriodStatus}
+                  onUpdateMomentoStatus={handleUpdateMomentoStatus}
                   onEditPeriod={handleEditPeriod}
+                  onCierreAnual={handleCierreAnual}
                 />
               )}
 
@@ -2048,8 +2083,15 @@ export default function App() {
               {activeTab === 'schedule' && (
                 <ScheduleCoordinator
                   scheduleEvents={scheduleEvents}
-                  subjects={subjects}
-                  studyPlans={studyPlans}
+                  subjects={subjects.filter(s => {
+                    const targetPlan = studyPlanVersions.find(v => String(v.nombre).includes('31059'));
+                    const targetPlanId = targetPlan ? targetPlan.id_tipo_plan : 2;
+                    return studyPlans.some(p => p.subjectId === s.id && p.id_tipo_plan === targetPlanId);
+                  })}
+                  studyPlans={studyPlans.filter(p => {
+                    const targetPlan = studyPlanVersions.find(v => String(v.nombre).includes('31059'));
+                    return p.id_tipo_plan === (targetPlan ? targetPlan.id_tipo_plan : 2);
+                  })}
                   users={users}
                   docentes={docentes}
                   classrooms={classrooms}

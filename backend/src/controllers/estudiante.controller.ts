@@ -62,17 +62,16 @@ export const EstudianteController = {
     const gradoWhere: any = {};
     if (hasYearFilter) gradoWhere.numero = Number(year);
 
-    const includes: any[] = [
-      { model: Representante, as: 'representante' },
-      {
-        model: Matricula,
-        as: 'matriculas',
-        required: hasAnyFilter,
+    let matchingEstudianteIds: number[] | null = null;
+
+    if (hasAnyFilter) {
+      // Consultamos desde Matricula para obtener IDs
+      const mats = await Matricula.findAll({
         where: Object.keys(matriculaWhere).length ? matriculaWhere : undefined,
         include: [{
           model: Seccion,
           as: 'seccion',
-          required: hasAnyFilter,
+          required: true,
           where: Object.keys(seccionWhere).length ? seccionWhere : undefined,
           include: [{
             model: GradoAno,
@@ -81,17 +80,45 @@ export const EstudianteController = {
             where: Object.keys(gradoWhere).length ? gradoWhere : undefined,
           }],
         }],
-      },
-    ];
+      });
+      matchingEstudianteIds = mats.map((m: any) => m.id_estudiante);
+
+      if (matchingEstudianteIds.length === 0) {
+        res.json({
+          data: [],
+          meta: { total: 0, page: pageNum, limit: limitNum }
+        });
+        return;
+      }
+    }
+
+    if (matchingEstudianteIds) {
+      where.id_estudiante = { [Op.in]: matchingEstudianteIds };
+    }
 
     const { count, rows } = await Estudiante.findAndCountAll({
       where,
-      include: includes,
-      subQuery: false,
-      distinct: true,
       limit: limitNum,
       offset,
       order: [['apellido1', 'ASC'], ['apellido2', 'ASC'], ['nombre1', 'ASC']],
+      distinct: true,
+      include: [
+        { model: Representante, as: 'representante' },
+        {
+          model: Matricula,
+          as: 'matriculas',
+          required: false,
+          where: Object.keys(matriculaWhere).length ? matriculaWhere : undefined,
+          include: [{
+            model: Seccion,
+            as: 'seccion',
+            include: [{
+              model: GradoAno,
+              as: 'grado',
+            }],
+          }],
+        },
+      ],
     });
 
     res.json({

@@ -8,7 +8,7 @@ import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusC
 import toast from 'react-hot-toast';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole, StudyPlanItem, SchoolPeriod, Section } from '../types';
 import { calculateEvaluationAverage, calculateSubjectFinalGrade, gradeToLiteral } from '../utils/gradeCalculations';
-import { generateBoletinPDF } from '../utils/pdfGenerator';
+import { generateBoletinPDF, generateResumenFinalNotasPDF } from '../utils/pdfGenerator';
 import { exportGradesToExcel } from '../utils/excelGenerator';
 import { api } from '../services/api';
 import { SearchableSelect } from './SearchableSelect';
@@ -86,6 +86,32 @@ export default function GradeManager({
   useEffect(() => {
     setGradePage(1);
   }, [selectedYear, selectedSection, selectedSubjectId, selectedLapso]);
+
+  // Status del lapso actual
+  const isLapsoCerrado = useMemo(() => {
+    const activePeriod = periods.find(p => p.status === 'Activo');
+    if (activePeriod && activePeriod.momentos) {
+      const sortedMomentos = [...activePeriod.momentos].sort((a, b) => a.id_momento - b.id_momento);
+      const momento = sortedMomentos[selectedLapso - 1];
+      if (momento) {
+        return momento.estatus === 'Cerrado';
+      }
+    }
+    return false;
+  }, [periods, selectedLapso]);
+
+  const canEditGrade = useMemo(() => {
+    // control_estudios siempre puede editar
+    if (currentUserRole === 'control_estudios') return true;
+    
+    // super_admin y coordinador NO pueden editar notas directamente en este módulo
+    if (currentUserRole === 'super_admin' || currentUserRole === 'coordinador') return false;
+
+    // docente puede editar SI el lapso NO está cerrado
+    if (isLapsoCerrado) return false;
+    
+    return ['docente'].includes(currentUserRole);
+  }, [currentUserRole, isLapsoCerrado]);
 
   // Sections available for the selected year (from active period)
   const availableSections = useMemo(() => {
@@ -411,7 +437,10 @@ export default function GradeManager({
 
   // Grade edit triggers
   const handleStartEditGrade = (stdId: string, evId: string, currentScore?: number) => {
-    if (!['super_admin', 'control_estudios', 'docente'].includes(currentUserRole)) return;
+    if (!canEditGrade) {
+      if (isLapsoCerrado) toast.error("El lapso se encuentra cerrado. Comuníquese con Control de Estudios.");
+      return;
+    }
     setEditingGradeCell({ studentId: stdId, evaluationId: evId });
     setTempGradeValue(currentScore !== undefined ? currentScore.toString() : '');
   };
@@ -644,14 +673,16 @@ export default function GradeManager({
             </div>
 
             <div id="eval-plan-actions" className="ml-auto pt-2">
-              <button
-                id="btn-modify-eval-plan"
-                onClick={handleStartModifyPlan}
-                className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 text-sm rounded-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Configurar Plan de Evaluación
-              </button>
+              {canEditGrade && (
+                <button
+                  id="btn-modify-eval-plan"
+                  onClick={handleStartModifyPlan}
+                  className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 text-sm rounded-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Configurar Plan de Evaluación
+                </button>
+              )}
             </div>
 
           </div>
@@ -756,7 +787,7 @@ export default function GradeManager({
                   <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block"></span> Mínima (10-14)</span>
                   <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span> Sobresaliente (15-20)</span>
                 </div>
-                {['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) && (
+                {canEditGrade && (
                   <button
                     onClick={handleGlobalSave}
                     className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2 pointer-events-auto cursor-pointer"
@@ -843,9 +874,9 @@ export default function GradeManager({
                                       scoreRecord 
                                         ? getFailingClass(scoreRecord.score) 
                                         : 'bg-slate-50/50 border-slate-200 text-slate-300 hover:bg-slate-100 hover:border-slate-300 pointer-events-auto cursor-pointer'
-                                    }`}
-                                    disabled={!['super_admin', 'control_estudios', 'docente'].includes(currentUserRole)}
-                                    title={!['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) ? "Solo lectura para este rol simulado" : "Editar Nota"}
+                                    } ${!canEditGrade ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={!canEditGrade}
+                                    title={!canEditGrade ? (isLapsoCerrado ? "Lapso cerrado" : "Solo lectura") : "Editar Nota"}
                                   >
                                     {scoreRecord ? String(scoreRecord.score).padStart(2, '0') : '--'}
                                   </button>
@@ -1033,6 +1064,19 @@ export default function GradeManager({
               className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
             >
               <Printer className="h-4 w-4" /> Excel (Sábana)
+            </button>
+            <button
+              onClick={() => {
+                const sectionData = sections.find(s => s.grade === sabanaYear && s.letter === sabanaSection);
+                if (sectionData) {
+                  generateResumenFinalNotasPDF(sectionData, sabanaStudents, subjects, grades, evaluationPlans);
+                } else {
+                  toast.error("No se pudo encontrar la información de la sección.");
+                }
+              }}
+              className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-lg flex items-center gap-1.5 shadow-sm pointer-events-auto cursor-pointer"
+            >
+              <FileText className="h-4 w-4" /> Resumen Anual
             </button>
           </div>
 

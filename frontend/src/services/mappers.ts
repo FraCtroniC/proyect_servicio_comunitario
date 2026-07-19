@@ -1,4 +1,4 @@
-import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative, AcademicYear, Docente } from '../types';
+import { User, UserRole, Student, Classroom, Subject, EvaluationPlan, ScheduleEvent, Grade, StudyPlanItem, SchoolPeriod, Section, Representative, AcademicYear, Docente, MomentoType } from '../types';
 
 export function mapRole(idRol: number): UserRole {
   if (idRol === 4) return 'super_admin';
@@ -53,6 +53,16 @@ export function mapPeriodoToSchoolPeriod(dbPeriodo: any): SchoolPeriod {
     status: dbPeriodo.estatus as any,
     fecha_inicio: dbPeriodo.fecha_inicio || null,
     fecha_fin: dbPeriodo.fecha_fin || null,
+    momentos: dbPeriodo.momentos ? dbPeriodo.momentos.map(mapMomentoToMomentoType) : [],
+  };
+}
+
+export function mapMomentoToMomentoType(dbMomento: any): MomentoType {
+  return {
+    id_momento: dbMomento.id_momento,
+    id_periodo: dbMomento.id_periodo,
+    descripcion: dbMomento.descripcion,
+    estatus: dbMomento.estatus || 'Abierto',
   };
 }
 

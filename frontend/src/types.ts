@@ -66,6 +66,14 @@ export interface SchoolPeriod {
   status: 'Activo' | 'Cerrado' | 'Planificación';
   fecha_inicio?: string | null;
   fecha_fin?: string | null;
+  momentos?: MomentoType[];
+}
+
+export interface MomentoType {
+  id_momento: number;
+  id_periodo: number;
+  descripcion: string;
+  estatus: 'Abierto' | 'Cerrado';
 }
 
 export interface Especialidad {
