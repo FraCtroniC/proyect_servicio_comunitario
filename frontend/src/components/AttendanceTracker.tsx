@@ -486,9 +486,7 @@ export default function AttendanceTracker({
                     const subject = subjects.find(s => String(s.id) === e.subjectId);
                     const dayNames: Record<string, string> = { L: 'Lunes', M: 'Martes', MI: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado' };
                     const dayLabel = dayNames[e.day as string] || e.day;
-                    const startTime = e.timeBlock?.split('-')[0] || '';
-                    const endTime = e.timeBlock?.split('-')[1] || '';
-                    return { value: e.id, label: `${subject?.name || e.subjectId} - ${dayLabel} ${startTime}-${endTime}` };
+                    return { value: e.id, label: `${subject?.name || e.subjectId} - ${dayLabel}` };
                   })}
                 value={selectedSubject}
                 onChange={(val) => setSelectedSubject(String(val))}

@@ -26,6 +26,7 @@ interface GradeManagerProps {
   studyPlans: StudyPlanItem[];
   periods: SchoolPeriod[];
   sections: Section[];
+  teacherSubjectsBySection?: Record<string, string[]>;
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
   onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => Promise<void>;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
@@ -42,6 +43,7 @@ export default function GradeManager({
   studyPlans,
   periods,
   sections,
+  teacherSubjectsBySection,
   onUpdateGrade,
   onSaveGrades,
   onUpdateEvaluationPlan,
@@ -80,12 +82,18 @@ export default function GradeManager({
   const [gradePage, setGradePage] = useState(1);
   const GRADE_PAGE_LIMIT = 10;
 
-  // Sync selectedSubjectId with loaded subjects
+  // Sync selectedSubjectId with loaded subjects (respecting section filter)
   useEffect(() => {
-    if (subjects.length > 0 && (!selectedSubjectId || !subjects.find(s => s.id === selectedSubjectId))) {
-      setSelectedSubjectId(subjects[0].id);
+    if (subjects.length > 0) {
+      const availableIds = teacherSubjectsBySection
+        ? (teacherSubjectsBySection[`${selectedYear}-${selectedSection}`] || [])
+        : subjects.map(s => s.id);
+      if (!selectedSubjectId || !availableIds.includes(selectedSubjectId)) {
+        const firstValid = subjects.find(s => availableIds.includes(s.id));
+        if (firstValid) setSelectedSubjectId(firstValid.id);
+      }
     }
-  }, [subjects, selectedSubjectId]);
+  }, [subjects, selectedSubjectId, selectedYear, selectedSection, teacherSubjectsBySection]);
 
   // Reset grade page when filters change
   useEffect(() => {
@@ -125,6 +133,19 @@ export default function GradeManager({
     return unique.sort((a, b) => a.letter.localeCompare(b.letter));
   }, [sections, selectedYear]);
 
+  // Years available from the filtered sections
+  const availableYears = useMemo(() => {
+    const years = [...new Set(sections.map(s => s.grade))];
+    return years.sort((a, b) => a - b);
+  }, [sections]);
+
+  // Reset selectedYear when current year is not available (e.g. docente has limited years)
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0] as AcademicYear);
+    }
+  }, [availableYears, selectedYear]);
+
   // Reset selectedSection when year changes and current section is not available
   useEffect(() => {
     if (availableSections.length > 0 && !availableSections.find(s => s.letter === selectedSection)) {
@@ -139,6 +160,19 @@ export default function GradeManager({
     return unique.sort((a, b) => a.letter.localeCompare(b.letter));
   }, [sections, sabanaYear]);
 
+  // Years available for Sábana
+  const availableYearsSabana = useMemo(() => {
+    const years = [...new Set(sections.map(s => s.grade))];
+    return years.sort((a, b) => a - b);
+  }, [sections]);
+
+  // Reset sabanaYear when current year is not available
+  useEffect(() => {
+    if (availableYearsSabana.length > 0 && !availableYearsSabana.includes(sabanaYear)) {
+      setSabanaYear(availableYearsSabana[0] as AcademicYear);
+    }
+  }, [availableYearsSabana, sabanaYear]);
+
   // Reset sabanaSection when year changes and current section is not available
   useEffect(() => {
     if (availableSectionsSabana.length > 0 && !availableSectionsSabana.find(s => s.letter === sabanaSection)) {
@@ -146,12 +180,18 @@ export default function GradeManager({
     }
   }, [availableSectionsSabana, sabanaSection]);
 
-  // Sync sabanaSubjectId with loaded subjects
+  // Sync sabanaSubjectId with loaded subjects (respecting section filter)
   useEffect(() => {
-    if (subjects.length > 0 && (!sabanaSubjectId || !subjects.find(s => s.id === sabanaSubjectId))) {
-      setSabanaSubjectId(subjects[0].id);
+    if (subjects.length > 0) {
+      const availableIds = teacherSubjectsBySection
+        ? (teacherSubjectsBySection[`${sabanaYear}-${sabanaSection}`] || [])
+        : subjects.map(s => s.id);
+      if (!sabanaSubjectId || !availableIds.includes(sabanaSubjectId)) {
+        const firstValid = subjects.find(s => availableIds.includes(s.id));
+        if (firstValid) setSabanaSubjectId(firstValid.id);
+      }
     }
-  }, [subjects, sabanaSubjectId]);
+  }, [subjects, sabanaSubjectId, sabanaYear, sabanaSection, teacherSubjectsBySection]);
 
   // Students for Sábana (independent filter)
   const sabanaStudents = useMemo(() => {
@@ -693,11 +733,9 @@ export default function GradeManager({
                 onChange={(e) => setSelectedYear(Number(e.target.value) as AcademicYear)}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value={1}>1er Año</option>
-                <option value={2}>2do Año</option>
-                <option value={3}>3er Año</option>
-                <option value={4}>4to Año</option>
-                <option value={5}>5to Año</option>
+                {availableYears.map(y => (
+                  <option key={y} value={y}>{y}° Año</option>
+                ))}
               </select>
             </div>
 
@@ -717,7 +755,14 @@ export default function GradeManager({
             <div id="filter-subject-group" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Asignatura</span>
               <SearchableSelect
-                options={subjects.filter(s => s.years.includes(selectedYear)).map(s => ({ value: s.id, label: s.name }))}
+                options={subjects.filter(s => {
+                  if (!s.years.includes(selectedYear)) return false;
+                  if (teacherSubjectsBySection) {
+                    const validIds = teacherSubjectsBySection[`${selectedYear}-${selectedSection}`];
+                    return validIds ? validIds.includes(s.id) : false;
+                  }
+                  return true;
+                }).map(s => ({ value: s.id, label: s.name }))}
                 value={selectedSubjectId}
                 onChange={(val) => setSelectedSubjectId(String(val))}
               />
@@ -1081,11 +1126,9 @@ export default function GradeManager({
                 onChange={(e) => setSabanaYear(Number(e.target.value) as AcademicYear)}
                 className="text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium"
               >
-                <option value={1}>1er Año</option>
-                <option value={2}>2do Año</option>
-                <option value={3}>3er Año</option>
-                <option value={4}>4to Año</option>
-                <option value={5}>5to Año</option>
+                {availableYearsSabana.map(y => (
+                  <option key={y} value={y}>{y}° Año</option>
+                ))}
               </select>
             </div>
 
@@ -1105,7 +1148,14 @@ export default function GradeManager({
             <div id="sabana-ctrl-subject" className="flex flex-col gap-1">
               <span className="text-sm font-bold text-slate-400 uppercase">Asignatura</span>
               <SearchableSelect
-                options={subjects.filter(s => s.years.includes(sabanaYear)).map(s => ({ value: s.id, label: s.name }))}
+                options={subjects.filter(s => {
+                  if (!s.years.includes(sabanaYear)) return false;
+                  if (teacherSubjectsBySection) {
+                    const validIds = teacherSubjectsBySection[`${sabanaYear}-${sabanaSection}`];
+                    return validIds ? validIds.includes(s.id) : false;
+                  }
+                  return true;
+                }).map(s => ({ value: s.id, label: s.name }))}
                 value={sabanaSubjectId}
                 onChange={(val) => setSabanaSubjectId(String(val))}
               />

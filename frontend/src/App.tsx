@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSocket } from './hooks/useSocket';
 import { motion, AnimatePresence } from 'motion/react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -1697,6 +1697,65 @@ export default function App() {
 
   const { label: currentRoleLabel, color: currentRoleColor } = getRoleLabelAndColor(currentUserRole);
 
+  // --- Computed values needed before early return (hooks rules) ---
+  const isDocente = currentUserRole === 'docente';
+  const teacherId = currentUser?.id;
+  const activePeriod = periods.find(p => p.status === 'Activo');
+  const sectionsForSchedule = activePeriod
+    ? sections.filter(s => String(s.periodId) === String(activePeriod.id))
+    : sections;
+  const sectionsForGrades = sectionsForSchedule;
+
+  // Docente filtering: same approach as AttendanceTracker — filter by teacher's schedule
+  const teacherScheduleKeys = useMemo(() => {
+    if (!isDocente || !teacherId) return { subjectIds: new Set<string>(), sectionKeys: new Set<string>() };
+    const subjectIds = new Set<string>();
+    const sectionKeys = new Set<string>();
+    scheduleEvents.forEach(e => {
+      if (String(e.teacherId) === String(teacherId)) {
+        subjectIds.add(String(e.subjectId));
+        sectionKeys.add(`${e.year}-${e.section}`);
+      }
+    });
+    return { subjectIds, sectionKeys };
+  }, [isDocente, teacherId, scheduleEvents]);
+
+  const gradeSubjects = useMemo(
+    () => isDocente ? subjects.filter(s => teacherScheduleKeys.subjectIds.has(String(s.id))) : subjects,
+    [isDocente, subjects, teacherScheduleKeys.subjectIds]
+  );
+  const gradeSections = useMemo(
+    () => isDocente ? sectionsForSchedule.filter(s => teacherScheduleKeys.sectionKeys.has(`${s.grade}-${s.letter}`)) : sectionsForSchedule,
+    [isDocente, sectionsForSchedule, teacherScheduleKeys.sectionKeys]
+  );
+  const gradeStudents = useMemo(
+    () => isDocente ? students.filter(s => teacherScheduleKeys.sectionKeys.has(`${s.academicYear}-${s.section}`)) : students,
+    [isDocente, students, teacherScheduleKeys.sectionKeys]
+  );
+  const gradeEvaluationPlans = useMemo(
+    () => isDocente ? evaluationPlans.filter(p => teacherScheduleKeys.subjectIds.has(String(p.subjectId))) : evaluationPlans,
+    [isDocente, evaluationPlans, teacherScheduleKeys.subjectIds]
+  );
+  const gradeGrades = useMemo(
+    () => isDocente ? grades.filter(g => teacherScheduleKeys.subjectIds.has(String(g.subjectId))) : grades,
+    [isDocente, grades, teacherScheduleKeys.subjectIds]
+  );
+
+  const teacherSubjectsBySection = useMemo(() => {
+    if (!isDocente || !teacherId) return undefined;
+    const map: Record<string, string[]> = {};
+    scheduleEvents.forEach(e => {
+      if (String(e.teacherId) === String(teacherId)) {
+        const key = `${e.year}-${e.section}`;
+        if (!map[key]) map[key] = [];
+        if (!map[key].includes(String(e.subjectId))) {
+          map[key].push(String(e.subjectId));
+        }
+      }
+    });
+    return map;
+  }, [isDocente, teacherId, scheduleEvents]);
+
   if (!isLoggedIn) {
     return <LoginScreen users={users} onLogin={handleLogin} />;
   }
@@ -1707,12 +1766,6 @@ export default function App() {
     coordinador: 3,
     docente: 4,
   };
-
-  const activePeriod = periods.find(p => p.status === 'Activo');
-  const sectionsForSchedule = activePeriod
-    ? sections.filter(s => String(s.periodId) === String(activePeriod.id))
-    : sections;
-  const sectionsForGrades = sectionsForSchedule;
 
   return (
     <div id="mppe-app-root" className="h-screen overflow-hidden bg-slate-50/60 font-sans antialiased text-slate-800 flex flex-col">
@@ -2044,15 +2097,16 @@ export default function App() {
 
               {activeTab === 'grades' && (
                 <GradeManager
-                  students={students}
-                  subjects={subjects}
-                  evaluationPlans={evaluationPlans}
-                  grades={grades}
+                  students={gradeStudents}
+                  subjects={gradeSubjects}
+                  evaluationPlans={gradeEvaluationPlans}
+                  grades={gradeGrades}
                   auditLogs={auditLogs}
                   currentUserRole={currentUserRole}
                   studyPlans={studyPlans}
                   periods={periods}
-                  sections={sectionsForGrades}
+                  sections={gradeSections}
+                  teacherSubjectsBySection={teacherSubjectsBySection}
                   onUpdateGrade={handleUpdateGrade}
                   onSaveGrades={handleSaveGrades}
                   onUpdateEvaluationPlan={handleUpdateEvaluationPlan}
