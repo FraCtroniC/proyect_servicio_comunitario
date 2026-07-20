@@ -457,7 +457,7 @@ export default function ScheduleCoordinator({
           Planificación y Distribución Horaria Escolar
 
         </h1>
-        <p className="text-sm text-slate-500 mt-1">Definición de asignaturas, auditorías de solapamientos para docentes, y designación de planta física.</p>
+        <p className="text-sm text-slate-500 mt-1">Definición de asignaturas, auditorías de superposicion y designación de planta física.</p>
       </div>
 
       {/* Main interactive area: Grid + Side assign form */}
@@ -491,8 +491,8 @@ export default function ScheduleCoordinator({
               <ShieldAlert className="h-5 w-5 text-amber-600" />
               <p className="font-bold">Acceso Académico Restringido</p>
               <p className="leading-relaxed">
-                Su rol simulado no posee potestad para alterar la planificación de planta física o designar profesores. 
-                Utilice la pestaña "Usuarios" arriba para asumir el rol de <strong>Director</strong> o <strong>Control de Estudios</strong>.
+                Su rol asignado no posee autorizacion para alterar la planificación horaria o designar profesores. 
+                Roles autorizados: <strong>Director</strong> o <strong>Control de Estudios</strong>.
               </p>
             </div>
           ) : (

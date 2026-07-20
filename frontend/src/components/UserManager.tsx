@@ -314,7 +314,7 @@ export default function UserManager({ users, currentUserRole, onAddUser, onEditU
           {
             label: 'TOTAL USUARIOS',
             value: totalUsuarios,
-            sub: 'Registrados en el sistema',
+            sub: 'Registrados',
             icon: <Users className="h-6 w-6" />,
             bg: 'bg-slate-50',
             iconColor: 'text-slate-500',

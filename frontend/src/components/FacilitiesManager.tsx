@@ -169,7 +169,7 @@ export default function FacilitiesManager({
             <Home className="h-6 w-6 text-indigo-600" />
             Administración de Planta Física y Aulas
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Estructuración e inventariado de salones de clase teóricos, laboratorios especializados, y espacios deportivos regulados por el MPPE.</p>
+          <p className="text-sm text-slate-500 mt-1">Estructuración de salones de clase teóricos, laboratorios especializados, y espacios deportivos.</p>
         </div>
 
         <div id="facilities-grid" className="grid grid-cols-1 gap-6">

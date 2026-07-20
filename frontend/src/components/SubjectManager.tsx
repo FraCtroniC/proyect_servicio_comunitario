@@ -195,7 +195,7 @@ export default function SubjectManager({ studyPlans, studyPlanVersions, currentU
             <Book className="h-6 w-6 text-indigo-600" />
             Configuración del Plan de Estudio
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Gestión de códigos y posiciones de materias según normativa MPPE.</p>
+          <p className="text-sm text-slate-500 mt-1">Gestión de códigos y posiciones de materias según normativa.</p>
         </div>
         {canEdit && (
           <div className="mt-4 md:mt-0 flex items-center gap-3">

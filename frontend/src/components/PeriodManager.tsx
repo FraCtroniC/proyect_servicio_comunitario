@@ -219,7 +219,7 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
             <CalendarDays className="h-6 w-6 text-indigo-600" />
             Periodos Escolares
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Gestión de Años Académicos y Bloqueo de Históricos.</p>
+          <p className="text-sm text-slate-500 mt-1">Gestión de Años Académicos y Bloqueo de Lapsos.</p>
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-0">
           {canEdit && (

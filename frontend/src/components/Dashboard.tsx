@@ -455,7 +455,7 @@ export default function Dashboard({ students, users, attendance, grades, subject
                     <Users className="h-6 w-6" />
                   </div>
                   <div className="w-full">
-                    <h4 className="text-lg font-bold text-slate-800 mb-1">Registro LOPNA</h4>
+                    <h4 className="text-lg font-bold text-slate-800 mb-1">Registro de Representantes</h4>
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-purple-500 rounded-full transition-all duration-1000" style={{ width: `${repPercentage}%` }}></div>
