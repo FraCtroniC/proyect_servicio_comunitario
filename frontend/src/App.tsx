@@ -1447,6 +1447,17 @@ export default function App() {
         id_horario: h.id_horario,
         estudiantes: h.estudiantes || [],
         asignatura: h.asignatura ? { id: String(h.asignatura.id_asignatura), name: h.asignatura.nombre, shortName: h.asignatura.nombre?.substring(0, 3).toUpperCase(), years: [] } : null,
+        seccion: h.seccion ? {
+          ...h.seccion,
+          id: String(h.seccion.id_seccion),
+          grade: h.seccion.id_grado,
+          letter: h.seccion.letra,
+        } : h.seccion,
+        aula: h.aula ? {
+          ...h.aula,
+          id: String(h.aula.id_aula),
+          name: h.aula.nombre_codigo,
+        } : h.aula,
       })));
     } catch (e) {
       console.error('Error al cargar mi horario:', e);

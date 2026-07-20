@@ -24,7 +24,8 @@ export const HorarioController = {
       return;
     }
 
-    const diaSemana = new Date(fecha).toLocaleDateString('en-US', { weekday: 'long' });
+    const [y, m, d] = fecha.split('-').map(Number);
+    const diaSemana = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' });
     const idDia = DIAS_MAP[diaSemana];
     if (!idDia) {
       res.json({ data: [], meta: { message: 'La fecha no corresponde a un día de clase (Lunes a Viernes)' } });

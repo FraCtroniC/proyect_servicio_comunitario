@@ -844,26 +844,38 @@ export default function AttendanceTracker({
                       <th className="py-2.5">Estudiante</th>
                       <th className="py-2.5">Cédula</th>
                       <th className="py-2.5 text-center">Estado</th>
+                      <th className="py-2.5">Observación</th>
+                      <th className="py-2.5 text-center">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100/60 font-semibold">
+                  <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-700">
                     {selectedHorario.estudiantes.map((est: any) => {
                       const attRecord = attendance.find(
                         a => a.studentId === String(est.id_estudiante) && a.date === selectedDate && a.horarioId === String(selectedHorario.id_horario)
                       );
                       const currentStatus = attRecord?.status || null;
+                      const isLoading = loadingStudentId === String(est.id_estudiante);
 
                       return (
-                        <tr key={est.id_matricula} className="hover:bg-slate-50/40">
-                          <td className="py-3">
-                            <span className="font-bold text-slate-800 text-sm">{est.nombre}</span>
+                        <tr key={est.id_matricula} className={`hover:bg-slate-50/40 transition-colors ${isLoading ? 'bg-indigo-50/50' : ''}`}>
+                          <td className="py-3 pr-2">
+                            <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                              {isLoading && (
+                                <svg className="animate-spin h-3 w-3 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                              )}
+                              {est.nombre}
+                            </span>
                           </td>
-                          <td className="py-3 font-mono text-xs text-slate-500">{est.cedula}</td>
+                          <td className="py-3 font-mono font-bold text-slate-500 text-sm">{est.cedula}</td>
                           <td className="py-3">
                             <div className="flex items-center justify-center gap-1.5 max-w-[170px] mx-auto">
                               {(['P', 'A', 'J'] as const).map(flag => {
                                 const isSelected = currentStatus === flag;
                                 const getFlagTheme = (f: 'P' | 'A' | 'J') => {
+                                  if (isLoading) return 'bg-slate-100 text-slate-400 cursor-not-allowed';
                                   if (f === 'P') return isSelected ? 'bg-green-600 text-white' : 'bg-slate-50 hover:bg-green-50 text-slate-500';
                                   if (f === 'A') return isSelected ? 'bg-rose-600 text-white' : 'bg-slate-50 hover:bg-rose-50 text-slate-500';
                                   return isSelected ? 'bg-amber-600 text-white' : 'bg-slate-50 hover:bg-amber-50 text-slate-500';
@@ -872,8 +884,24 @@ export default function AttendanceTracker({
                                 return (
                                   <button
                                     key={flag}
-                                    disabled={loadingStudentId === String(est.id_estudiante)}
+                                    disabled={isLoading}
                                     onClick={async () => {
+                                      if (isLoading) return;
+                                      if (flag === 'J') {
+                                        if (currentStatus === 'J' && attRecord) {
+                                          const existingJust = attRecord.justificaciones?.[0];
+                                          setStudentJustifyAtt(attRecord);
+                                          setStudentJustifyStudentId(null);
+                                          setStudentJustifyMotivo(existingJust?.motivo || '');
+                                          setStudentJustifySoporte(existingJust?.soporte_digital || '');
+                                        } else {
+                                          setStudentJustifyAtt(attRecord || null);
+                                          setStudentJustifyStudentId(attRecord ? null : String(est.id_estudiante));
+                                          setStudentJustifyMotivo('');
+                                          setStudentJustifySoporte('');
+                                        }
+                                        return;
+                                      }
                                       setLoadingStudentId(String(est.id_estudiante));
                                       try {
                                         await onModifyAttendance(
@@ -888,13 +916,47 @@ export default function AttendanceTracker({
                                         setLoadingStudentId(null);
                                       }
                                     }}
-                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-sm font-bold transition-all p-0 focus:outline-hidden pointer-events-auto cursor-pointer ${getFlagTheme(flag)}`}
+                                    className={`w-10 py-1.5 rounded-lg border border-slate-200 text-sm font-bold transition-all p-0 focus:outline-hidden ${isLoading ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'} ${getFlagTheme(flag)}`}
                                     title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
                                   >
                                     {flag}
                                   </button>
                                 );
                               })}
+                            </div>
+                          </td>
+                          <td className="py-3">
+                            {attRecord ? (
+                              <button
+                                onClick={() => {
+                                  setObsModalAtt(attRecord);
+                                  setObsModalText(attRecord.observacion?.texto || observaciones[String(est.id_estudiante)] || '');
+                                  setObsModalGravedad(attRecord.observacion?.gravedad || '');
+                                }}
+                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                  (attRecord.observacion?.texto || observaciones[String(est.id_estudiante)])
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
+                                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                                }`}
+                                title={attRecord.observacion?.texto ? 'Ver/editar observación' : 'Agregar observación'}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {currentUserRole === 'super_admin' && attRecord && (
+                                <button
+                                  onClick={() => setConfirmDeleteId(attRecord.id)}
+                                  className="text-sm text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-1.5 py-1 rounded font-bold pointer-events-auto cursor-pointer"
+                                  title="Eliminar registro"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
