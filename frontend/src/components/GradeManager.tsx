@@ -3,16 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Eye, Edit3, Award, FileText, CheckCircle, AlertTriangle, Printer, PlusCircle, Trash, ScrollText, Download, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Subject, EvaluationPlan, Grade, AcademicYear, UserRole, StudyPlanItem, SchoolPeriod, Section } from '../types';
+import { FormatConfig } from '../types/formatEditor.types';
 import { calculateEvaluationAverage, calculateSubjectFinalGrade, gradeToLiteral } from '../utils/gradeCalculations';
 import { generateBoletinPDF, generateResumenFinalNotasPDF } from '../utils/pdfGenerator';
 import { exportGradesToExcel } from '../utils/excelGenerator';
 import { api } from '../services/api';
 import { SearchableSelect } from './SearchableSelect';
 import { PaginationBar } from './PaginationBar';
+import { SabanaRenderer } from './FormatEditor/renderers/SabanaRenderer';
 
 interface GradeManagerProps {
   students: Student[];
@@ -58,6 +60,9 @@ export default function GradeManager({
   const [sabanaYear, setSabanaYear] = useState<AcademicYear>(5);
   const [sabanaSection, setSabanaSection] = useState<string>('A');
   const [sabanaSubjectId, setSabanaSubjectId] = useState<string>('');
+
+  // Active format loaded from backend for Sábana
+  const [activeFormat, setActiveFormat] = useState<FormatConfig | null>(null);
 
   // Audit log modal state
   const [selectedAuditLog, setSelectedAuditLog] = useState<any | null>(null);
@@ -152,6 +157,65 @@ export default function GradeManager({
   const sabanaStudents = useMemo(() => {
     return students.filter(s => s.academicYear === sabanaYear && s.section === sabanaSection && s.status === 'Activo');
   }, [students, sabanaYear, sabanaSection]);
+
+  // Load active format from backend when switching to sabana sub-tab
+  useEffect(() => {
+    if (activeSubTab === 'sabana') {
+      api.formatosSabana.getActive()
+        .then((data: any) => {
+          if (data?.configuracion) {
+            setActiveFormat(data.configuracion as FormatConfig);
+          } else {
+            setActiveFormat(null);
+          }
+        })
+        .catch(() => setActiveFormat(null));
+    }
+  }, [activeSubTab]);
+
+  // Transform raw student/grade data into SabanaRenderer StudentData format
+  const buildSabanaStudentData = useCallback(() => {
+    const isCualitativa = subjects.find(s => s.id === sabanaSubjectId)?.tipoCalificacion === 'Cualitativo';
+
+    const formatGrade = (avg: { raw: number; rounded: number }) => {
+      if (avg.raw === 0) return '--';
+      return isCualitativa ? gradeToLiteral(avg.rounded) : String(avg.rounded).padStart(2, '0');
+    };
+
+    const formatFinal = (fg: { raw: number; rounded: number }) => {
+      if (fg.raw === 0) return '--';
+      return isCualitativa ? gradeToLiteral(fg.rounded) : String(fg.rounded).padStart(2, '0');
+    };
+
+    return sabanaStudents.map((student, idx) => {
+      const l1Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 1);
+      const l1Avg = l1Plan ? calculateEvaluationAverage(grades, l1Plan.evaluations, student.id, sabanaSubjectId, 1) : { rounded: 0, raw: 0 };
+
+      const l2Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 2);
+      const l2Avg = l2Plan ? calculateEvaluationAverage(grades, l2Plan.evaluations, student.id, sabanaSubjectId, 2) : { rounded: 0, raw: 0 };
+
+      const l3Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 3);
+      const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, sabanaSubjectId, 3) : { rounded: 0, raw: 0 };
+
+      const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId, sabanaYear, sabanaSection);
+
+      let status = 'Cursando';
+      if (finalGrade.raw > 0) {
+        status = finalGrade.rounded >= 10 ? 'Aprobado' : 'A Aplazar / Reprobado';
+      }
+
+      return {
+        list_number: idx + 1,
+        cedula: student.cedula,
+        full_name: `${student.lastName}, ${student.firstName}`,
+        lapso1: formatGrade(l1Avg),
+        lapso2: formatGrade(l2Avg),
+        lapso3: formatGrade(l3Avg),
+        final: formatFinal(finalGrade),
+        status,
+      };
+    });
+  }, [sabanaStudents, grades, evaluationPlans, sabanaSubjectId, sabanaYear, sabanaSection, subjects]);
 
   // Refresh data from server when switching subtabs
   useEffect(() => {
@@ -1083,143 +1147,149 @@ export default function GradeManager({
           {/* Sábana layout (Sheet style) */}
           <div id="printable-sabana" className="bg-white p-8 border border-slate-250 shadow-md rounded-xl space-y-8 select-text selection:bg-slate-100">
             
-            {/* Header matching venezuelan public layouts */}
-            <div id="sabana-gov-header" className="flex justify-between items-start text-xs text-slate-600 font-medium">
-              <div id="gov-dep" className="space-y-0.5">
-                <span className="block font-bold text-slate-800 uppercase text-sm">República Bolivariana de Venezuela</span>
-                <span className="block">Ministerio del Poder Popular para la Educación</span>
-                <span className="block">Liceo Bolivariano "José Antonio Anzoátegui"</span>
-                <span className="block font-mono">Código MPPE: #EM-77218320</span>
-              </div>
-              <div id="rep-stamp-box" className="border-2 border-slate-800 rounded p-1 text-center font-bold px-3">
-                REGISTRO DE CONTROL DE ESTUDIOS
-              </div>
-            </div>
+            {activeFormat ? (
+              <SabanaRenderer
+                config={activeFormat}
+                students={buildSabanaStudentData()}
+                institutionData={{
+                  name: 'Liceo Bolivariano "José Antonio Anzoátegui"',
+                  code: '#EM-77218320',
+                }}
+                periodData={{
+                  year: '2025-2026',
+                }}
+                sectionData={{
+                  name: sabanaSection,
+                  grade: String(sabanaYear),
+                  full_name: `${sabanaYear}° Año EMG - Sección "${sabanaSection}"`,
+                }}
+                subjectData={{
+                  name: getSubjectName(sabanaSubjectId) || '',
+                  code: '',
+                }}
+                directorData={{ name: 'Dr. Francisco Linares' }}
+                controlEstudiosData={{ name: 'Lic. Teresa Carreño' }}
+                teacherData={{ name: 'Prof. de Cátedra' }}
+              />
+            ) : (
+              <>
+                {/* Header matching venezuelan public layouts */}
+                <div id="sabana-gov-header" className="flex justify-between items-start text-xs text-slate-600 font-medium">
+                  <div id="gov-dep" className="space-y-0.5">
+                    <span className="block font-bold text-slate-800 uppercase text-sm">República Bolivariana de Venezuela</span>
+                    <span className="block">Ministerio del Poder Popular para la Educación</span>
+                    <span className="block">Liceo Bolivariano "José Antonio Anzoátegui"</span>
+                    <span className="block font-mono">Código MPPE: #EM-77218320</span>
+                  </div>
+                  <div id="rep-stamp-box" className="border-2 border-slate-800 rounded p-1 text-center font-bold px-3">
+                    REGISTRO DE CONTROL DE ESTUDIOS
+                  </div>
+                </div>
 
-            {/* Title description of sheet */}
-            <div id="sabana-sheet-title" className="text-center font-black text-sm space-y-1 text-slate-900 uppercase">
-              <h4>ACTA INTEGRAL DE EVALUACIONES CONTINUAS ("SÁBANA DE NOTAS")</h4>
-              <p className="text-sm font-semibold text-slate-500 font-mono">
-                Año Escolar: 2025-2026 | {sabanaYear}° Año EMG - Sección "{sabanaSection}" | Asignatura: {getSubjectName(sabanaSubjectId)?.toUpperCase() || ''}
-              </p>
-            </div>
+                {/* Title description of sheet */}
+                <div id="sabana-sheet-title" className="text-center font-black text-sm space-y-1 text-slate-900 uppercase">
+                  <h4>ACTA INTEGRAL DE EVALUACIONES CONTINUAS ("SÁBANA DE NOTAS")</h4>
+                  <p className="text-sm font-semibold text-slate-500 font-mono">
+                    Año Escolar: 2025-2026 | {sabanaYear}° Año EMG - Sección "{sabanaSection}" | Asignatura: {getSubjectName(sabanaSubjectId)?.toUpperCase() || ''}
+                  </p>
+                </div>
 
-            {/* Sheet Matrix */}
-            <div id="sabana-matrix-scroller" className="overflow-x-auto">
-              <table className="w-full text-left text-sm border border-slate-300 border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-300 font-bold text-slate-800 text-xs">
-                    <th className="p-2 border border-slate-300 w-16 text-center font-bold">N°</th>
-                    <th className="p-2 border border-slate-300 w-32 font-bold font-mono">Cédula</th>
-                    <th className="p-2 border border-slate-300">Nombres y Apellidos del Estudiante</th>
-                    <th className="p-2 border border-slate-300 text-center font-bold w-20 bg-blue-50/50">LAPSO 1 (L1)</th>
-                    <th className="p-2 border border-slate-300 text-center font-bold w-20 bg-blue-50/50">LAPSO 2 (L2)</th>
-                    <th className="p-2 border border-slate-300 text-center font-bold w-20 bg-blue-50/50">LAPSO 3 (L3)</th>
-                    <th className="p-2 border border-slate-300 text-center font-bold w-24 bg-blue-100/50">NOTA FINAL</th>
-                    <th className="p-2 border border-slate-300 text-center font-bold w-28">ESTADO</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-300 font-medium text-slate-705">
-                  {sabanaStudents.length > 0 ? (
-                    sabanaStudents.map((student, idx) => {
-                      // Get L1 Average
-                      const l1Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 1);
-                      const l1Avg = l1Plan ? calculateEvaluationAverage(grades, l1Plan.evaluations, student.id, sabanaSubjectId, 1) : { rounded: 0, raw: 0 };
-
-                      // Get L2 Average
-                      const l2Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 2);
-                      const l2Avg = l2Plan ? calculateEvaluationAverage(grades, l2Plan.evaluations, student.id, sabanaSubjectId, 2) : { rounded: 0, raw: 0 };
-
-                      // Get L3 Average
-                      const l3Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 3);
-                      const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, sabanaSubjectId, 3) : { rounded: 0, raw: 0 };
-
-                      // Calculate final rounded score
-                      const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId, sabanaYear, sabanaSection);
-
-                      // Check if subject is Cualitativa
-                      const isCualitativa = subjects.find(s => s.id === sabanaSubjectId)?.tipoCalificacion === 'Cualitativo';
-
-                      const renderGrade = (avg: { raw: number; rounded: number }) => {
-                        if (avg.raw === 0) return '--';
-                        return isCualitativa ? gradeToLiteral(avg.rounded) : String(avg.rounded).padStart(2, '0');
-                      };
-
-                      const renderFinal = (fg: { raw: number; rounded: number }) => {
-                        if (fg.raw === 0) return '--';
-                        return isCualitativa ? gradeToLiteral(fg.rounded) : String(fg.rounded).padStart(2, '0');
-                      };
-
-                      return (
-                        <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-sm">
-                          <td className="p-2 border border-slate-300 text-center font-bold font-mono">{idx + 1}</td>
-                          <td className="p-2 border border-slate-300 font-mono font-bold text-slate-900">{student.cedula}</td>
-                          <td className="p-2 border border-slate-300">
-                            <span className="font-extrabold uppercase text-slate-800">{student.lastName}</span>, {student.firstName}
-                          </td>
-                          <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
-                            {renderGrade(l1Avg)}
-                          </td>
-                          <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
-                            {renderGrade(l2Avg)}
-                          </td>
-                          <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">
-                            {renderGrade(l3Avg)}
-                          </td>
-                          <td className="p-2 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-base text-blue-900">
-                            {renderFinal(finalGrade)}
-                          </td>
-                          <td className="p-2 border border-slate-300 text-center">
-                            {finalGrade.raw > 0 ? (
-                              finalGrade.rounded >= 10 ? (
-                                <span className="text-green-700 font-bold uppercase text-sm bg-green-50 px-1.5 py-0.5 rounded">Aprobado</span>
-                              ) : (
-                                <span className="text-rose-700 font-bold uppercase text-sm bg-rose-50 px-1.5 py-0.5 rounded">A Aplazar / Reprobado</span>
-                              )
-                            ) : (
-                              <span className="text-slate-400">Cursando</span>
-                            )}
+                {/* Sheet Matrix */}
+                <div id="sabana-matrix-scroller" className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border border-slate-300 border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-300 font-bold text-slate-800 text-xs">
+                        <th className="p-2 border border-slate-300 w-16 text-center font-bold">N°</th>
+                        <th className="p-2 border border-slate-300 w-32 font-bold font-mono">Cédula</th>
+                        <th className="p-2 border border-slate-300">Nombres y Apellidos del Estudiante</th>
+                        <th className="p-2 border border-slate-300 text-center font-bold w-20 bg-blue-50/50">LAPSO 1 (L1)</th>
+                        <th className="p-2 border border-slate-300 text-center font-bold w-20 bg-blue-50/50">LAPSO 2 (L2)</th>
+                        <th className="p-2 border border-slate-300 text-center font-bold w-20 bg-blue-50/50">LAPSO 3 (L3)</th>
+                        <th className="p-2 border border-slate-300 text-center font-bold w-24 bg-blue-100/50">NOTA FINAL</th>
+                        <th className="p-2 border border-slate-300 text-center font-bold w-28">ESTADO</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-300 font-medium text-slate-705">
+                      {sabanaStudents.length > 0 ? (
+                        sabanaStudents.map((student, idx) => {
+                          const l1Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 1);
+                          const l1Avg = l1Plan ? calculateEvaluationAverage(grades, l1Plan.evaluations, student.id, sabanaSubjectId, 1) : { rounded: 0, raw: 0 };
+                          const l2Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 2);
+                          const l2Avg = l2Plan ? calculateEvaluationAverage(grades, l2Plan.evaluations, student.id, sabanaSubjectId, 2) : { rounded: 0, raw: 0 };
+                          const l3Plan = evaluationPlans.find(p => p.subjectId === sabanaSubjectId && p.year === sabanaYear && p.section === sabanaSection && p.lapso === 3);
+                          const l3Avg = l3Plan ? calculateEvaluationAverage(grades, l3Plan.evaluations, student.id, sabanaSubjectId, 3) : { rounded: 0, raw: 0 };
+                          const finalGrade = calculateSubjectFinalGrade(grades, evaluationPlans, student.id, sabanaSubjectId, sabanaYear, sabanaSection);
+                          const isCualitativa = subjects.find(s => s.id === sabanaSubjectId)?.tipoCalificacion === 'Cualitativo';
+                          const renderGrade = (avg: { raw: number; rounded: number }) => {
+                            if (avg.raw === 0) return '--';
+                            return isCualitativa ? gradeToLiteral(avg.rounded) : String(avg.rounded).padStart(2, '0');
+                          };
+                          const renderFinal = (fg: { raw: number; rounded: number }) => {
+                            if (fg.raw === 0) return '--';
+                            return isCualitativa ? gradeToLiteral(fg.rounded) : String(fg.rounded).padStart(2, '0');
+                          };
+                          return (
+                            <tr id={`sab-row-${student.id}`} key={student.id} className="hover:bg-slate-50/20 text-sm">
+                              <td className="p-2 border border-slate-300 text-center font-bold font-mono">{idx + 1}</td>
+                              <td className="p-2 border border-slate-300 font-mono font-bold text-slate-900">{student.cedula}</td>
+                              <td className="p-2 border border-slate-300">
+                                <span className="font-extrabold uppercase text-slate-800">{student.lastName}</span>, {student.firstName}
+                              </td>
+                              <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">{renderGrade(l1Avg)}</td>
+                              <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">{renderGrade(l2Avg)}</td>
+                              <td className="p-2 border border-slate-300 text-center font-bold font-mono bg-blue-50/10">{renderGrade(l3Avg)}</td>
+                              <td className="p-2 border border-slate-300 text-center font-extrabold font-mono bg-blue-50/50 text-base text-blue-900">{renderFinal(finalGrade)}</td>
+                              <td className="p-2 border border-slate-300 text-center">
+                                {finalGrade.raw > 0 ? (
+                                  finalGrade.rounded >= 10 ? (
+                                    <span className="text-green-700 font-bold uppercase text-sm bg-green-50 px-1.5 py-0.5 rounded">Aprobado</span>
+                                  ) : (
+                                    <span className="text-rose-700 font-bold uppercase text-sm bg-rose-50 px-1.5 py-0.5 rounded">A Aplazar / Reprobado</span>
+                                  )
+                                ) : (
+                                  <span className="text-slate-400">Cursando</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="p-4 text-center text-slate-400 font-bold">
+                            No hay alumnos matriculados para emitir actas.
                           </td>
                         </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="p-4 text-center text-slate-400 font-bold">
-                        No hay alumnos matriculados para emitir actas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Regulatory Signatures block matching actual templates */}
-            <div id="regulatory-signatures" className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 text-xs text-slate-600 font-medium">
-              <div id="sig-director" className="text-center space-y-12">
-                <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
-                <div>
-                  <span className="block font-bold">Dr. Francisco Linares</span>
-                  <span className="block">Director Principal (Sello)</span>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
 
-              <div id="sig-control" className="text-center space-y-12">
-                <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
-                <div>
-                  <span className="block font-bold">Lic. Teresa Carreño</span>
-                  <span className="block">Control de Estudios</span>
+                {/* Regulatory Signatures block matching actual templates */}
+                <div id="regulatory-signatures" className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 text-xs text-slate-600 font-medium">
+                  <div id="sig-director" className="text-center space-y-12">
+                    <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
+                    <div>
+                      <span className="block font-bold">Dr. Francisco Linares</span>
+                      <span className="block">Director Principal (Sello)</span>
+                    </div>
+                  </div>
+                  <div id="sig-control" className="text-center space-y-12">
+                    <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
+                    <div>
+                      <span className="block font-bold">Lic. Teresa Carreño</span>
+                      <span className="block">Control de Estudios</span>
+                    </div>
+                  </div>
+                  <div id="sig-teacher" className="text-center space-y-12">
+                    <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
+                    <div>
+                      <span className="block font-bold">Prof. de Cátedra</span>
+                      <span className="block">Carga Digital Registrada y Conforme</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <div id="sig-teacher" className="text-center space-y-12">
-                <div className="h-0.5 bg-slate-300 w-32 mx-auto"></div>
-                <div>
-                  <span className="block font-bold">Prof. de Cátedra</span>
-                  <span className="block">Carga Digital Registrada y Conforme</span>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
 
           </div>
 

@@ -33,6 +33,7 @@ import { initJustificacionEstudiante, JustificacionEstudiante } from './Justific
 import { initMateriaPendiente, MateriaPendiente } from './MateriaPendiente';
 import { initLoginAudit, LoginAudit } from './LoginAudit';
 import { initRefreshToken, RefreshToken } from './RefreshToken';
+import { initFormatoSabana, FormatoSabana } from './FormatoSabana';
 
 const env = environment.nodeEnv || 'development';
 const config = databaseConfig[env];
@@ -74,6 +75,7 @@ initJustificacionEstudiante(sequelize);
 initMateriaPendiente(sequelize);
 initLoginAudit(sequelize);
 initRefreshToken(sequelize);
+initFormatoSabana(sequelize);
 
 const models = {
   Rol,
@@ -106,7 +108,8 @@ const models = {
   JustificacionEstudiante,
   MateriaPendiente,
   LoginAudit,
-  RefreshToken
+  RefreshToken,
+  FormatoSabana
 };
 
 Object.values(models).forEach((model: any) => {
@@ -148,5 +151,6 @@ export {
   JustificacionEstudiante,
   MateriaPendiente,
   LoginAudit,
-  RefreshToken
+  RefreshToken,
+  FormatoSabana
 };

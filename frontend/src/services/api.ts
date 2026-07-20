@@ -245,4 +245,13 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  formatosSabana: {
+    getAll: () => request('/api/formatos'),
+    getActive: () => request('/api/formatos/activo'),
+    getById: (id: number) => request(`/api/formatos/${id}`),
+    create: (data: any) => request('/api/formatos', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: any) => request(`/api/formatos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    activate: (id: number) => request(`/api/formatos/${id}/activar`, { method: 'PUT' }),
+    delete: (id: number) => request(`/api/formatos/${id}`, { method: 'DELETE' }),
+  },
 };

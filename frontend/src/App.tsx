@@ -27,6 +27,8 @@ import {
   Sparkles,
   Clock,
   Database,
+  TableProperties,
+  FileEdit,
 } from 'lucide-react';
 
 import {
@@ -69,6 +71,7 @@ import PeriodManager from './components/PeriodManager';
 import PendingSubjectsManager from './components/PendingSubjectsManager';
 import ChatbotAsistente from './components/ChatbotAsistente';
 import UserProfileModal from './components/UserProfileModal';
+import { FormatEditor } from './components/FormatEditor/FormatEditor';
 
 const VenezuelaClock = () => {
   const [time, setTime] = useState(new Date());
@@ -1025,7 +1028,7 @@ export default function App() {
       const realSectionId = seccion ? Number(seccion.id) : 1;
       
       const activePeriod = periods.find(p => p.status === 'Activo');
-      let realMomentoId = lap;
+      let realMomentoId: number = lap;
       if (activePeriod && activePeriod.momentos && activePeriod.momentos.length > 0) {
         const sortedMomentos = [...activePeriod.momentos].sort((a, b) => a.id_momento - b.id_momento);
         if (sortedMomentos[lap - 1]) {
@@ -1635,6 +1638,12 @@ export default function App() {
       ]
     },
     {
+      group: 'Formatos',
+      items: [
+        { id: 'formats', label: 'Edición Formatos', icon: FileEdit, allowedRoles: ['super_admin', 'control_estudios'] }
+      ]
+    },
+    {
       group: 'Operaciones Diarias',
       items: [
         { id: 'grades', label: 'Calificaciones', icon: Award, allowedRoles: ['super_admin', 'control_estudios', 'coordinador', 'docente'] },
@@ -2078,6 +2087,10 @@ export default function App() {
                   onFetchMiHorario={fetchMiHorario}
                   onFetchHorarios={fetchHorariosDisponibles}
                 />
+              )}
+
+              {activeTab === 'formats' && (
+                <FormatEditor />
               )}
 
               {activeTab === 'schedule' && (

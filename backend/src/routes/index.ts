@@ -33,6 +33,7 @@ import { systemRoutes } from './system.routes';
 import { notificacionRoutes } from './notificacion.routes';
 import { materiaPendienteRoutes } from './materia-pendiente.routes';
 import { especialidadRoutes } from './especialidad.routes';
+import { formatoSabanaRoutes } from './formato-sabana.routes';
 
 
 export const routes = Router();
@@ -78,3 +79,4 @@ routes.use('/system', systemRoutes);
 routes.use('/notificaciones', notificacionRoutes);
 routes.use('/materias-pendientes', materiaPendienteRoutes);
 routes.use('/especialidades', especialidadRoutes);
+routes.use('/formatos', formatoSabanaRoutes);
