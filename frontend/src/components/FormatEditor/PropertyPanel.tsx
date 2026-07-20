@@ -32,7 +32,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({ element, onUpdate,
     );
   }
 
-  const renderTextProps = (el: TextElement | FieldElement) => (
+  const renderTextProps = (el: TextElement | FieldElement | CuadriculaElement) => (
     <>
       {'contenido' in el && (
         <PropField label="Contenido">

@@ -131,6 +131,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
         email: identifier.trim(),
         role: mappedRole,
         active: true,
+        username: data.user.userName,
       };
 
       onLogin(loggedUser);

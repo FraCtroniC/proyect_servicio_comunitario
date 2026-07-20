@@ -449,7 +449,19 @@ export default function App() {
           const activeDbPeriod = parsedPeriodos.find((p: any) => p.estatus === 'Activo');
           const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
 
-          setUsers(usuariosData.map(mapUsuarioToUser));
+          const mappedUsers = usuariosData.map(mapUsuarioToUser);
+          setUsers(mappedUsers);
+
+          // Enrich currentUser with correct numeric ID and teacherId from DB
+          if (currentUser) {
+            const match = mappedUsers.find(u =>
+              u.username === currentUser.username || u.username === currentUser.id || u.name === currentUser.name
+            );
+            if (match) {
+              setCurrentUser(prev => prev ? { ...prev, id: match.id, teacherId: match.teacherId, cedula: match.cedula || prev.cedula } : prev);
+            }
+          }
+
           const usuariosArray = Array.isArray(usuariosData) ? usuariosData : (usuariosData as any)?.data || [];
           const docentesApiData = usuariosArray.filter((u: any) => (u.idRol || u.id_rol) === 5);
           const parsedDocentes = docentesApiData.map(mapDocenteToDocenteType);
@@ -1979,7 +1991,8 @@ export default function App() {
                   onAddStudent={handleAddStudent}
                   onUpdateStudentStatus={handleUpdateStudentStatus}
                   onUpdateStudentProfile={handleUpdateStudentProfile}
-                  onNavigateToPending={(id) => {
+                   onNavigateToPending={(id) => {
+                    if (!['super_admin', 'control_estudios'].includes(currentUserRole)) return;
                     setViewPendingStudentId(id);
                     setActiveTab('pendientes');
                   }}

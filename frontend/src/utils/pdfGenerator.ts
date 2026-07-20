@@ -350,7 +350,7 @@ export const generateResumenFinalNotasPDF = (
   doc.text(`RESUMEN FINAL DE NOTAS - ${section.grade}° AÑO "${section.letter}"`, doc.internal.pageSize.getWidth() / 2, 110, { align: 'center' });
 
   // Filter subjects for this year
-  const yearSubjects = subjects.filter(sub => sub.years.includes(section.grade));
+  const yearSubjects = subjects.filter(sub => sub.years.includes(section.grade as AcademicYear));
   const subjectHeaders = yearSubjects.map(s => s.shortName || s.name.substring(0,3).toUpperCase());
 
   // Prepare table data
