@@ -430,6 +430,7 @@ export default function AttendanceTracker({
             <span>Asistencia Estudiantil</span>
           </button>
         )}
+        {currentUserRole === 'docente' && (
         <button
           id="btn-att-miclase"
           onClick={() => {
@@ -445,6 +446,7 @@ export default function AttendanceTracker({
           <BookOpen className="h-4 w-4" />
           <span>Mi Clase</span>
         </button>
+        )}
         <button
           id="btn-att-bitacora"
           onClick={() => setTrackerTab('bitacora')}
@@ -890,7 +892,7 @@ export default function AttendanceTracker({
       )}
 
       {/*************** MI CLASE (Docente View) ***************/}
-      {trackerTab === 'miclase' && (
+      {currentUserRole === 'docente' && trackerTab === 'miclase' && (
         <div id="miclase-container" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
