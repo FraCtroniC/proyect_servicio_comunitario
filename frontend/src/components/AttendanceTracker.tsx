@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen, Pencil, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent, DirtyAttendanceRecord } from '../types';
+import { getErrorMessage } from '../utils/errorHandler';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
 import { SearchableSelect } from './SearchableSelect';
@@ -480,7 +481,7 @@ export default function AttendanceTracker({
 
             {dirtyRecords.size > 0 && (
               <button
-                disabled={isSaveAllLoading}
+                disabled={isSaveAllLoading} aria-busy={isSaveAllLoading}
                 onClick={async () => {
                   if (!onSaveAllAttendance) return;
                   setIsSaveAllLoading(true);
@@ -492,7 +493,7 @@ export default function AttendanceTracker({
                       toast.success(`Asistencia guardada (${records.length} registro${records.length !== 1 ? 's' : ''})`);
                     }
                   } catch (e: any) {
-                    toast.error('Error al guardar: ' + (e?.response?.data?.error?.message || e.message));
+                    toast.error('Error al guardar: ' + getErrorMessage(e));
                   } finally {
                     setIsSaveAllLoading(false);
                   }
@@ -788,7 +789,7 @@ export default function AttendanceTracker({
                                   <button
                                     id={`att-flag-${student.id}-${flag}`}
                                     key={flag}
-                                    disabled={isLoading || !selectedSubject}
+                                    disabled={isLoading || !selectedSubject} aria-busy={isLoading}
                                     onClick={async () => {
                                       if (!selectedSubject) {
                                         toast.error("Debe seleccionar una materia para registrar asistencia.");
@@ -962,7 +963,7 @@ export default function AttendanceTracker({
                 <div className="flex items-center gap-2">
                   {dirtyRecords.size > 0 && (
                     <button
-                      disabled={isSaveAllLoading}
+                      disabled={isSaveAllLoading} aria-busy={isSaveAllLoading}
                       onClick={async () => {
                         if (!onSaveAllAttendance) return;
                         setIsSaveAllLoading(true);
@@ -979,7 +980,7 @@ export default function AttendanceTracker({
                             toast.success(`Asistencia guardada (${records.length} registro${records.length !== 1 ? 's' : ''})`);
                           }
                         } catch (e: any) {
-                          toast.error('Error al guardar: ' + (e?.response?.data?.error?.message || e.message));
+                          toast.error('Error al guardar: ' + getErrorMessage(e));
                         } finally {
                           setIsSaveAllLoading(false);
                         }

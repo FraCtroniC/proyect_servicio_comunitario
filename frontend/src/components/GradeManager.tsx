@@ -1604,7 +1604,7 @@ export default function GradeManager({
               {/* Download Excel */}
               <button
                 onClick={handleDownloadCertExcel}
-                disabled={!certSelectedStudentId || certExcelLoading}
+                disabled={!certSelectedStudentId || certExcelLoading} aria-busy={certExcelLoading}
                 className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
               >
                 <Download className="w-4 h-4" />
@@ -1938,7 +1938,7 @@ export default function GradeManager({
               </button>
               <button
                 onClick={handleSaveCertifiedGrades}
-                disabled={certLoadSaving || !certLoadPeriodId}
+                disabled={certLoadSaving || !certLoadPeriodId} aria-busy={certLoadSaving}
                 className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
               >
                 {certLoadSaving ? 'Guardando...' : 'Guardar Notas Certificadas'}

@@ -11,6 +11,7 @@ export const errorHandler = (
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: {
+        statusCode: err.statusCode,
         message: err.message,
         ...(err.statusCode === 400 && 'details' in err
           ? { details: (err as any).details }
@@ -23,6 +24,7 @@ export const errorHandler = (
   if (err.name === 'SequelizeForeignKeyConstraintError') {
     res.status(400).json({
       error: {
+        statusCode: 400,
         message: 'No se puede completar la acción porque el registro tiene otros datos asociados en el sistema.',
       },
     });
@@ -31,8 +33,10 @@ export const errorHandler = (
 
   console.error('Error no controlado:', err);
 
-  res.status(500).json({
+  const statusCode = 500;
+  res.status(statusCode).json({
     error: {
+      statusCode,
       message: environment.nodeEnv === 'production'
         ? 'Error interno del servidor'
         : err.message,

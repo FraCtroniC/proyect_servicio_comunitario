@@ -462,6 +462,7 @@ export default function AcademicManager({
           <button
             type="submit"
             disabled={secLoading}
+            aria-busy={secLoading}
             className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-400 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer"
           >
             {secLoading ? (editingSection ? 'Guardando...' : 'Creando...') : (editingSection ? 'Guardar Cambios' : 'Aperturar Sección')}

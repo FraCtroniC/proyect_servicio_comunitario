@@ -3,6 +3,7 @@ import { Book, Plus, Filter, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { StudyPlanItem, UserRole, StudyPlanVersion } from '../types';
 import { Modal } from './Modal';
+import { Tooltip } from './Tooltip';
 
 interface SubjectManagerProps {
   studyPlans: StudyPlanItem[];
@@ -203,13 +204,14 @@ export default function SubjectManager({ studyPlans, studyPlanVersions, currentU
               <label className="text-xs font-bold text-slate-500 mb-1 flex items-center gap-2">
                 Versión del Plan:
                 {onAddStudyPlanVersion && (
-                  <button 
-                    onClick={handleOpenNewVersionModal}
-                    className="text-[10px] bg-slate-100 hover:bg-slate-200 text-indigo-600 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                    title="Crear Nueva Versión"
-                  >
-                    + Nuevo
-                  </button>
+                  <Tooltip content="Crea una nueva versión del plan de estudio (ej. 2024, 2025)">
+                    <button 
+                      onClick={handleOpenNewVersionModal}
+                      className="text-[10px] bg-slate-100 hover:bg-slate-200 text-indigo-600 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                    >
+                      + Nuevo
+                    </button>
+                  </Tooltip>
                 )}
               </label>
               <div className="flex gap-2">
@@ -241,14 +243,15 @@ export default function SubjectManager({ studyPlans, studyPlanVersions, currentU
           <div className="flex items-center gap-3">
             <h3 className="text-base font-bold text-slate-800">Materias de la {studyPlanVersions.find(v => v.id_tipo_plan === selectedVersion)?.nombre}</h3>
             {canEdit && onDeleteStudyPlanVersion && studyPlanVersions.length > 1 && (
-              <button
-                onClick={() => setIsDeleteVersionModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 rounded-md transition-colors shadow-sm cursor-pointer border border-rose-100"
-                title="Eliminar esta versión"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Eliminar Versión
-              </button>
+              <Tooltip content="Elimina esta versión del plan de estudio y todas sus materias asociadas.">
+                <button
+                  onClick={() => setIsDeleteVersionModalOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 rounded-md transition-colors shadow-sm cursor-pointer border border-rose-100"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Eliminar Versión
+                </button>
+              </Tooltip>
             )}
           </div>
           

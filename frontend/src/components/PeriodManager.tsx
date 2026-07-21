@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { CalendarDays, Plus, Lock, CheckCircle2, Clock, Pencil } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { CalendarDays, Plus, Lock, CheckCircle2, Clock, Pencil, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Tooltip } from './Tooltip';
+import { ProgressBar } from './ProgressBar';
 import { SchoolPeriod, UserRole } from '../types';
 import { Modal } from './Modal';
 
@@ -43,6 +45,10 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
 
   const [confirmText, setConfirmText] = useState('');
   const [confirmCierreText, setConfirmCierreText] = useState('');
+  const [isCierreLoading, setIsCierreLoading] = useState(false);
+  const [cierreProgress, setCierreProgress] = useState(0);
+  const [cierreStage, setCierreStage] = useState('');
+  const cierreIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editPeriodId, setEditPeriodId] = useState<string>('');
@@ -104,9 +110,17 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (cierreIntervalRef.current) clearInterval(cierreIntervalRef.current);
+    };
+  }, []);
+
   const openCierreAnualModal = (period: SchoolPeriod) => {
     setSelectedPeriod(period);
     setConfirmCierreText('');
+    setCierreProgress(0);
+    setCierreStage('');
     setIsCierreAnualModalOpen(true);
   };
 
@@ -117,11 +131,46 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
       return;
     }
     if (selectedPeriod && onCierreAnual) {
+      setIsCierreLoading(true);
+      setCierreProgress(5);
+      setCierreStage('Preparando cierre anual...');
+
+      const stages = [
+        { at: 20, label: 'Procesando matrículas de estudiantes...' },
+        { at: 40, label: 'Calculando promedios finales...' },
+        { at: 65, label: 'Registrando materias pendientes...' },
+        { at: 85, label: 'Cerrando período y lapsos...' },
+      ];
+
+      let stageIndex = 0;
+      cierreIntervalRef.current = setInterval(() => {
+        if (stageIndex < stages.length) {
+          const nextStage = stages[stageIndex];
+          if (cierreProgress < nextStage.at - 5) {
+            setCierreProgress(p => p + 2);
+          } else {
+            setCierreStage(nextStage.label);
+            setCierreProgress(nextStage.at);
+            stageIndex++;
+          }
+        } else if (cierreProgress < 90) {
+          setCierreProgress(p => Math.min(p + 1, 90));
+        }
+      }, 400);
+
       try {
         await onCierreAnual(selectedPeriod.id);
+        setCierreProgress(100);
+        setCierreStage('¡Cierre anual completado!');
+        if (cierreIntervalRef.current) clearInterval(cierreIntervalRef.current);
+        await new Promise(r => setTimeout(r, 800));
         setIsCierreAnualModalOpen(false);
       } catch (error) {
-        // handled in App.tsx
+        if (cierreIntervalRef.current) clearInterval(cierreIntervalRef.current);
+      } finally {
+        setIsCierreLoading(false);
+        setCierreProgress(0);
+        setCierreStage('');
       }
     }
   };
@@ -288,24 +337,26 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
                             </button>
                           )}
                           {(per.status === 'Activo' || per.status === 'Planificación') && (
-                            <button
-                              onClick={() => openCloseModal(per)}
-                              className="bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 px-3 py-1.5 rounded text-xs font-bold transition-colors pointer-events-auto cursor-pointer flex items-center gap-1"
-                              title="Cerrar periodo normalmente"
-                            >
-                              <Lock className="w-3 h-3" />
-                              Cerrar
-                            </button>
+                            <Tooltip content="Cierra el periodo normalmente. Las notas quedarán como histórico." position="bottom">
+                              <button
+                                onClick={() => openCloseModal(per)}
+                                className="bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 px-3 py-1.5 rounded text-xs font-bold transition-colors pointer-events-auto cursor-pointer flex items-center gap-1"
+                              >
+                                <Lock className="w-3 h-3" />
+                                Cerrar
+                              </button>
+                            </Tooltip>
                           )}
                           {per.status === 'Activo' && canEdit && onCierreAnual && (
-                            <button
-                              onClick={() => openCierreAnualModal(per)}
-                              className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 rounded text-xs font-bold transition-colors pointer-events-auto cursor-pointer flex items-center gap-1 shadow-sm"
-                              title="Cierre de Año Definitivo (Promueve aplazados a Materias Pendientes)"
-                            >
-                              <Lock className="w-3 h-3" />
-                              Cierre Definitivo
-                            </button>
+                            <Tooltip content="Cierre Definitivo: Calcula promedios finales y registra automáticamente estudiantes reprobados en Materias Pendientes." position="bottom">
+                              <button
+                                onClick={() => openCierreAnualModal(per)}
+                                className="bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 rounded text-xs font-bold transition-colors pointer-events-auto cursor-pointer flex items-center gap-1 shadow-sm"
+                              >
+                                <Lock className="w-3 h-3" />
+                                Cierre Definitivo
+                              </button>
+                            </Tooltip>
                           )}
                         </td>
                       )}
@@ -567,7 +618,7 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
       </Modal>
 
       {/* Modal Cierre de Año Anual */}
-      <Modal isOpen={isCierreAnualModalOpen} onClose={() => setIsCierreAnualModalOpen(false)} title="Cierre de Año Escolar Definitivo">
+      <Modal isOpen={isCierreAnualModalOpen} onClose={() => { if (!isCierreLoading) setIsCierreAnualModalOpen(false); }} title="Cierre de Año Escolar Definitivo">
         <form onSubmit={handleCierreAnualSubmit} className="space-y-4">
           <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm font-medium">
             <h4 className="font-bold mb-2 flex items-center gap-2">
@@ -583,36 +634,46 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
             <p>Esta acción puede demorar varios segundos y <strong>no se puede deshacer</strong> fácilmente.</p>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-              Escribe <span className="text-rose-600">CERRAR AÑO</span> para confirmar
-            </label>
-            <input
-              type="text"
-              required
-              value={confirmCierreText}
-              onChange={(e) => setConfirmCierreText(e.target.value)}
-              className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-rose-500 font-bold text-center uppercase"
-              placeholder="CERRAR AÑO"
-            />
-          </div>
+          {isCierreLoading ? (
+            <div className="space-y-3 py-2">
+              <ProgressBar progress={cierreProgress} label={cierreStage} />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                  Escribe <span className="text-rose-600">CERRAR AÑO</span> para confirmar
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={confirmCierreText}
+                  onChange={(e) => setConfirmCierreText(e.target.value)}
+                  className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-rose-500 font-bold text-center uppercase"
+                  placeholder="CERRAR AÑO"
+                />
+              </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setIsCierreAnualModalOpen(false)}
-              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-lg text-sm font-bold transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={confirmCierreText !== 'CERRAR AÑO'}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Ejecutar Cierre Anual
-            </button>
-          </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCierreAnualModalOpen(false)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-lg text-sm font-bold transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={confirmCierreText !== 'CERRAR AÑO' || isCierreLoading}
+                  aria-busy={isCierreLoading}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {isCierreLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {isCierreLoading ? 'Ejecutando...' : 'Ejecutar Cierre Anual'}
+                </button>
+              </div>
+            </>
+          )}
         </form>
       </Modal>
 

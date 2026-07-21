@@ -600,7 +600,7 @@ export default function DocenteManager({ docentes, users, currentUserRole, onAdd
               <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-base font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                 Cancelar
               </button>
-              <button disabled={isSubmitting} type="submit" className="px-6 py-2.5 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70 disabled:cursor-not-allowed">
+              <button disabled={isSubmitting} type="submit" aria-busy={isSubmitting} className="px-6 py-2.5 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-70 disabled:cursor-not-allowed">
                 {isSubmitting ? 'Guardando...' : 'Registrar Docente'}
               </button>
             </div>

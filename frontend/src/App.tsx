@@ -53,6 +53,7 @@ import {
 } from './types';
 
 import { api } from './services/api';
+import { getErrorMessage } from './utils/errorHandler';
 import { mapUsuarioToUser, mapEstudianteToStudent, mapAulaToClassroom, mapAsignaturaToSubject, mapPlanToStudyPlanItem, mapHorarioToScheduleEvent, mapCalificacionToGrade, mapPeriodoToSchoolPeriod, mapEvaluacionesDbToPlans, mapNotaParcialToGrade, mapSeccionToSection, mapRepresentanteToRepresentative, mapDocenteToDocenteType } from './services/mappers';
 
 
@@ -560,7 +561,7 @@ export default function App() {
           }
         } catch (error: any) {
           console.error("Error al cargar datos desde el backend:", error);
-          toast.error("Error al cargar datos desde el backend: " + error.message);
+          toast.error("Error al cargar datos desde el backend: " + getErrorMessage(error));
         }
       };
       loadInitialData();
@@ -632,7 +633,7 @@ export default function App() {
         err.fieldErrors = details;
         throw err;
       }
-      throw new Error(e.message || 'Error al actualizar usuario');
+      throw new Error(getErrorMessage(e, 'Error al actualizar usuario'));
     }
   };
 
@@ -647,7 +648,7 @@ export default function App() {
       }
     } catch (e: any) {
       console.error(e);
-      throw new Error(e.response?.data?.error?.message || 'Error al cambiar estatus del usuario');
+      throw new Error(getErrorMessage(e, 'Error al cambiar estatus del usuario'));
     }
   };
 
@@ -812,7 +813,7 @@ export default function App() {
       setStudyPlans(prev => prev.filter(sp => sp.id !== stripId(id)));
     } catch (e) {
       console.error(e);
-      toast.error('Error al eliminar la materia del plan de estudio');
+      toast.error(getErrorMessage(e, 'Error al eliminar la materia del plan de estudio'));
     }
   };
 
@@ -823,7 +824,7 @@ export default function App() {
       return resp;
     } catch (e: any) {
       console.error(e);
-      toast.error('Error al crear una nueva versión de plan de estudio');
+      toast.error(getErrorMessage(e, 'Error al crear una nueva versión de plan de estudio'));
       throw e;
     }
   };
@@ -835,13 +836,7 @@ export default function App() {
       toast.success('Versión eliminada exitosamente');
     } catch (e: any) {
       console.error(e);
-      if (e.details && e.details.message) {
-        toast.error(e.details.message);
-      } else if (e.message) {
-        toast.error(e.message);
-      } else {
-        toast.error('Error al eliminar la versión del plan de estudio');
-      }
+      toast.error(getErrorMessage(e, 'Error al eliminar la versión del plan de estudio'));
       throw e;
     }
   };
@@ -852,7 +847,7 @@ export default function App() {
       setSubjects(p => p.map(s => s.id === id ? { ...s, name, shortName: name.substring(0, 3).toUpperCase() } : s));
     } catch (e) {
       console.error(e);
-      toast.error('Error al actualizar la asignatura en la base de datos');
+      toast.error(getErrorMessage(e, 'Error al actualizar la asignatura en la base de datos'));
     }
   };
 
@@ -867,7 +862,7 @@ export default function App() {
       setPeriods(prev => [...prev, mapPeriodoToSchoolPeriod(resp)]);
     } catch (e: any) {
       console.error(e);
-      toast.error(e.message || 'Error al crear periodo escolar');
+      toast.error(getErrorMessage(e, 'Error al crear periodo escolar'));
       throw e;
     }
   };
@@ -878,7 +873,7 @@ export default function App() {
       setPeriods(prev => prev.map(p => p.id === String(updated.id_periodo) ? mapPeriodoToSchoolPeriod(updated) : p));
     } catch (e) {
       console.error(e);
-      toast.error('Error al actualizar periodo escolar');
+      toast.error(getErrorMessage(e, 'Error al actualizar periodo escolar'));
       throw e;
     }
   };
@@ -890,7 +885,7 @@ export default function App() {
       toast.success(`Lapso ${newStatus === 'Abierto' ? 'Abierto' : 'Cerrado'} exitosamente`);
     } catch (e) {
       console.error(e);
-      toast.error('Error al actualizar estatus del lapso');
+      toast.error(getErrorMessage(e, 'Error al actualizar estatus del lapso'));
       throw e;
     }
   };
@@ -901,7 +896,7 @@ export default function App() {
       setPeriods(prev => prev.map(p => p.id === String(updated.id_periodo) ? mapPeriodoToSchoolPeriod(updated) : p));
     } catch (e) {
       console.error(e);
-      toast.error('Error al editar periodo escolar');
+      toast.error(getErrorMessage(e, 'Error al editar periodo escolar'));
       throw e;
     }
   };
@@ -915,7 +910,7 @@ export default function App() {
       }
     } catch (e: any) {
       console.error(e);
-      toast.error('Error al cerrar el año escolar: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al cerrar el año escolar: ' + getErrorMessage(e));
       throw e;
     }
   };
@@ -939,8 +934,7 @@ export default function App() {
       return newSection;
     } catch (e: any) {
       console.error('Error al crear sección:', e);
-      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
-      throw new Error(msg);
+      throw new Error(getErrorMessage(e, 'Error desconocido'));
     }
   };
 
@@ -958,8 +952,7 @@ export default function App() {
       setSections(prev => prev.map(s => s.id === sectionId ? mapSeccionToSection(updated) : s));
     } catch (e: any) {
       console.error('Error al actualizar sección:', e);
-      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
-      throw new Error(msg);
+      throw new Error(getErrorMessage(e, 'Error desconocido'));
     }
   };
 
@@ -969,8 +962,7 @@ export default function App() {
       setSections(prev => prev.filter(s => s.id !== sectionId));
     } catch (e: any) {
       console.error('Error al eliminar sección:', e);
-      const msg = e.response?.data?.error?.message || e.message || 'Error desconocido';
-      throw new Error(msg);
+      throw new Error(getErrorMessage(e, 'Error desconocido'));
     }
   };
 
@@ -1024,8 +1016,7 @@ export default function App() {
         toast.error("⚠️ ATENCIÓN: Debes 'Configurar Plan de Evaluación' para esta asignatura y lapso antes de guardar calificaciones.", { duration: 6000 });
         return;
       }
-      const msg = e.response?.data?.error?.message || e.message || "Error desconocido";
-      toast.error(`Error al guardar las calificaciones en la base de datos: ${msg}`);
+      toast.error('Error al guardar las calificaciones en la base de datos: ' + getErrorMessage(e, 'Error desconocido'));
       throw e;
     }
   };
@@ -1084,8 +1075,7 @@ export default function App() {
       toast.success("Plan de Evaluación guardado permanentemente en la base de datos.");
     } catch (e: any) {
       console.error(e);
-      const msg = e.response?.data?.error?.message || e.message || "Error de conexión";
-      toast.error(`Error al guardar el plan de evaluación: ${msg}`);
+      toast.error('Error al guardar el plan de evaluación: ' + getErrorMessage(e, 'Error de conexión'));
     }
   };
 
@@ -1275,7 +1265,7 @@ export default function App() {
       }
     } catch (e: any) {
       console.error('Error al guardar asistencia estudiantil', e);
-      toast.error('Error al guardar asistencia: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al guardar asistencia: ' + getErrorMessage(e));
     }
   };
 
@@ -1361,7 +1351,7 @@ export default function App() {
       return true;
     } catch (e: any) {
       console.error('Error al guardar asistencias en batch', e);
-      toast.error('Error al guardar asistencias: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al guardar asistencias: ' + getErrorMessage(e));
       return false;
     }
   };
@@ -1442,7 +1432,7 @@ export default function App() {
       return true;
     } catch (e: any) {
       console.error('Error al crear justificación estudiante', e);
-      toast.error('Error al justificar: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al justificar: ' + getErrorMessage(e));
       return false;
     }
   };
@@ -1465,7 +1455,7 @@ export default function App() {
       return true;
     } catch (e: any) {
       console.error('Error al guardar observación', e);
-      toast.error('Error al guardar observación: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al guardar observación: ' + getErrorMessage(e));
       return false;
     }
   };
@@ -1483,7 +1473,7 @@ export default function App() {
       setTeacherLogs(p => [{ ...log, id: String(created.id_asistencia || created.id), status: serverStatus }, ...p]);
     } catch (e: any) {
       console.error('Error al registrar entrada:', e);
-      toast.error('Error al registrar entrada: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al registrar entrada: ' + getErrorMessage(e));
     }
   };
 
@@ -1495,7 +1485,7 @@ export default function App() {
       toast.success(`Inasistencias sincronizadas correctamente para ${ids_matricula.length} estudiante(s).`);
     } catch (e: any) {
       console.error('Error al sincronizar inasistencias', e);
-      toast.error('Error al sincronizar inasistencias: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al sincronizar inasistencias: ' + getErrorMessage(e));
     }
   };
 
@@ -1507,7 +1497,7 @@ export default function App() {
       }
     } catch (e: any) {
       console.error('Error al registrar salida:', e);
-      toast.error('Error al registrar salida: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al registrar salida: ' + getErrorMessage(e));
       return;
     }
     setTeacherLogs(p => p.map(l => l.id === logId ? { ...l, clockOutTime: clockOut } : l));
@@ -1521,7 +1511,7 @@ export default function App() {
       toast.success('Registro de asistencia eliminado');
     } catch (e: any) {
       console.error('Error al eliminar asistencia:', e);
-      toast.error('Error al eliminar: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al eliminar: ' + getErrorMessage(e));
     }
   };
 
@@ -1592,7 +1582,7 @@ export default function App() {
       return false;
     } catch (e: any) {
       console.error('Error al registrar justificación:', e);
-      toast.error('Error al registrar justificación: ' + (e?.response?.data?.error?.message || e.message));
+      toast.error('Error al registrar justificación: ' + getErrorMessage(e));
       return false;
     }
   };
@@ -1624,7 +1614,7 @@ export default function App() {
       setScheduleEvents(prev => [...prev, mapHorarioToScheduleEvent(created)]);
     } catch (e: any) {
       console.error('Error al crear horario:', e);
-      toast.error('Error al guardar horario en BD: ' + (e.message || 'Error desconocido'));
+      toast.error('Error al guardar horario en BD: ' + getErrorMessage(e, 'Error desconocido'));
     }
   };
 
@@ -1661,7 +1651,7 @@ export default function App() {
       setScheduleEvents(prev => prev.map(e => e.id === String(id) ? mapHorarioToScheduleEvent(updated) : e));
     } catch (e: any) {
       console.error('Error al actualizar horario:', e);
-      toast.error('Error al actualizar horario en BD: ' + (e.message || 'Error desconocido'));
+      toast.error('Error al actualizar horario en BD: ' + getErrorMessage(e, 'Error desconocido'));
     }
   };
 
@@ -1675,7 +1665,7 @@ export default function App() {
       }
     } catch (e: any) {
       console.error('Error al eliminar horario:', e);
-      toast.error('Error al eliminar asignación: ' + (e.response?.data?.error?.message || e.message || 'Error desconocido'));
+      toast.error('Error al eliminar asignación: ' + getErrorMessage(e, 'Error desconocido'));
     }
   };
 
@@ -1987,6 +1977,7 @@ export default function App() {
                 <button
                   onClick={handleBackup}
                   disabled={isBackingUp}
+                  aria-busy={isBackingUp}
                   className={`w-full py-1.5 px-3 text-white text-[11px] font-bold uppercase tracking-wide rounded-lg shadow-sm transition-all pointer-events-auto flex justify-center items-center gap-2 ${isBackingUp
                     ? 'bg-slate-600/50 cursor-not-allowed border border-slate-500/30'
                     : 'bg-slate-700/80 hover:bg-slate-600 border border-slate-600/50 cursor-pointer'

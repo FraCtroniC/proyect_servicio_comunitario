@@ -451,6 +451,7 @@ export default function FacilitiesManager({
             <button
               type="submit"
               disabled={isDuplicateName || !name.trim() || isSubmitting}
+              aria-busy={isSubmitting}
               className="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm rounded-lg shadow-sm transition-colors pointer-events-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (

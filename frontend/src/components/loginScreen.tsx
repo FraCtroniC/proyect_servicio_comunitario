@@ -347,6 +347,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               <button
                 type="submit"
                 disabled={isLoading}
+                aria-busy={isLoading}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
                 {isLoading ? (
@@ -423,6 +424,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
                 <button
                   type="submit"
                   disabled={isLoading}
+                  aria-busy={isLoading}
                   className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
                 >
                   {isLoading ? (
@@ -507,6 +509,7 @@ export default function LoginScreen({ users, onLogin }: LoginScreenProps) {
               type="submit"
               id="btn-submit-login"
               disabled={isLoading}
+              aria-busy={isLoading}
               className="w-full py-3 2xl:py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base 2xl:text-lg rounded-xl shadow-lg shadow-blue-900/30 transition-all pointer-events-auto cursor-pointer flex items-center justify-center gap-1.5 2xl:gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2 2xl:mt-4"
             >
               {isLoading ? (

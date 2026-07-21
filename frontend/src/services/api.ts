@@ -73,9 +73,10 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     }
   }
 
-  if (!response.ok) {
+    if (!response.ok) {
     let errorMsg = `Error en la petición al servidor (Status: ${response.status} - ${response.statusText} en ${url})`;
     let errDetails: Record<string, string[]> | null = null;
+    let errStatusCode: number = response.status;
     try {
       const errJson = await response.json();
       if (errJson.error && errJson.error.message) {
@@ -84,11 +85,15 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
       if (errJson.error && errJson.error.details) {
         errDetails = errJson.error.details;
       }
+      if (errJson.error && errJson.error.statusCode) {
+        errStatusCode = errJson.error.statusCode;
+      }
     } catch (e) {
       // Ignorar si no es JSON válido
     }
     const err = new Error(errorMsg) as any;
     err.details = errDetails;
+    err.statusCode = errStatusCode;
     throw err;
   }
 
@@ -169,7 +174,24 @@ export const api = {
       }
     }
 
-    if (!res.ok) throw new Error(`Error ${res.status}`);
+    if (!res.ok) {
+      let errorMsg = `Error al descargar (Status: ${res.status})`;
+      let errStatusCode: number = res.status;
+      try {
+        const errJson = await res.json();
+        if (errJson.error && errJson.error.message) {
+          errorMsg = errJson.error.message;
+        }
+        if (errJson.error && errJson.error.statusCode) {
+          errStatusCode = errJson.error.statusCode;
+        }
+      } catch {
+        // Ignorar si no es JSON válido
+      }
+      const err = new Error(errorMsg) as any;
+      err.statusCode = errStatusCode;
+      throw err;
+    }
     return res.json();
   },
   post: <T>(url: string, body?: any) =>
