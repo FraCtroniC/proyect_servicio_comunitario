@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Layers, UserPlus, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen } from 'lucide-react';
+import { Layers, UserPlus, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, AcademicYear, UserRole, MateriaPendiente, Section, PaginatedResponse } from '../types';
 import { generateConstanciaEstudio } from '../utils/pdfGenerator';
@@ -81,6 +81,8 @@ export default function StudentManager({ students, sections, classrooms, current
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [pendingSubjects, setPendingSubjects] = useState<MateriaPendiente[]>([]);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   
   useEffect(() => {
     if (modalMode === 'create' && isStudentModalOpen) {
@@ -151,6 +153,11 @@ export default function StudentManager({ students, sections, classrooms, current
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleOpenView = (s: Student) => {
+    setViewingStudent(s);
+    setIsViewModalOpen(true);
   };
 
   const resetFormToDefaults = () => {
@@ -658,6 +665,15 @@ export default function StudentManager({ students, sections, classrooms, current
                           >
                             <FileText className="h-4 w-4" />
                           </button>
+                          {currentUserRole === 'coordinador' && (
+                            <button
+                              onClick={() => handleOpenView(s)}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Ver Datos Completos"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
                           {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                             <select
                               value={s.status}
@@ -1083,6 +1099,105 @@ export default function StudentManager({ students, sections, classrooms, current
                 + Registrar Nueva Materia Pendiente
               </button>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal Visualización de Datos del Estudiante (Coordinador) */}
+      <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Datos Completos del Estudiante">
+        {viewingStudent && (
+          <div className="space-y-5">
+            {/* Ficha del Estudiante */}
+            <div className="space-y-3">
+              <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest block border-b border-indigo-50 pb-0.5">Ficha del Estudiante</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cédula</span>
+                  <p className="text-sm font-bold text-slate-800 font-mono">{viewingStudent.cedula}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha de Nacimiento</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.dateOfBirth}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Primer Nombre</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.firstName?.split(' ')[0] || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Segundo Nombre</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.firstName?.split(' ').slice(1).join(' ') || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Primer Apellido</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.lastName?.split(' ')[0] || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Segundo Apellido</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.lastName?.split(' ').slice(1).join(' ') || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Género</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.gender === 'M' ? 'Masculino' : viewingStudent.gender === 'F' ? 'Femenino' : viewingStudent.gender || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Año Escolar</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.academicYear}° Año</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sección</span>
+                  <p className="text-sm font-bold text-slate-800">"{viewingStudent.section}"</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estatus</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.status}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lugar de Nacimiento</span>
+                  <p className="text-sm font-bold text-slate-800">
+                    {[viewingStudent.birthPlace, viewingStudent.municipality, viewingStudent.state].filter(Boolean).join(', ') || '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Representante Legal */}
+            <div className="space-y-3">
+              <span className="text-sm font-bold text-amber-600 uppercase tracking-widest block border-b border-amber-50 pb-0.5">Representante Legal (LOPNA)</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cédula</span>
+                  <p className="text-sm font-bold text-slate-800 font-mono">{viewingStudent.representativeCedula}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Teléfono</span>
+                  <p className="text-sm font-bold text-slate-800 font-mono">{viewingStudent.representativePhone}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Primer Nombre</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.repFirstName || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Segundo Nombre</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.repSecondName || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Primer Apellido</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.repLastName || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Segundo Apellido</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.repSecondLastName || '—'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Correo</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.representativeEmail || '—'}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Dirección</span>
+                  <p className="text-sm font-bold text-slate-800">{viewingStudent.representativeAddress || '—'}</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </Modal>
