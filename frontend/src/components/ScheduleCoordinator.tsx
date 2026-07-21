@@ -23,6 +23,8 @@ interface ScheduleCoordinatorProps {
   referenceData: { dias: any[]; bloques: any[]; grados: any[] };
   periods: SchoolPeriod[];
   currentUserRole: UserRole;
+  defaultFilterType?: 'section' | 'teacher' | 'classroom';
+  defaultTeacherId?: string;
   onAddScheduleEvent: (evt: ScheduleEvent) => void;
   onUpdateScheduleEvent?: (evtId: string, evt: Partial<ScheduleEvent>) => void;
   onRemoveScheduleEvent: (evtId: string) => void;
@@ -40,6 +42,8 @@ export default function ScheduleCoordinator({
   referenceData,
   periods,
   currentUserRole,
+  defaultFilterType,
+  defaultTeacherId,
   onAddScheduleEvent,
   onUpdateScheduleEvent,
   onRemoveScheduleEvent,
@@ -74,10 +78,10 @@ export default function ScheduleCoordinator({
   const activePeriod = periods?.find(p => p.status === 'Activo');
 
   // Filters to display current schedules
-  const [filterType, setFilterType] = useState<'section' | 'teacher' | 'classroom'>('section');
+  const [filterType, setFilterType] = useState<'section' | 'teacher' | 'classroom'>(defaultFilterType || 'section');
   const [filterYear, setFilterYear] = useState<AcademicYear | 0>(0);
   const [filterSection, setFilterSection] = useState<string>('');
-  const [filterTeacherId, setFilterTeacherId] = useState<string>('t-1');
+  const [filterTeacherId, setFilterTeacherId] = useState<string>(defaultTeacherId || 't-1');
   const [filterClassroomId, setFilterClassroomId] = useState<string>('rm-201');
 
   // Input states for assigning a block
@@ -115,6 +119,12 @@ export default function ScheduleCoordinator({
       }
     }
   }, [sections, referenceData.grados]);
+
+  // Sync filter with default props when they arrive (e.g. after user data loads)
+  useEffect(() => {
+    if (defaultFilterType) setFilterType(defaultFilterType);
+    if (defaultTeacherId) setFilterTeacherId(defaultTeacherId);
+  }, [defaultFilterType, defaultTeacherId]);
 
   // Sync calendar filter with form year/section
   useEffect(() => {

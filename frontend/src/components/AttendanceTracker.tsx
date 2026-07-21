@@ -3,16 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen, Pencil, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
 import { SearchableSelect } from './SearchableSelect';
+import StudentAttendanceCalendar from './StudentAttendanceCalendar';
 
 interface AttendanceTrackerProps {
   students: Student[];
+  gradeStudents?: Student[];
   users: User[];
   docentes: Docente[];
   subjects: Subject[];
@@ -36,11 +38,12 @@ interface AttendanceTrackerProps {
   onDeleteAttendance?: (attendanceId: string) => void;
   onRefreshData?: () => Promise<void>;
   onFetchMiHorario?: (fecha?: string) => Promise<void>;
-  onFetchHorarios?: (params?: { id_docente?: string; fecha?: string }) => Promise<void>;
+  onFetchHorarios?: (params?: { id_docente?: string; fecha?: string }) => void;
 }
 
 export default function AttendanceTracker({
   students,
+  gradeStudents,
   users,
   docentes,
   subjects,
@@ -67,7 +70,9 @@ export default function AttendanceTracker({
   onFetchHorarios
 }: AttendanceTrackerProps) {
   // Navigation
-  const [trackerTab, setTrackerTab] = useState<'students' | 'teachers' | 'miclase' | 'bitacora'>('students');
+  const [trackerTab, setTrackerTab] = useState<'students' | 'teachers' | 'miclase' | 'bitacora'>(
+    currentUserRole === 'docente' ? 'miclase' : 'students'
+  );
 
   // Bitácora state
   const [bitacoraTab, setBitacoraTab] = useState<'observaciones' | 'justificaciones'>('observaciones');
@@ -80,6 +85,24 @@ export default function AttendanceTracker({
   const [bitacoraEditJustMotivo, setBitacoraEditJustMotivo] = useState('');
   const [bitacoraEditJustSoporte, setBitacoraEditJustSoporte] = useState('');
   const [bitacoraEditJustLoading, setBitacoraEditJustLoading] = useState(false);
+
+  // Student Attendance Calendar
+  const [showStudentCalendar, setShowStudentCalendar] = useState(false);
+  const [calendarStudentId, setCalendarStudentId] = useState('');
+  const [calendarStudentName, setCalendarStudentName] = useState('');
+
+  // Filter attendance for calendar: docente only sees their own records, admin sees all
+  const calendarAttendance = useMemo(() => {
+    if (currentUserRole === 'docente') {
+      const myScheduleIds = new Set(
+        scheduleEvents
+          .filter(e => String(e.teacherId) === String(currentUser?.id))
+          .map(e => e.id)
+      );
+      return attendance.filter(a => a.horarioId && myScheduleIds.has(a.horarioId));
+    }
+    return attendance;
+  }, [attendance, scheduleEvents, currentUser, currentUserRole]);
 
   // Student Attendance Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
@@ -340,18 +363,20 @@ export default function AttendanceTracker({
       
       {/* Tab select slider */}
       <div id="attendance-tabs" className="flex border-b border-slate-200">
-        <button
-          id="btn-att-students"
-          onClick={() => setTrackerTab('students')}
-          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
-            trackerTab === 'students' 
-              ? 'border-indigo-600 text-indigo-700' 
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <ClipboardCheck className="h-4 w-4" />
-          <span>Asistencia Estudiantil</span>
-        </button>
+        {currentUserRole !== 'docente' && (
+          <button
+            id="btn-att-students"
+            onClick={() => setTrackerTab('students')}
+            className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+              trackerTab === 'students' 
+                ? 'border-indigo-600 text-indigo-700' 
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            <span>Asistencia Estudiantil</span>
+          </button>
+        )}
         <button
           id="btn-att-miclase"
           onClick={() => {
@@ -639,7 +664,10 @@ export default function AttendanceTracker({
                       return (
                         <tr id={`att-std-row-${student.id}`} key={student.id} className={`hover:bg-slate-50/40 transition-colors ${loadingStudentId === student.id ? 'bg-indigo-50/50' : ''}`}>
                           <td className="py-3 pr-2">
-                            <span className="font-bold text-slate-800 text-sm block flex items-center gap-1.5">
+                            <button
+                              onClick={() => { setCalendarStudentId(student.id); setCalendarStudentName(`${student.lastName}, ${student.firstName}`); setShowStudentCalendar(true); }}
+                              className="font-bold text-slate-800 text-sm flex items-center gap-1.5 hover:text-indigo-600 transition-colors cursor-pointer text-left"
+                            >
                               {loadingStudentId === student.id && (
                                 <svg className="animate-spin h-3 w-3 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -647,7 +675,7 @@ export default function AttendanceTracker({
                                 </svg>
                               )}
                               {student.lastName}, {student.firstName}
-                            </span>
+                            </button>
                           </td>
                           <td className="py-3 font-mono font-bold text-slate-500 text-sm">{student.cedula}</td>
                           <td className="py-3">
@@ -860,7 +888,10 @@ export default function AttendanceTracker({
                       return (
                         <tr key={est.id_matricula} className={`hover:bg-slate-50/40 transition-colors ${isLoading ? 'bg-indigo-50/50' : ''}`}>
                           <td className="py-3 pr-2">
-                            <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                            <button
+                              onClick={() => { setCalendarStudentId(String(est.id_estudiante)); setCalendarStudentName(est.nombre); setShowStudentCalendar(true); }}
+                              className="font-bold text-slate-800 text-sm flex items-center gap-1.5 hover:text-indigo-600 transition-colors cursor-pointer text-left"
+                            >
                               {isLoading && (
                                 <svg className="animate-spin h-3 w-3 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -868,7 +899,7 @@ export default function AttendanceTracker({
                                 </svg>
                               )}
                               {est.nombre}
-                            </span>
+                            </button>
                           </td>
                           <td className="py-3 font-mono font-bold text-slate-500 text-sm">{est.cedula}</td>
                           <td className="py-3">
@@ -979,7 +1010,7 @@ export default function AttendanceTracker({
             <div className="flex flex-col gap-1 w-96">
               <span className="text-sm font-bold text-slate-400 uppercase">Seleccione Estudiante</span>
               <SearchableSelect
-                options={students.filter(s => s.status === 'Activo').map(s => ({
+                options={(gradeStudents || students).filter(s => s.status === 'Activo').map(s => ({
                   value: s.id,
                   label: `[${s.academicYear}° Año "${s.section}"] - ${s.lastName}, ${s.firstName} (${s.cedula})`
                 }))}
@@ -1769,6 +1800,15 @@ export default function AttendanceTracker({
           );
         })()}
       </Modal>
+
+      {/* Student Attendance Calendar Modal */}
+      <StudentAttendanceCalendar
+        studentId={calendarStudentId}
+        studentName={calendarStudentName}
+        calendarAttendance={calendarAttendance}
+        isOpen={showStudentCalendar}
+        onClose={() => setShowStudentCalendar(false)}
+      />
 
     </div>
   );

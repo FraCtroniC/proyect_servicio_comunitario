@@ -2140,6 +2140,7 @@ export default function App() {
               {activeTab === 'attendance' && (
                 <AttendanceTracker
                   students={students}
+                  gradeStudents={gradeStudents}
                   users={users}
                   docentes={docentes}
                   subjects={subjects}
@@ -2190,6 +2191,8 @@ export default function App() {
                   referenceData={referenceData}
                   periods={periods}
                   currentUserRole={currentUserRole}
+                  defaultFilterType={isDocente ? 'teacher' : 'section'}
+                  defaultTeacherId={isDocente ? teacherId : undefined}
                   onAddScheduleEvent={handleAddScheduleEvent}
                   onUpdateScheduleEvent={handleUpdateScheduleEvent}
                   onRemoveScheduleEvent={handleRemoveScheduleEvent}
