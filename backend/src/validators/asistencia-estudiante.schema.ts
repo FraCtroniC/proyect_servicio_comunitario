@@ -51,6 +51,10 @@ export const crearBatchAsistenciaEstudianteSchema = z.object({
       texto: z.string().min(1).transform(val => val.trim()),
       gravedad: z.enum(['Bajo', 'Moderado', 'Alto', 'Critico']).optional(),
     }).nullable().optional(),
+    justificacion: z.object({
+      motivo: z.string().min(1, 'El motivo es obligatorio').transform(val => val.trim()),
+      soporte_digital: z.string().optional(),
+    }).nullable().optional(),
   })).nonempty('registros debe ser un array no vacío'),
 });
 

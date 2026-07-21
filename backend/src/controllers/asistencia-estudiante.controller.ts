@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import {
   AsistenciaEstudiante, Matricula, Estudiante, Seccion,
   Calificacion, PeriodoEscolar, HorarioDocente, Asignatura,
-  BloqueHorario, Usuario, ObservacionEstudiante, sequelize
+  BloqueHorario, Usuario, ObservacionEstudiante, JustificacionEstudiante, sequelize
 } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
@@ -199,6 +199,16 @@ export const AsistenciaEstudianteController = {
         if (!created) {
           await registro.update({ estatus: payload.estatus, id_observacion: payload.id_observacion }, { transaction: t });
         }
+
+        const justificacionData = r.justificacion;
+        if (justificacionData && justificacionData.motivo) {
+          await JustificacionEstudiante.create({
+            id_asistencia_est: registro.id_asistencia_est,
+            motivo: justificacionData.motivo,
+            soporte_digital: justificacionData.soporte_digital || null,
+          }, { transaction: t });
+        }
+
         creados.push(registro);
       }
       return creados;

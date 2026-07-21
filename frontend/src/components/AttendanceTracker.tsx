@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { ClipboardCheck, Fingerprint, Calendar, Users, Clock, CheckCircle, ShieldAlert, FileText, Trash2, BookOpen, Pencil, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent } from '../types';
+import { Student, Attendance, User, Docente, TeacherScheduleLog, AcademicYear, UserRole, Section, SchoolPeriod, Subject, SubjectSchedule, ScheduleEvent, DirtyAttendanceRecord } from '../types';
 import { generateReporteAsistencia } from '../utils/pdfGenerator';
 import { Modal } from './Modal';
 import { SearchableSelect } from './SearchableSelect';
@@ -36,6 +36,7 @@ interface AttendanceTrackerProps {
   onJustifyStudentAbsence?: (attendanceId: string | null, motivo: string, soporteDigital?: string, studentId?: string, fecha?: string, horarioId?: string) => Promise<boolean>;
   onSaveObservacion?: (attendanceId: string, texto: string, gravedad?: string) => Promise<boolean>;
   onDeleteAttendance?: (attendanceId: string) => void;
+  onSaveAllAttendance?: (dirtyRecords: DirtyAttendanceRecord[], date: string, year: AcademicYear, section: string, subjectId: string) => Promise<boolean>;
   onRefreshData?: () => Promise<void>;
   onFetchMiHorario?: (fecha?: string) => Promise<void>;
   onFetchHorarios?: (params?: { id_docente?: string; fecha?: string }) => void;
@@ -65,6 +66,7 @@ export default function AttendanceTracker({
   onJustifyStudentAbsence,
   onSaveObservacion,
   onDeleteAttendance,
+  onSaveAllAttendance,
   onRefreshData,
   onFetchMiHorario,
   onFetchHorarios
@@ -124,6 +126,10 @@ export default function AttendanceTracker({
   // Loading state for attendance marking
   const [loadingStudentId, setLoadingStudentId] = useState<string | null>(null);
 
+  // Dirty state for batch save
+  const [dirtyRecords, setDirtyRecords] = useState<Map<string, DirtyAttendanceRecord>>(new Map());
+  const [isSaveAllLoading, setIsSaveAllLoading] = useState(false);
+
   // Teacher clock-in Emulator
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [clockSuccessMsg, setClockSuccessMsg] = useState('');
@@ -161,6 +167,43 @@ export default function AttendanceTracker({
     }
   }, []);
 
+  // Warn about unsaved changes when leaving
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirtyRecords.size > 0) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirtyRecords.size]);
+
+  // Auto-save dirty records when switching tabs or changing date
+  const prevTabRef = useRef(trackerTab);
+  const prevDateRef = useRef(selectedDate);
+  useEffect(() => {
+    if (!onSaveAllAttendance || dirtyRecords.size === 0) {
+      prevTabRef.current = trackerTab;
+      prevDateRef.current = selectedDate;
+      return;
+    }
+    const tabChanged = prevTabRef.current !== trackerTab;
+    const dateChanged = prevDateRef.current !== selectedDate;
+    if (tabChanged || dateChanged) {
+      const records = Array.from(dirtyRecords.values());
+      onSaveAllAttendance(records, selectedDate, selectedYear, selectedSection, selectedSubject)
+        .then(success => {
+          if (success) {
+            setDirtyRecords(new Map());
+            toast.success(`Asistencia guardada automáticamente (${records.length} registro${records.length !== 1 ? 's' : ''})`);
+          }
+        })
+        .catch(() => {});
+    }
+    prevTabRef.current = trackerTab;
+    prevDateRef.current = selectedDate;
+  }, [trackerTab, selectedDate]);
+
   const activePeriod = periods.find(p => p.status === 'Activo');
   const schoolYearStart = (() => {
     if (!activePeriod) return '2025-01-01';
@@ -178,14 +221,24 @@ export default function AttendanceTracker({
   const maxDate = todayString < schoolYearEnd ? todayString : schoolYearEnd;
 
   const attendanceSummary = (() => {
-    const todayRecords = attendance.filter(a =>
+    const todayServerRecords = attendance.filter(a =>
       a.date === selectedDate &&
       (selectedSubject ? a.horarioId === selectedSubject : !a.horarioId)
     );
+    const overrides = new Map<string, 'P' | 'A' | 'J'>();
+    for (const d of Array.from(dirtyRecords.values())) {
+      overrides.set(d.studentId, d.status);
+    }
+    const effectiveStatuses = todayServerRecords.map(a => overrides.get(a.studentId) || a.status);
+    for (const [stId, status] of overrides) {
+      if (!todayServerRecords.some(a => a.studentId === stId)) {
+        effectiveStatuses.push(status);
+      }
+    }
     return {
-      presentes: todayRecords.filter(a => a.status === 'P').length,
-      ausentes: todayRecords.filter(a => a.status === 'A').length,
-      justificados: todayRecords.filter(a => a.status === 'J').length,
+      presentes: effectiveStatuses.filter(s => s === 'P').length,
+      ausentes: effectiveStatuses.filter(s => s === 'A').length,
+      justificados: effectiveStatuses.filter(s => s === 'J').length,
     };
   })();
 
@@ -425,6 +478,45 @@ export default function AttendanceTracker({
           {/* Action buttons */}
           <div className="flex justify-end gap-2 items-center">
 
+            {dirtyRecords.size > 0 && (
+              <button
+                disabled={isSaveAllLoading}
+                onClick={async () => {
+                  if (!onSaveAllAttendance) return;
+                  setIsSaveAllLoading(true);
+                  try {
+                    const records = Array.from(dirtyRecords.values());
+                    const success = await onSaveAllAttendance(records, selectedDate, selectedYear, selectedSection, selectedSubject);
+                    if (success) {
+                      setDirtyRecords(new Map());
+                      toast.success(`Asistencia guardada (${records.length} registro${records.length !== 1 ? 's' : ''})`);
+                    }
+                  } catch (e: any) {
+                    toast.error('Error al guardar: ' + (e?.response?.data?.error?.message || e.message));
+                  } finally {
+                    setIsSaveAllLoading(false);
+                  }
+                }}
+                className={`text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
+                  isSaveAllLoading
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                }`}
+              >
+                {isSaveAllLoading ? (
+                  <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293z" />
+                  </svg>
+                )}
+                Guardar todo ({dirtyRecords.size})
+              </button>
+            )}
+
             <button
               onClick={() => {
                 const desde = new Date();
@@ -654,7 +746,8 @@ export default function AttendanceTracker({
                       const todayAtt = selectedSubject
                         ? attendance.find(a => a.studentId === student.id && a.date === selectedDate && a.horarioId === selectedSubject)
                         : attendance.find(a => a.studentId === student.id && a.date === selectedDate && !a.horarioId);
-                      const currentStatus = todayAtt ? todayAtt.status : null;
+                      const dirtyRec = dirtyRecords.get(student.id);
+                      const currentStatus = dirtyRec?.status || todayAtt?.status || null;
 
                       // Student monthly attendance rates calculation
                       const studentHistory = attendance.filter(a => a.studentId === student.id);
@@ -662,7 +755,7 @@ export default function AttendanceTracker({
                       const rate = studentHistory.length > 0 ? Math.round((presents / studentHistory.length) * 100) : 100;
 
                       return (
-                        <tr id={`att-std-row-${student.id}`} key={student.id} className={`hover:bg-slate-50/40 transition-colors ${loadingStudentId === student.id ? 'bg-indigo-50/50' : ''}`}>
+                        <tr id={`att-std-row-${student.id}`} key={student.id} className={`transition-colors ${dirtyRecords.has(student.id) ? 'bg-amber-50/60 border-l-4 border-l-amber-400' : 'hover:bg-slate-50/40'} ${loadingStudentId === student.id ? 'bg-indigo-50/50' : ''}`}>
                           <td className="py-3 pr-2">
                             <button
                               onClick={() => { setCalendarStudentId(student.id); setCalendarStudentName(`${student.lastName}, ${student.firstName}`); setShowStudentCalendar(true); }}
@@ -717,12 +810,17 @@ export default function AttendanceTracker({
                                         }
                                         return;
                                       }
-                                      setLoadingStudentId(student.id);
-                                      try {
-                                        await onModifyAttendance(student.id, selectedDate, selectedYear, selectedSection, flag, selectedSubject || undefined);
-                                      } finally {
-                                        setLoadingStudentId(null);
-                                      }
+                                      setDirtyRecords(prev => {
+                                        const next = new Map(prev);
+                                        const existing = next.get(student.id);
+                                        next.set(student.id, {
+                                          studentId: student.id,
+                                          status: flag,
+                                          observacion: existing?.observacion,
+                                          justificacion: existing?.justificacion,
+                                        });
+                                        return next;
+                                      });
                                     }}
                                     className={`w-10 py-1.5 rounded-lg border border-slate-200 text-sm font-bold transition-all p-0 focus:outline-hidden ${isLoading ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'} ${getFlagTheme(flag)}`}
                                     title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
@@ -861,9 +959,54 @@ export default function AttendanceTracker({
                 <h3 className="text-base font-bold text-slate-800">
                   Asistencia: {selectedHorario.asignatura?.name} - {selectedHorario.seccion?.grade || ''}° "{selectedHorario.seccion?.letter}" 
                 </h3>
-                <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-mono">
-                  {selectedHorario.bloque?.hora_inicio?.substring(0,5)} - {selectedHorario.bloque?.hora_fin?.substring(0,5)}
-                </span>
+                <div className="flex items-center gap-2">
+                  {dirtyRecords.size > 0 && (
+                    <button
+                      disabled={isSaveAllLoading}
+                      onClick={async () => {
+                        if (!onSaveAllAttendance) return;
+                        setIsSaveAllLoading(true);
+                        try {
+                          const records = Array.from(dirtyRecords.values());
+                          const success = await onSaveAllAttendance(
+                            records, selectedDate,
+                            ((selectedHorario.seccion as any)?.grade || (selectedHorario.seccion as any)?.id_grado || 5) as AcademicYear,
+                            selectedHorario.seccion?.letter || 'A',
+                            String(selectedHorario.id_horario)
+                          );
+                          if (success) {
+                            setDirtyRecords(new Map());
+                            toast.success(`Asistencia guardada (${records.length} registro${records.length !== 1 ? 's' : ''})`);
+                          }
+                        } catch (e: any) {
+                          toast.error('Error al guardar: ' + (e?.response?.data?.error?.message || e.message));
+                        } finally {
+                          setIsSaveAllLoading(false);
+                        }
+                      }}
+                      className={`text-xs font-bold px-3 py-1 rounded-lg flex items-center gap-1 pointer-events-auto cursor-pointer ${
+                        isSaveAllLoading
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                          : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                      }`}
+                    >
+                      {isSaveAllLoading ? (
+                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293z" />
+                        </svg>
+                      )}
+                      Guardar ({dirtyRecords.size})
+                    </button>
+                  )}
+                  <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-mono">
+                    {selectedHorario.bloque?.hora_inicio?.substring(0,5)} - {selectedHorario.bloque?.hora_fin?.substring(0,5)}
+                  </span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -882,11 +1025,12 @@ export default function AttendanceTracker({
                       const attRecord = attendance.find(
                         a => a.studentId === String(est.id_estudiante) && a.date === selectedDate && a.horarioId === String(selectedHorario.id_horario)
                       );
-                      const currentStatus = attRecord?.status || null;
+                      const dirtyRec = dirtyRecords.get(String(est.id_estudiante));
+                      const currentStatus = dirtyRec?.status || attRecord?.status || null;
                       const isLoading = loadingStudentId === String(est.id_estudiante);
 
                       return (
-                        <tr key={est.id_matricula} className={`hover:bg-slate-50/40 transition-colors ${isLoading ? 'bg-indigo-50/50' : ''}`}>
+                        <tr key={est.id_matricula} className={`transition-colors ${dirtyRecords.has(String(est.id_estudiante)) ? 'bg-amber-50/60 border-l-4 border-l-amber-400' : 'hover:bg-slate-50/40'} ${isLoading ? 'bg-indigo-50/50' : ''}`}>
                           <td className="py-3 pr-2">
                             <button
                               onClick={() => { setCalendarStudentId(String(est.id_estudiante)); setCalendarStudentName(est.nombre); setShowStudentCalendar(true); }}
@@ -934,19 +1078,18 @@ export default function AttendanceTracker({
                                         }
                                         return;
                                       }
-                                      setLoadingStudentId(String(est.id_estudiante));
-                                      try {
-                                        await onModifyAttendance(
-                                          String(est.id_estudiante),
-                                          selectedDate,
-                                          ((selectedHorario.seccion as any)?.grade || (selectedHorario.seccion as any)?.id_grado || 5) as AcademicYear,
-                                          selectedHorario.seccion?.letter || 'A',
-                                          flag,
-                                          String(selectedHorario.id_horario)
-                                        );
-                                      } finally {
-                                        setLoadingStudentId(null);
-                                      }
+                                      setDirtyRecords(prev => {
+                                        const next = new Map(prev);
+                                        const studentId = String(est.id_estudiante);
+                                        const existing = next.get(studentId);
+                                        next.set(studentId, {
+                                          studentId,
+                                          status: flag,
+                                          observacion: existing?.observacion,
+                                          justificacion: existing?.justificacion,
+                                        });
+                                        return next;
+                                      });
                                     }}
                                     className={`w-10 py-1.5 rounded-lg border border-slate-200 text-sm font-bold transition-all p-0 focus:outline-hidden ${isLoading ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'} ${getFlagTheme(flag)}`}
                                     title={flag === 'P' ? 'Presente' : flag === 'A' ? 'Ausente' : 'Justificado'}
@@ -1511,27 +1654,36 @@ export default function AttendanceTracker({
             <button
               disabled={studentJustifyLoading}
               onClick={async () => {
-                if (!studentJustifyAtt && !studentJustifyStudentId) return;
+                const stId = studentJustifyStudentId || studentJustifyAtt?.studentId;
+                if (!stId) {
+                  toast.error("No se pudo identificar al estudiante.");
+                  return;
+                }
                 if (!studentJustifyMotivo.trim()) {
                   toast.error("El motivo es obligatorio.");
                   return;
                 }
                 setStudentJustifyLoading(true);
                 try {
-                  if (onJustifyStudentAbsence) {
-                    const attId = studentJustifyAtt?.id || null;
-                    const stId = studentJustifyStudentId || studentJustifyAtt?.studentId || undefined;
-                    const fecha = studentJustifyAtt?.date || selectedDate;
-                    const hId = studentJustifyAtt?.horarioId || selectedSubject || undefined;
-                    const success = await onJustifyStudentAbsence(attId, studentJustifyMotivo, studentJustifySoporte || undefined, stId, fecha, hId);
-                    if (success) {
-                      setStudentJustifyAtt(null);
-                      setStudentJustifyStudentId(null);
-                      setStudentJustifyMotivo('');
-                      setStudentJustifySoporte('');
-                      if (onRefreshData) await onRefreshData();
-                    }
-                  }
+                  setDirtyRecords(prev => {
+                    const next = new Map(prev);
+                    const existing = next.get(stId);
+                    next.set(stId, {
+                      studentId: stId,
+                      status: 'J',
+                      observacion: existing?.observacion,
+                      justificacion: {
+                        motivo: studentJustifyMotivo.trim(),
+                        soporte_digital: studentJustifySoporte || undefined,
+                      },
+                    });
+                    return next;
+                  });
+                  setStudentJustifyAtt(null);
+                  setStudentJustifyStudentId(null);
+                  setStudentJustifyMotivo('');
+                  setStudentJustifySoporte('');
+                  toast.success('Justificación agregada. No olvide guardar los cambios.');
                 } finally {
                   setStudentJustifyLoading(false);
                 }
@@ -1611,14 +1763,25 @@ export default function AttendanceTracker({
                 if (!obsModalAtt) return;
                 setObsModalLoading(true);
                 try {
-                  if (onSaveObservacion) {
-                    const success = await onSaveObservacion(obsModalAtt.id, obsModalText, obsModalGravedad || undefined);
-                    if (success) {
-                      setObsModalAtt(null);
-                      setObsModalText('');
-                      setObsModalGravedad('');
-                    }
-                  }
+                  const stId = obsModalAtt.studentId;
+                  setDirtyRecords(prev => {
+                    const next = new Map(prev);
+                    const existing = next.get(stId);
+                    next.set(stId, {
+                      studentId: stId,
+                      status: existing?.status || obsModalAtt.status,
+                      observacion: {
+                        texto: obsModalText,
+                        gravedad: obsModalGravedad || undefined,
+                      },
+                      justificacion: existing?.justificacion,
+                    });
+                    return next;
+                  });
+                  setObsModalAtt(null);
+                  setObsModalText('');
+                  setObsModalGravedad('');
+                  toast.success('Observación agregada. No olvide guardar los cambios.');
                 } finally {
                   setObsModalLoading(false);
                 }

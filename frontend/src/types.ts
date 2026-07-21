@@ -219,6 +219,13 @@ export interface ObservacionEstudiante {
   created_at: string;
 }
 
+export interface DirtyAttendanceRecord {
+  studentId: string;
+  status: 'P' | 'A' | 'J';
+  observacion?: { texto: string; gravedad?: string };
+  justificacion?: { motivo: string; soporte_digital?: string };
+}
+
 export interface Classroom {
   id: string;
   name: string;         // e.g., "Aula 1-A", "Laboratorio de Química", "Cancha"

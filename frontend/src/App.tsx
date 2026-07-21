@@ -48,7 +48,8 @@ import {
   Docente,
   SubjectSchedule,
   JustificacionEstudiante,
-  AcademicYear
+  AcademicYear,
+  DirtyAttendanceRecord
 } from './types';
 
 import { api } from './services/api';
@@ -1278,6 +1279,93 @@ export default function App() {
     }
   };
 
+  const handleSaveAllAttendance = async (
+    dirtyRecords: DirtyAttendanceRecord[],
+    date: string,
+    year: number,
+    section: string,
+    subjectId: string
+  ): Promise<boolean> => {
+    try {
+      const studentToMatricula = new Map<string, number>();
+      const registros = dirtyRecords.map(r => {
+        const existingAtt = attendance.find(
+          a => a.studentId === r.studentId && a.date === date &&
+            (subjectId ? a.horarioId === subjectId : !a.horarioId)
+        );
+        let matriculaId: number | null = existingAtt?.matriculaId ? Number(existingAtt.matriculaId) : null;
+        if (!matriculaId) {
+          matriculaId = resolveMatriculaId(r.studentId, year, section);
+        }
+        if (matriculaId) {
+          studentToMatricula.set(r.studentId, matriculaId);
+        }
+        const dbStatus = r.status === 'P' ? 'Presente' : r.status === 'A' ? 'Ausente' : 'Justificado';
+        const payload: any = {
+          id_matricula: matriculaId,
+          fecha: date,
+          estatus: dbStatus,
+        };
+        if (subjectId) {
+          payload.id_horario = Number(subjectId);
+        }
+        if (r.observacion) {
+          payload.observacion = r.observacion;
+        }
+        if (r.justificacion) {
+          payload.justificacion = r.justificacion;
+        }
+        return { studentId: r.studentId, status: r.status, payload };
+      });
+
+      const validRegistros = registros
+        .filter(r => r.payload.id_matricula != null)
+        .map(r => r.payload);
+
+      if (validRegistros.length === 0) {
+        toast.error('No se pudieron resolver las matrículas de los estudiantes.');
+        return false;
+      }
+
+      await api.post<any>('/api/asistencias-estudiantes/batch', { registros: validRegistros });
+
+      setAttendance(prev => {
+        const next = [...prev];
+        for (const { studentId, status } of registros) {
+          if (!studentToMatricula.has(studentId)) continue;
+          const mid = studentToMatricula.get(studentId)!;
+          const existingIdx = next.findIndex(a =>
+            a.studentId === studentId && a.date === date &&
+            (subjectId ? a.horarioId === subjectId : !a.horarioId)
+          );
+          const newAtt: Attendance = {
+            id: `saved-${studentId}-${Date.now()}`,
+            studentId,
+            matriculaId: String(mid),
+            date,
+            academicYear: year as any,
+            section,
+            status,
+            horarioId: subjectId || undefined,
+          };
+          if (existingIdx >= 0) {
+            next[existingIdx] = newAtt;
+          } else {
+            next.push(newAtt);
+          }
+        }
+        return next;
+      });
+
+      await refreshAttendance();
+      return true;
+    } catch (e: any) {
+      console.error('Error al guardar asistencias en batch', e);
+      toast.error('Error al guardar asistencias: ' + (e?.response?.data?.error?.message || e.message));
+      return false;
+    }
+  };
+
   const handleJustifyStudentAbsence = async (attendanceId: string | null, motivo: string, soporteDigital?: string, studentId?: string, fecha?: string, horarioId?: string): Promise<boolean> => {
     try {
       const existingAtt = attendanceId ? attendance.find(a => a.id === attendanceId) : null;
@@ -2154,8 +2242,9 @@ export default function App() {
                   scheduleEvents={scheduleEvents}
                   currentUser={currentUser}
                   currentUserRole={currentUserRole}
-                  onModifyAttendance={handleModifyAttendance}
-                  onAddTeacherLog={handleAddTeacherLog}
+                   onModifyAttendance={handleModifyAttendance}
+                   onSaveAllAttendance={handleSaveAllAttendance}
+                   onAddTeacherLog={handleAddTeacherLog}
                   onUpdateTeacherLog={handleUpdateTeacherLog}
                   onSyncInasistencias={handleSyncInasistencias}
                   onJustifyTeacherAbsence={handleJustifyTeacherAbsence}
