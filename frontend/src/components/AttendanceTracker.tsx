@@ -85,6 +85,7 @@ export default function AttendanceTracker({
   const [selectedYear, setSelectedYear] = useState<AcademicYear>(5);
   const [selectedSection, setSelectedSection] = useState<string>('A');
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [miClaseDate] = useState<string>(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date()));
 
   // New filters for subject-aware attendance
   const [selectedSubject, setSelectedSubject] = useState<string>('');
@@ -355,7 +356,7 @@ export default function AttendanceTracker({
           id="btn-att-miclase"
           onClick={() => {
             setTrackerTab('miclase');
-            onFetchMiHorario?.(selectedDate);
+            onFetchMiHorario?.(miClaseDate);
           }}
           className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 pointer-events-auto cursor-pointer ${
             trackerTab === 'miclase' 
@@ -771,7 +772,7 @@ export default function AttendanceTracker({
               Mi Horario del Día
             </h2>
             <span className="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-mono">
-              {selectedDate}
+              {miClaseDate}
             </span>
           </div>
 

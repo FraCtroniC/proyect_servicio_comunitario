@@ -1565,7 +1565,7 @@ export default function GradeManager({
                 <ScrollText className="h-5 w-5 text-amber-600" />
                 <h3 className="text-base font-bold text-slate-800">Histórico de Notas Certificadas</h3>
               </div>
-              {['super_admin', 'control_estudios', 'docente'].includes(currentUserRole) && (
+              {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                 <button
                   onClick={handleOpenCertLoadModal}
                   className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"

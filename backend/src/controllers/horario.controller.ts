@@ -13,6 +13,13 @@ const DIAS_MAP: Record<string, number> = {
   'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5,
 };
 
+function diaDeLaSemana(y: number, m: number, d: number): string {
+  const nombres = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+  if (m < 3) y--;
+  return nombres[(y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) + t[m - 1] + d) % 7];
+}
+
 export const HorarioController = {
   miHorario: wrapAsync(async (req: AuthenticatedRequest, res: Response) => {
     const fecha = String(req.query.fecha || new Date().toISOString().split('T')[0]);
@@ -25,7 +32,7 @@ export const HorarioController = {
     }
 
     const [y, m, d] = fecha.split('-').map(Number);
-    const diaSemana = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' });
+    const diaSemana = diaDeLaSemana(y, m, d);
     const idDia = DIAS_MAP[diaSemana];
     if (!idDia) {
       res.json({ data: [], meta: { message: 'La fecha no corresponde a un día de clase (Lunes a Viernes)' } });
