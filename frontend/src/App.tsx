@@ -1884,7 +1884,7 @@ export default function App() {
       api.get<any[]>('/api/materias-pendientes').then(data => {
         const parsed = Array.isArray(data) ? data : (data as any)?.data || [];
         setMateriasPendientes(parsed);
-      }).catch(() => {});
+      }).catch(e => console.error('Error cargando materias pendientes en App:', e));
     }
   }, [isLoggedIn, activePeriod?.id]);
 
