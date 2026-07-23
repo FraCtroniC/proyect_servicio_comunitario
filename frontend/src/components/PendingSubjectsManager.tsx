@@ -318,7 +318,7 @@ export default function PendingSubjectsManager({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {pendingList.map((p) => {
+                {(pendingList ?? []).map((p) => {
                   const st = p.estudiante;
                   const asig = p.asignatura;
                   const per = p.periodo;
@@ -445,7 +445,7 @@ export default function PendingSubjectsManager({
               <div className="space-y-1">
                 <label className="text-sm font-bold text-slate-500 uppercase">Estudiante <span className="text-rose-500">*</span></label>
                 <SearchableSelect
-                  options={students.map(s => ({ value: s.id, label: `${s.lastName}, ${s.firstName} - ${s.cedula}` }))}
+                  options={(students ?? []).map(s => ({ value: s.id, label: `${s.lastName}, ${s.firstName} - ${s.cedula}` }))}
                   value={enrollStudentId}
                   onChange={(val) => {
                     setEnrollStudentId(String(val));
@@ -465,7 +465,7 @@ export default function PendingSubjectsManager({
                 ) : enrollStudentId ? (
                   reprobadas.length > 0 ? (
                     <SearchableSelect
-                      options={reprobadas.map(r => ({ value: String(r.id_asignatura), label: `${r.nombre} (Nota: ${r.nota_final})` }))}
+                      options={(reprobadas ?? []).map(r => ({ value: String(r.id_asignatura), label: `${r.nombre} (Nota: ${r.nota_final})` }))}
                       value={enrollSubjectId}
                       onChange={(val) => setEnrollSubjectId(String(val))}
                       placeholder="Seleccione materia reprobada"
@@ -490,7 +490,7 @@ export default function PendingSubjectsManager({
                   className="w-full text-base p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-indigo-500"
                 >
                   <option value="">Seleccione el período</option>
-                  {periods.map(p => (
+                  {(periods ?? []).map(p => (
                     <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
                   ))}
                 </select>
@@ -499,7 +499,7 @@ export default function PendingSubjectsManager({
               <div className="space-y-1">
                 <label className="text-sm font-bold text-slate-500 uppercase">Docente Evaluador</label>
                 <SearchableSelect
-                  options={docentes.filter(d => d.status === 'Activo').map(d => ({
+                  options={(docentes ?? []).filter(d => d.status === 'Activo').map(d => ({
                     value: d.id,
                     label: `${d.lastName}, ${d.firstName}`
                   }))}
