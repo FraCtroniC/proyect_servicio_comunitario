@@ -88,8 +88,8 @@ export default function PendingSubjectsManager({
       if (estatus !== 'All') params.estatus = estatus;
 
       const res = await api.getRaw<PaginatedResponse<MateriaPendiente>>('/api/materias-pendientes', params);
-      setPendingList(res.data);
-      setMeta(res.meta);
+      setPendingList(res.data || []);
+      setMeta(res.meta || { total: 0, page: 1, limit: 10, pages: 0 });
     } catch (e) {
       console.error('Error fetching pending subjects:', e);
     } finally {
@@ -160,7 +160,7 @@ export default function PendingSubjectsManager({
       toast.success('Materia pendiente inscrita exitosamente');
       setIsEnrollModalOpen(false);
       resetEnrollForm();
-      fetchPendingSubjects();
+      fetchPendingSubjects(page, limit, searchDebounced, statusFilter);
     } catch (e: any) {
       const msg = e.message || 'Error al inscribir materia pendiente';
       setEnrollError(msg);
@@ -194,7 +194,7 @@ export default function PendingSubjectsManager({
       setIsGradeModalOpen(false);
       setSelectedPending(null);
       setGradeValue('');
-      fetchPendingSubjects();
+      fetchPendingSubjects(page, limit, searchDebounced, statusFilter);
     } catch (e: any) {
       setGradeError(e.message || 'Error al guardar calificación');
     } finally {
@@ -208,7 +208,7 @@ export default function PendingSubjectsManager({
       await api.materiasPendientes.delete(String(id));
       toast.success('Materia pendiente eliminada');
       setDeleteConfirmId(null);
-      fetchPendingSubjects();
+      fetchPendingSubjects(page, limit, searchDebounced, statusFilter);
     } catch (e: any) {
       toast.error(e.message || 'Error al eliminar');
     } finally {
@@ -221,7 +221,7 @@ export default function PendingSubjectsManager({
     try {
       const result = await api.materiasPendientes.autoCrearMaterias();
       toast.success(result.message || `Materias creadas: ${result.materiasCreadas}, Evaluaciones: ${result.evaluacionesCreadas}`);
-      fetchPendingSubjects();
+      fetchPendingSubjects(page, limit, searchDebounced, statusFilter);
     } catch (e: any) {
       toast.error(e.message || 'Error en auto-generación de materias');
     } finally {
