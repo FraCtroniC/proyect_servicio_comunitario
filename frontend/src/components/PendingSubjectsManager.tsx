@@ -80,7 +80,7 @@ export default function PendingSubjectsManager({
     setPage(1);
   }, [statusFilter]);
 
-  const fetchPendingSubjects = useCallback(async (pageNum: number, pageLimit: number, busqueda: string, estatus: string) => {
+  const fetchPendingSubjects = useCallback(async (pageNum: number = 1, pageLimit: number = 10, busqueda: string = '', estatus: string = 'All') => {
     setLoading(true);
     try {
       const params: Record<string, any> = { page: pageNum, limit: pageLimit };
@@ -399,7 +399,7 @@ export default function PendingSubjectsManager({
                     </tr>
                   );
                 })}
-                {pendingList.length === 0 && !loading && (
+                {(pendingList ?? []).length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                       <BookOpen className="w-12 h-12 mx-auto mb-3 text-slate-300" />
@@ -463,7 +463,7 @@ export default function PendingSubjectsManager({
                     Cargando materias reprobadas...
                   </div>
                 ) : enrollStudentId ? (
-                  reprobadas.length > 0 ? (
+                  (reprobadas ?? []).length > 0 ? (
                     <SearchableSelect
                       options={(reprobadas ?? []).map(r => ({ value: String(r.id_asignatura), label: `${r.nombre} (Nota: ${r.nota_final})` }))}
                       value={enrollSubjectId}
