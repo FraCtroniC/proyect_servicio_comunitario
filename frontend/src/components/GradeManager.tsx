@@ -920,7 +920,7 @@ export default function GradeManager({
                         <span className="block text-xs text-slate-400 font-bold font-mono text-center">{ev.percentage}%</span>
                       </th>
                     ))}
-                    <th className="py-2.5 text-center font-bold text-slate-700">LAPSO RAW</th>
+                    <th className="py-2.5 text-center font-bold text-slate-700">LAPSO</th>
                     <th className="py-2.5 text-center font-bold text-slate-800">LAPSO REDONDEADO</th>
                   </tr>
                 </thead>
