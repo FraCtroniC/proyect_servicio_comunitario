@@ -217,6 +217,7 @@ export const api = {
     create: (data: any) => request('/api/materias-pendientes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request(`/api/materias-pendientes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/materias-pendientes/${id}`, { method: 'DELETE' }),
+    autoCrearMaterias: () => request('/api/materias-pendientes/auto-crear-materias', { method: 'POST' }),
   },
   notificaciones: {
     alertaAcademica: (data: any) => request('/api/notificaciones/alerta-academica', { method: 'POST', body: JSON.stringify(data) })
@@ -256,6 +257,14 @@ export const api = {
       request<{ respuesta: string }>('/api/chatbot/consultar', {
         method: 'POST',
         body: JSON.stringify({ mensaje, roleId, nombre }),
+      }),
+  },
+  promocion: {
+    getPreview: (periodoId: string) => request<any>(`/api/periodos/${periodoId}/promocion-preview`),
+    confirmar: (periodoId: string, decisiones: { id_estudiante: number; accion: string; materias_pendientes?: number[] }[]) =>
+      request<any>(`/api/periodos/${periodoId}/promocion-confirmar`, {
+        method: 'POST',
+        body: JSON.stringify({ decisiones }),
       }),
   },
   auth: {

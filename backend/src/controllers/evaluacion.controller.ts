@@ -1,13 +1,24 @@
 import { Request, Response } from 'express';
-import { Evaluacion, NotaParcial, Matricula, Calificacion, PlanEstudio, PeriodoEscolar, Momento } from '../models';
+import { Evaluacion, NotaParcial, Matricula, Calificacion, PlanEstudio, PeriodoEscolar, Momento, Estudiante, EscalaCalificacion } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
 export const EvaluacionController = {
   // Obtener planes de evaluación
   listarPlanes: wrapAsync(async (req: Request, res: Response) => {
+    let id_periodo = req.query.id_periodo ? Number(req.query.id_periodo) : null;
+    if (!id_periodo) {
+      const activo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+      if (activo) id_periodo = activo.id_periodo;
+    }
+
+    if (!id_periodo) {
+      res.json({ data: [] });
+      return;
+    }
+
     const result = await Evaluacion.findAll({
-      include: [{ model: Momento, as: 'momento' }]
+      include: [{ model: Momento, as: 'momento', where: { id_periodo }, required: true }]
     });
     res.json({ data: result });
   }),
@@ -41,12 +52,22 @@ export const EvaluacionController = {
     }
 
     let realMomentoId = id_momento;
-    if ([1, 2, 3].includes(id_momento)) {
-      const descripciones = ['Primer Lapso', 'Segundo Lapso', 'Tercer Lapso'];
+    const descripciones = ['Primer Lapso', 'Segundo Lapso', 'Tercer Lapso'];
+    const lapsoIndex = [1, 2, 3].indexOf(id_momento);
+    if (lapsoIndex >= 0) {
       const [momento] = await Momento.findOrCreate({
-        where: { id_periodo: periodoActivo.id_periodo, descripcion: descripciones[id_momento - 1] }
+        where: { id_periodo: periodoActivo.id_periodo, descripcion: descripciones[lapsoIndex] }
       });
       realMomentoId = (momento as any).id_momento;
+    } else {
+      const momentoExistente = await Momento.findOne({
+        where: { id_momento, id_periodo: periodoActivo.id_periodo }
+      });
+      if (!momentoExistente) {
+        res.status(400).json({ error: { message: 'El id_momento no pertenece al periodo activo' } });
+        return;
+      }
+      realMomentoId = momentoExistente.id_momento;
     }
     
     const saved = [];
@@ -101,8 +122,17 @@ export const EvaluacionController = {
 
   // Obtener notas parciales
   listarNotas: wrapAsync(async (req: Request, res: Response) => {
-    const Momento = require('../models').Momento;
-    const Estudiante = require('../models').Estudiante;
+    let id_periodo = req.query.id_periodo ? Number(req.query.id_periodo) : null;
+    if (!id_periodo) {
+      const activo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+      if (activo) id_periodo = activo.id_periodo;
+    }
+
+    if (!id_periodo) {
+      res.json({ data: [] });
+      return;
+    }
+
     const result = await NotaParcial.findAll({
       include: [
         {
@@ -118,6 +148,7 @@ export const EvaluacionController = {
         {
           model: Evaluacion,
           as: 'evaluacion',
+          required: true,
           include: [
             {
               model: PlanEstudio,
@@ -125,9 +156,15 @@ export const EvaluacionController = {
             },
             {
               model: Momento,
-              as: 'momento'
+              as: 'momento',
+              where: { id_periodo },
+              required: true
             }
           ]
+        },
+        {
+          model: EscalaCalificacion,
+          as: 'escala'
         }
       ]
     });
@@ -146,6 +183,9 @@ export const EvaluacionController = {
     // Agrupar para actualizar Calificacion final
     const affectedLapsos = new Set<string>();
 
+    // Obtener periodo activo para filtrar matrículas
+    const periodoActivo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } }) as any;
+
     for (const item of notas_parciales) {
       let { id_matricula } = item;
       const { id_estudiante, id_evaluacion, id_escala } = item;
@@ -153,7 +193,9 @@ export const EvaluacionController = {
       if (!id_evaluacion) continue;
 
       if (!id_matricula && id_estudiante) {
-        const matricula = await Matricula.findOne({ where: { id_estudiante } });
+        const whereClause: any = { id_estudiante };
+        if (periodoActivo) whereClause.id_periodo = periodoActivo.id_periodo;
+        const matricula = await Matricula.findOne({ where: whereClause });
         if (matricula) id_matricula = (matricula as any).id_matricula;
         else continue;
       }

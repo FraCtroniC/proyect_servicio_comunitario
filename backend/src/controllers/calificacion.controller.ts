@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Calificacion, PlanEstudio, Asignatura, EscalaCalificacion, Matricula } from '../models';
+import { Calificacion, PlanEstudio, Asignatura, EscalaCalificacion, Matricula, Momento, PeriodoEscolar } from '../models';
 import { wrapAsync } from '../shared/utils/wrapAsync';
 import { getIO } from '../socket';
 
@@ -21,12 +21,24 @@ export const CalificacionController = {
     if (req.query.id_momento) where.id_momento = Number(req.query.id_momento);
     if (req.query.id_matricula) where.id_matricula = Number(req.query.id_matricula);
 
+    let id_periodo = req.query.id_periodo ? Number(req.query.id_periodo) : null;
+    if (!id_periodo) {
+      const activo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
+      if (activo) id_periodo = activo.id_periodo;
+    }
+
+    if (!id_periodo) {
+      res.json({ data: [] });
+      return;
+    }
+
     const result = await Calificacion.findAll({
       where,
       include: [
         { model: PlanEstudio, as: 'plan', include: [{ model: Asignatura, as: 'asignatura' }] },
         { model: EscalaCalificacion, as: 'escala' },
         { model: Matricula, as: 'matricula' },
+        { model: Momento, as: 'momento', where: { id_periodo }, required: true },
       ],
     });
     res.json({ data: result });

@@ -187,12 +187,24 @@ export function mapPlanToStudyPlanItem(dbPlan: any): StudyPlanItem {
 }
 
 export function mapCalificacionToGrade(dbCalificacion: any, studentId: string): Grade {
+  let lapso = 1 as 1|2|3;
+  const momentoDesc = dbCalificacion.momento?.descripcion;
+  if (momentoDesc) {
+    if (momentoDesc === 'Primer Lapso' || momentoDesc === 'Lapso 1') lapso = 1;
+    else if (momentoDesc === 'Segundo Lapso' || momentoDesc === 'Lapso 2') lapso = 2;
+    else if (momentoDesc === 'Tercer Lapso' || momentoDesc === 'Lapso 3') lapso = 3;
+  } else {
+    const rawId = dbCalificacion.id_momento || 1;
+    if (rawId >= 1 && rawId <= 3) lapso = rawId as 1|2|3;
+  }
+
   return {
     studentId: String(dbCalificacion.matricula?.id_estudiante || studentId),
     subjectId: String(dbCalificacion.plan?.id_asignatura || dbCalificacion.id_asignatura),
-    lapso: (dbCalificacion.id_momento || 1) as 1|2|3,
-    evaluationId: `ev1-${dbCalificacion.id_plan}`, // simplified matching
-    score: dbCalificacion.escala?.nota_calculo || dbCalificacion.id_escala || 0
+    lapso: lapso,
+    evaluationId: `ev1-${dbCalificacion.id_plan}`,
+    score: dbCalificacion.escala?.nota_calculo || dbCalificacion.id_escala || 0,
+    periodId: dbCalificacion.momento?.id_periodo || undefined,
   };
 }
 
@@ -210,9 +222,10 @@ export function mapEvaluacionesDbToPlans(evaluacionesDb: any[], studyPlans: any[
     const section = sectionObj ? sectionObj.letra : 'A';
     let lapso = ev.id_momento as 1|2|3;
     if (ev.momento) {
-      if (ev.momento.descripcion === 'Primer Lapso') lapso = 1;
-      else if (ev.momento.descripcion === 'Segundo Lapso') lapso = 2;
-      else if (ev.momento.descripcion === 'Tercer Lapso') lapso = 3;
+      const desc = ev.momento.descripcion;
+      if (desc === 'Primer Lapso' || desc === 'Lapso 1') lapso = 1;
+      else if (desc === 'Segundo Lapso' || desc === 'Lapso 2') lapso = 2;
+      else if (desc === 'Tercer Lapso' || desc === 'Lapso 3') lapso = 3;
     }
     
     const key = `${subjectId}-${year}-${section}-${lapso}`;
@@ -254,19 +267,31 @@ export function mapRepresentanteToRepresentative(dbRep: any): Representative {
 }
 
 export function mapNotaParcialToGrade(dbNota: any, studentId: string): Grade {
-  let lapso = (dbNota.evaluacion?.id_momento || dbNota.id_momento || 1) as 1|2|3;
+  let lapso = 1 as 1|2|3;
   const momentoDesc = dbNota.evaluacion?.momento?.descripcion || dbNota.momento?.descripcion;
   if (momentoDesc) {
-    if (momentoDesc === 'Primer Lapso') lapso = 1;
-    else if (momentoDesc === 'Segundo Lapso') lapso = 2;
-    else if (momentoDesc === 'Tercer Lapso') lapso = 3;
+    if (momentoDesc === 'Primer Lapso' || momentoDesc === 'Lapso 1') lapso = 1;
+    else if (momentoDesc === 'Segundo Lapso' || momentoDesc === 'Lapso 2') lapso = 2;
+    else if (momentoDesc === 'Tercer Lapso' || momentoDesc === 'Lapso 3') lapso = 3;
+  } else {
+    const rawId = dbNota.evaluacion?.id_momento || dbNota.id_momento || 1;
+    if (rawId >= 1 && rawId <= 3) lapso = rawId as 1|2|3;
   }
 
+  const resolvedStudentId = dbNota.matricula?.id_estudiante
+    ? String(dbNota.matricula.id_estudiante)
+    : studentId;
+
+  const resolvedSubjectId = dbNota.evaluacion?.plan?.id_asignatura
+    ? String(dbNota.evaluacion.plan.id_asignatura)
+    : (dbNota.matricula?.estudiante?.id_estudiante ? String(dbNota.matricula.estudiante.id_estudiante) : '');
+
   return {
-    studentId: String(dbNota.matricula?.id_estudiante || dbNota.id_estudiante || studentId),
-    subjectId: String(dbNota.evaluacion?.plan?.id_asignatura || dbNota.id_asignatura || ''),
+    studentId: resolvedStudentId,
+    subjectId: resolvedSubjectId,
     lapso: lapso,
     evaluationId: String(dbNota.id_evaluacion),
-    score: dbNota.escala?.nota_calculo || dbNota.id_escala || 0
+    score: dbNota.id_escala || 0,
+    periodId: dbNota.evaluacion?.momento?.id_periodo || undefined,
   };
 }

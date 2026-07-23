@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BookOpen, Search, User, PlusCircle, CheckCircle, AlertTriangle, FileText, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
-import { Student, Subject, SchoolPeriod, User as AppUser, MateriaPendiente, Docente } from '../types';
+import { Student, Subject, SchoolPeriod, User as AppUser, MateriaPendiente, Docente, PaginatedResponse } from '../types';
 import { SearchableSelect } from './SearchableSelect';
+import { PaginationBar } from './PaginationBar';
 import { generateActaMateriaPendiente } from '../utils/pdfGenerator';
 
 interface Reprobada {
@@ -34,7 +35,12 @@ export default function PendingSubjectsManager({
   const [pendingList, setPendingList] = useState<MateriaPendiente[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Cursando' | 'Aprobada' | 'Aplazada'>('All');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, pages: 0 });
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
@@ -57,11 +63,33 @@ export default function PendingSubjectsManager({
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const fetchPendingSubjects = useCallback(async () => {
+  const [autoCreating, setAutoCreating] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setPage(1);
+    }, 350);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [searchQuery]);
+
+  // Reset page on status filter change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
+
+  const fetchPendingSubjects = useCallback(async (pageNum: number, pageLimit: number, busqueda: string, estatus: string) => {
     setLoading(true);
     try {
-      const resp = await api.materiasPendientes.getAll();
-      setPendingList(Array.isArray(resp) ? resp : (resp as any)?.data || []);
+      const params: Record<string, any> = { page: pageNum, limit: pageLimit };
+      if (busqueda.trim()) params.busqueda = busqueda.trim();
+      if (estatus !== 'All') params.estatus = estatus;
+
+      const res = await api.getRaw<PaginatedResponse<MateriaPendiente>>('/api/materias-pendientes', params);
+      setPendingList(res.data);
+      setMeta(res.meta);
     } catch (e) {
       console.error('Error fetching pending subjects:', e);
     } finally {
@@ -70,8 +98,8 @@ export default function PendingSubjectsManager({
   }, []);
 
   useEffect(() => {
-    fetchPendingSubjects();
-  }, [fetchPendingSubjects, refreshTrigger]);
+    fetchPendingSubjects(page, limit, searchDebounced, statusFilter);
+  }, [fetchPendingSubjects, page, limit, searchDebounced, statusFilter, refreshTrigger]);
 
   useEffect(() => {
     if (defaultStudentId) {
@@ -111,21 +139,6 @@ export default function PendingSubjectsManager({
       }
     }
   }, [isEnrollModalOpen, periods, enrollPeriodId]);
-
-  const filteredList = useMemo(() => {
-    return pendingList.filter(p => {
-      const st = p.estudiante;
-      const matchSearch = st ? (
-        (st.nombre1 || st.firstName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (st.apellido1 || st.lastName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (st.cedula || '').includes(searchQuery)
-      ) : true;
-
-      const matchStatus = statusFilter === 'All' || p.estatus === statusFilter;
-
-      return matchSearch && matchStatus;
-    });
-  }, [pendingList, searchQuery, statusFilter]);
 
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,6 +216,19 @@ export default function PendingSubjectsManager({
     }
   };
 
+  const handleAutoCrearMaterias = async () => {
+    setAutoCreating(true);
+    try {
+      const result = await api.materiasPendientes.autoCrearMaterias();
+      toast.success(result.message || `Materias creadas: ${result.materiasCreadas}, Evaluaciones: ${result.evaluacionesCreadas}`);
+      fetchPendingSubjects();
+    } catch (e: any) {
+      toast.error(e.message || 'Error en auto-generación de materias');
+    } finally {
+      setAutoCreating(false);
+    }
+  };
+
   const resetEnrollForm = () => {
     setEnrollStudentId('');
     setEnrollSubjectId('');
@@ -231,13 +257,23 @@ export default function PendingSubjectsManager({
           </div>
         </div>
 
-        <button
-          onClick={() => { setIsEnrollModalOpen(true); }}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-base font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
-        >
-          <PlusCircle className="w-4 h-4" />
-          Inscribir Materia
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleAutoCrearMaterias}
+            disabled={autoCreating}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2.5 rounded-lg text-base font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+          >
+            <FileText className="w-4 h-4" />
+            {autoCreating ? 'Generando...' : 'Auto-generación Materias'}
+          </button>
+          <button
+            onClick={() => { setIsEnrollModalOpen(true); }}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-base font-bold transition-colors shadow-sm pointer-events-auto cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Inscribir Materia
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-xs flex flex-col h-[calc(100vh-280px)]">
@@ -282,7 +318,7 @@ export default function PendingSubjectsManager({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredList.map((p) => {
+                {pendingList.map((p) => {
                   const st = p.estudiante;
                   const asig = p.asignatura;
                   const per = p.periodo;
@@ -363,7 +399,7 @@ export default function PendingSubjectsManager({
                     </tr>
                   );
                 })}
-                {filteredList.length === 0 && (
+                {pendingList.length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                       <BookOpen className="w-12 h-12 mx-auto mb-3 text-slate-300" />
@@ -376,6 +412,15 @@ export default function PendingSubjectsManager({
             </table>
           )}
         </div>
+        <PaginationBar
+          page={meta.page}
+          limit={meta.limit}
+          total={meta.total}
+          pages={meta.pages}
+          loading={loading}
+          onPageChange={setPage}
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
+        />
       </div>
 
       {isEnrollModalOpen && (

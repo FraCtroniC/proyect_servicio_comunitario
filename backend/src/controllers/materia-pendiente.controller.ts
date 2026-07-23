@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import { MateriaPendiente } from '../models/MateriaPendiente';
 import { Asignatura } from '../models/Asignatura';
 import { Estudiante } from '../models/Estudiante';
@@ -8,6 +9,10 @@ import { Calificacion } from '../models/Calificacion';
 import { Matricula } from '../models/Matricula';
 import { PlanEstudio } from '../models/PlanEstudio';
 import { EscalaCalificacion } from '../models/EscalaCalificacion';
+import { Evaluacion } from '../models/Evaluacion';
+import { Seccion } from '../models/Seccion';
+import { GradoAno } from '../models/GradoAno';
+import { Momento } from '../models/Momento';
 import { getIO } from '../socket';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
@@ -37,12 +42,53 @@ export const MateriaPendienteController = {
         if (docenteId) where.id_docente_evaluador = docenteId;
       }
 
-      const materias = await MateriaPendiente.findAll({
-        where,
-        include: FULL_INCLUDES,
-        order: [['created_at', 'DESC']],
-      });
-      res.json(materias);
+      const page = req.query.page ? Number(req.query.page) : null;
+
+      if (page) {
+        const limitNum = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+        const offset = (page - 1) * limitNum;
+        const busqueda = (req.query.busqueda as string || '').trim();
+        const estatus = req.query.estatus as string;
+
+        if (estatus && estatus !== 'All') {
+          where.estatus = estatus;
+        }
+
+        if (busqueda) {
+          const estudiantes = await Estudiante.findAll({
+            where: {
+              [Op.or]: [
+                { cedula: { [Op.like]: `%${busqueda}%` } },
+                { nombre1: { [Op.like]: `%${busqueda}%` } },
+                { apellido1: { [Op.like]: `%${busqueda}%` } },
+              ],
+            },
+            attributes: ['id_estudiante'],
+          });
+          where.id_estudiante = { [Op.in]: estudiantes.map(e => e.id_estudiante) };
+        }
+
+        const { count, rows } = await MateriaPendiente.findAndCountAll({
+          where,
+          include: FULL_INCLUDES,
+          order: [['created_at', 'DESC']],
+          limit: limitNum,
+          offset,
+          distinct: true,
+        });
+
+        res.json({
+          data: rows,
+          meta: { total: count, page, limit: limitNum, pages: Math.ceil(count / limitNum) },
+        });
+      } else {
+        const materias = await MateriaPendiente.findAll({
+          where,
+          include: FULL_INCLUDES,
+          order: [['created_at', 'DESC']],
+        });
+        res.json(materias);
+      }
     } catch (e) {
       console.error(e);
       res.status(500).json({ message: 'Error retrieving pending subjects' });
@@ -68,8 +114,14 @@ export const MateriaPendienteController = {
     try {
       const idEstudiante = Number(req.params.id_estudiante);
 
+      const periodoActivo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } }) as any;
+      if (!periodoActivo) {
+        res.json([]);
+        return;
+      }
+
       const matriculas = await Matricula.findAll({
-        where: { id_estudiante: idEstudiante },
+        where: { id_estudiante: idEstudiante, id_periodo: periodoActivo.id_periodo },
         attributes: ['id_matricula', 'id_periodo'],
         order: [['id_periodo', 'DESC']],
       });
@@ -227,6 +279,182 @@ export const MateriaPendienteController = {
     } catch (e) {
       console.error(e);
       res.status(500).json({ message: 'Error deleting pending subject' });
+    }
+  },
+
+  autoCrearMaterias: async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const activo = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } }) as any;
+      if (!activo) {
+        res.status(400).json({ message: 'No hay un período escolar activo.' });
+        return;
+      }
+
+      const momentos = await Momento.findAll({ where: { id_periodo: activo.id_periodo } });
+      if (momentos.length === 0) {
+        res.status(400).json({ message: 'El período activo no tiene momentos (lapsos).' });
+        return;
+      }
+
+      // 1. Obtener matrículas del período activo
+      const matriculas = await Matricula.findAll({
+        where: { id_periodo: activo.id_periodo },
+        include: [{ model: Seccion, as: 'seccion', include: [{ model: GradoAno, as: 'grado' }] }],
+      });
+
+      if (matriculas.length === 0) {
+        res.json({ message: 'No hay estudiantes matriculados en el período activo.', materiasCreadas: 0, evaluacionesCreadas: 0 });
+        return;
+      }
+
+      // 2. Obtener calificaciones
+      const matriculaIds = matriculas.map(m => m.id_matricula);
+      const calificaciones = await Calificacion.findAll({
+        where: { id_matricula: matriculaIds },
+        include: [
+          { model: PlanEstudio, as: 'plan' },
+          { model: EscalaCalificacion, as: 'escala', attributes: ['nota_calculo'] },
+        ],
+      });
+
+      // 3. Agrupar notas por (estudiante, asignatura)
+      const notasByEstudiante: Record<number, Record<number, number[]>> = {};
+      const existingPlanIdsByMatricula: Record<number, Set<number>> = {};
+
+      for (const cal of calificaciones) {
+        const plan = (cal as any).plan;
+        const escala = (cal as any).escala;
+        if (!plan || !escala || escala.nota_calculo == null) continue;
+
+        const mat = matriculas.find(m => m.id_matricula === cal.id_matricula);
+        if (!mat) continue;
+
+        if (!existingPlanIdsByMatricula[cal.id_matricula]) {
+          existingPlanIdsByMatricula[cal.id_matricula] = new Set();
+        }
+        existingPlanIdsByMatricula[cal.id_matricula].add(cal.id_plan);
+
+        const idAsig = plan.id_asignatura;
+        if (!notasByEstudiante[mat.id_estudiante]) notasByEstudiante[mat.id_estudiante] = {};
+        if (!notasByEstudiante[mat.id_estudiante][idAsig]) notasByEstudiante[mat.id_estudiante][idAsig] = [];
+        notasByEstudiante[mat.id_estudiante][idAsig].push(escala.nota_calculo);
+      }
+
+      // 4. Determinar materias reprobadas (promedio < 10) y faltantes
+      const materiasARegistrar: any[] = [];
+      const evaluacionesACrear: Array<{ id_plan: number; id_seccion: number; id_asignatura: number; nombre: string }> = [];
+      const pendientesSet = new Set<string>();
+
+      // 4a. De calificaciones existentes con promedio < 10
+      for (const idEstudianteStr of Object.keys(notasByEstudiante)) {
+        const idEstudiante = Number(idEstudianteStr);
+        for (const idAsigStr of Object.keys(notasByEstudiante[idEstudiante])) {
+          const idAsig = Number(idAsigStr);
+          const grades = notasByEstudiante[idEstudiante][idAsig];
+          const suma = grades.reduce((s, g) => s + g, 0);
+          const notaFinal = Math.round(suma / 3);
+
+          if (notaFinal < 10) {
+            const key = `${idEstudiante}-${idAsig}`;
+            pendientesSet.add(key);
+            materiasARegistrar.push({ id_estudiante: idEstudiante, id_asignatura: idAsig, id_periodo: activo.id_periodo, estatus: 'Cursando' });
+          }
+        }
+      }
+
+      // 4b. Materias sin calificaciones (nunca se ingresaron notas)
+      for (const mat of matriculas) {
+        const sec = (mat as any).seccion;
+        const grado = sec?.grado;
+        if (!grado) continue;
+
+        const existingPlans = existingPlanIdsByMatricula[mat.id_matricula] || new Set();
+        const allPlans = await PlanEstudio.findAll({ where: { id_grado: grado.id_grado } });
+
+        for (const plan of allPlans) {
+          if (!existingPlans.has(plan.id_plan)) {
+            const key = `${mat.id_estudiante}-${plan.id_asignatura}`;
+            if (!pendientesSet.has(key)) {
+              pendientesSet.add(key);
+              materiasARegistrar.push({
+                id_estudiante: mat.id_estudiante,
+                id_asignatura: plan.id_asignatura,
+                id_periodo: activo.id_periodo,
+                estatus: 'Cursando',
+              });
+            }
+          }
+        }
+      }
+
+      // 5. Insertar materias pendientes (solo las que no existan ya)
+      const existentesDB = await MateriaPendiente.findAll({
+        where: { id_periodo: activo.id_periodo },
+      });
+      const existentesSet = new Set(existentesDB.map(mp => `${mp.id_estudiante}-${mp.id_asignatura}`));
+
+      const materiasNuevas = materiasARegistrar.filter(m => !existentesSet.has(`${m.id_estudiante}-${m.id_asignatura}`));
+      if (materiasNuevas.length > 0) {
+        await MateriaPendiente.bulkCreate(materiasNuevas);
+      }
+
+      // 6. Recopilar (plan, seccion, asignatura.nombre) para crear evaluaciones
+      const evalSet = new Set<string>();
+      for (const m of materiasARegistrar) {
+        const mat = matriculas.find(mm => mm.id_estudiante === m.id_estudiante);
+        if (!mat) continue;
+        const sec = (mat as any).seccion;
+        if (!sec) continue;
+
+        const planEntry = await PlanEstudio.findOne({
+          where: { id_grado: sec.id_grado, id_asignatura: m.id_asignatura },
+        });
+        if (!planEntry) continue;
+
+        const asignatura = await Asignatura.findByPk(m.id_asignatura);
+        const nombreAsig = asignatura?.nombre || 'Desconocida';
+        const evalKey = `${planEntry.id_plan}-${sec.id_seccion}`;
+        if (!evalSet.has(evalKey)) {
+          evalSet.add(evalKey);
+          evaluacionesACrear.push({ id_plan: planEntry.id_plan, id_seccion: sec.id_seccion, id_asignatura: m.id_asignatura, nombre: nombreAsig });
+        }
+      }
+
+      // 7. Crear evaluaciones
+      let evaluacionesCreadas = 0;
+      for (const ev of evaluacionesACrear) {
+        for (const momento of momentos) {
+          const existente = await Evaluacion.findOne({
+            where: {
+              id_plan: ev.id_plan,
+              id_seccion: ev.id_seccion,
+              id_momento: momento.id_momento,
+              descripcion: `Recuperación: ${ev.nombre}`,
+            },
+          });
+          if (!existente) {
+            await Evaluacion.create({
+              id_plan: ev.id_plan,
+              id_seccion: ev.id_seccion,
+              id_momento: momento.id_momento,
+              descripcion: `Recuperación: ${ev.nombre}`,
+              ponderacion: 100,
+            });
+            evaluacionesCreadas++;
+          }
+        }
+      }
+
+      getIO().emit('evaluacion:plan-update', { data: [] });
+      getIO().emit('materia-pendiente:create', { data: [] });
+      res.json({
+        message: `Auto-generación completada. ${materiasNuevas.length} materias pendientes y ${evaluacionesCreadas} evaluaciones creadas.`,
+        materiasCreadas: materiasNuevas.length,
+        evaluacionesCreadas,
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: 'Error en auto-generación de materias' });
     }
   },
 };

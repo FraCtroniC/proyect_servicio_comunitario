@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Layers, UserPlus, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen, Eye } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Layers, UserPlus, ShieldAlert, GraduationCap, Users, Download, FileText, BookOpen, Eye, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Student, AcademicYear, UserRole, MateriaPendiente, Section, PaginatedResponse } from '../types';
 import { generateConstanciaEstudio } from '../utils/pdfGenerator';
@@ -20,6 +20,7 @@ import { mapEstudianteToStudent } from '../services/mappers';
 interface StudentManagerProps {
   students: Student[];
   sections: Section[];
+  activePeriodId?: string;
   classrooms?: import('../types').Classroom[];
   currentUserRole: UserRole;
   representatives: any[];
@@ -30,11 +31,12 @@ interface StudentManagerProps {
   onRefreshData?: () => Promise<void>;
 }
 
-export default function StudentManager({ students, sections, classrooms, currentUserRole, representatives, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending, onRefreshData }: StudentManagerProps) {
+export default function StudentManager({ students, sections, activePeriodId, classrooms, currentUserRole, representatives, onAddStudent, onUpdateStudentStatus, onUpdateStudentProfile, onNavigateToPending, onRefreshData }: StudentManagerProps) {
   // Filters
   const [selectedYear, setSelectedYear] = useState<AcademicYear | 0>(0);
   const [selectedSection, setSelectedSection] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAllPeriods, setShowAllPeriods] = useState(false);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -44,6 +46,13 @@ export default function StudentManager({ students, sections, classrooms, current
   const [loading, setLoading] = useState(false);
   const [searchDebounced, setSearchDebounced] = useState('');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sections filtered by period for tabs
+  const sectionsForTabs = useMemo(() => {
+    if (showAllPeriods) return sections;
+    if (activePeriodId) return sections.filter(s => String(s.periodId) === String(activePeriodId));
+    return sections;
+  }, [showAllPeriods, sections, activePeriodId]);
 
   // Register Form states
   const [firstName, setFirstName] = useState('');
@@ -118,13 +127,14 @@ export default function StudentManager({ students, sections, classrooms, current
   }, [searchQuery]);
 
   // Fetch paginated students
-  const fetchPage = useCallback(async (pageNum: number, pageLimit: number, busqueda: string, year: AcademicYear | 0, section: string) => {
+  const fetchPage = useCallback(async (pageNum: number, pageLimit: number, busqueda: string, year: AcademicYear | 0, section: string, allPeriods: boolean) => {
     setLoading(true);
     try {
       const params: Record<string, any> = { page: pageNum, limit: pageLimit };
       if (busqueda.trim()) params.busqueda = busqueda.trim();
       if (year !== 0) params.year = year;
       if (section !== 'Todos') params.section = section;
+      if (allPeriods) params.allPeriods = 'true';
 
       const res = await api.getRaw<PaginatedResponse<any>>('/api/estudiantes', params);
 
@@ -141,8 +151,8 @@ export default function StudentManager({ students, sections, classrooms, current
   }, []);
 
   useEffect(() => {
-    fetchPage(page, limit, searchDebounced, selectedYear, selectedSection);
-  }, [page, limit, searchDebounced, selectedYear, selectedSection, fetchPage]);
+    fetchPage(page, limit, searchDebounced, selectedYear, selectedSection, showAllPeriods);
+  }, [page, limit, searchDebounced, selectedYear, selectedSection, showAllPeriods, fetchPage]);
 
   const handleOpenProfile = async (s: Student) => {
     setSelectedStudent(s);
@@ -568,6 +578,17 @@ export default function StudentManager({ students, sections, classrooms, current
                   <Download className="w-4 h-4" />
                   Exportar Nómina
                 </button>
+                <button
+                  onClick={() => { setShowAllPeriods(!showAllPeriods); setPage(1); setSelectedSection('Todos'); }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm border ${
+                    showAllPeriods
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400'
+                      : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  {showAllPeriods ? 'Todos los Periodos' : 'Periodo Activo'}
+                </button>
                 {['super_admin', 'control_estudios'].includes(currentUserRole) && (
                   <button
                     onClick={handleOpenCreate}
@@ -580,7 +601,7 @@ export default function StudentManager({ students, sections, classrooms, current
               </div>
               <div className="flex bg-slate-200/60 p-1 rounded-lg overflow-x-auto hide-scrollbar shrink-0">
                 {['Todos', ...Array.from(new Set(
-                  sections
+                  sectionsForTabs
                     .filter(s => selectedYear === 0 || s.grade === selectedYear)
                     .map(s => s.letter.trim().toUpperCase())
                 )).sort((a, b) => a.localeCompare(b))].map((letter) => (

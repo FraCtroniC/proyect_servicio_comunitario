@@ -54,6 +54,12 @@ export function initNotaParcial(sequelize: Sequelize): typeof NotaParcial {
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
+      indexes: [
+        {
+          unique: true,
+          fields: ['id_matricula', 'id_evaluacion'],
+        },
+      ],
     }
   );
   return NotaParcial;

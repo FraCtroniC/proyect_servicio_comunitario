@@ -10,9 +10,9 @@ async function init() {
   const periodos = await PeriodoEscolar.findAll();
   for (const p of periodos) {
     await Momento.bulkCreate([
-      { id_periodo: p.id_periodo, descripcion: 'Lapso 1', estatus: 'Abierto' },
-      { id_periodo: p.id_periodo, descripcion: 'Lapso 2', estatus: 'Abierto' },
-      { id_periodo: p.id_periodo, descripcion: 'Lapso 3', estatus: 'Abierto' }
+      { id_periodo: p.id_periodo, descripcion: 'Primer Lapso', estatus: 'Abierto' },
+      { id_periodo: p.id_periodo, descripcion: 'Segundo Lapso', estatus: 'Abierto' },
+      { id_periodo: p.id_periodo, descripcion: 'Tercer Lapso', estatus: 'Abierto' }
     ]);
     console.log(`Momentos creados para periodo ${p.id_periodo}`);
   }
