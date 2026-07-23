@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { CalendarDays, Plus, Lock, CheckCircle2, Clock, Pencil, Loader2 } from 'lucide-react';
+import { CalendarDays, Plus, Lock, CheckCircle2, Clock, Pencil, Loader2, GraduationCap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Tooltip } from './Tooltip';
 import { ProgressBar } from './ProgressBar';
@@ -14,9 +14,10 @@ interface PeriodManagerProps {
   onUpdateMomentoStatus?: (id_momento: number, newStatus: 'Abierto' | 'Cerrado') => Promise<void>;
   onEditPeriod: (id: string, data: { nombre?: string; estatus?: string; fecha_inicio?: string | null; fecha_fin?: string | null }) => Promise<void>;
   onCierreAnual?: (id: string) => Promise<void>;
+  onOpenPromocion?: (periodoId: string, periodoNombre: string) => void;
 }
 
-export default function PeriodManager({ periods, currentUserRole, onAddPeriod, onUpdatePeriodStatus, onUpdateMomentoStatus, onEditPeriod, onCierreAnual }: PeriodManagerProps) {
+export default function PeriodManager({ periods, currentUserRole, onAddPeriod, onUpdatePeriodStatus, onUpdateMomentoStatus, onEditPeriod, onCierreAnual, onOpenPromocion }: PeriodManagerProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
@@ -34,6 +35,12 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
 
   const existingYearStarts = useMemo(() => {
     return new Set(periods.map(p => parseInt(p.name.split('-')[0], 10)).filter(n => !isNaN(n)));
+  }, [periods]);
+
+  const lastClosedPeriodId = useMemo(() => {
+    const closed = periods.filter(p => p.status === 'Cerrado');
+    if (closed.length === 0) return null;
+    return Math.max(...closed.map(p => Number(p.id)));
   }, [periods]);
 
   const [startYear, setStartYear] = useState<string>(String(currentYear));
@@ -355,6 +362,17 @@ export default function PeriodManager({ periods, currentUserRole, onAddPeriod, o
                               >
                                 <Lock className="w-3 h-3" />
                                 Cierre Definitivo
+                              </button>
+                            </Tooltip>
+                          )}
+                          {per.status === 'Cerrado' && canEdit && onOpenPromocion && lastClosedPeriodId !== null && per.id === String(lastClosedPeriodId) && (
+                            <Tooltip content="Promover Estudiantes: Asigna promoción/repitencia y crea matrículas en el periodo siguiente." position="bottom">
+                              <button
+                                onClick={() => onOpenPromocion(per.id, per.name)}
+                                className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 rounded text-xs font-bold transition-colors pointer-events-auto cursor-pointer flex items-center gap-1 shadow-sm"
+                              >
+                                <GraduationCap className="w-3 h-3" />
+                                Promover
                               </button>
                             </Tooltip>
                           )}

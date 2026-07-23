@@ -71,6 +71,7 @@ import LoginScreen from './components/loginScreen';
 import SubjectManager from './components/SubjectManager';
 import PeriodManager from './components/PeriodManager';
 import PendingSubjectsManager from './components/PendingSubjectsManager';
+import PromocionManager from './components/PromocionManager';
 import ChatbotAsistente from './components/ChatbotAsistente';
 import UserProfileModal from './components/UserProfileModal';
 import { FormatEditor } from './components/FormatEditor/FormatEditor';
@@ -137,6 +138,7 @@ export default function App() {
   const [matriculasCache, setMatriculasCache] = useState<any[]>([]);
 
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [materiasPendientes, setMateriasPendientes] = useState<any[]>([]);
 
   const handleBackup = async () => {
     if (isBackingUp) return;
@@ -199,6 +201,7 @@ export default function App() {
   const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [promocionModal, setPromocionModal] = useState<{ isOpen: boolean; periodoId: string; periodoNombre: string }>({ isOpen: false, periodoId: '', periodoNombre: '' });
 
   useEffect(() => {
     if (!initialAuth.isLoggedIn) {
@@ -342,17 +345,16 @@ export default function App() {
         r.id_representante !== payload.data.id_representante
       ));
     } else if (event === 'calificacion:create') {
-      setGrades(prev => [...prev, mapCalificacionToGrade(payload.data, String(payload.data.id_matricula))]);
+      refreshGrades();
     } else if (event === 'calificacion:update') {
-      setGrades(prev => prev.map(g =>
-        g.studentId === String(payload.data.matricula?.id_estudiante) && g.lapso === payload.data.id_momento
-          ? mapCalificacionToGrade(payload.data, String(payload.data.id_matricula)) : g
-      ));
+      refreshGrades();
     } else if (event === 'calificacion:delete') {
       refreshGrades();
     } else if (event === 'calificacion:bulk') {
       refreshGrades();
-    } else if (event === 'evaluacion:plan-update' || event === 'evaluacion:notas-update') {
+    } else if (event === 'evaluacion:plan-update') {
+      // No refresh - handleUpdateEvaluationPlan already does optimistic update
+    } else if (event === 'evaluacion:notas-update') {
       refreshGrades();
     } else if (event === 'materia-pendiente:create' || event === 'materia-pendiente:update' || event === 'materia-pendiente:delete') {
       setPendingRefreshKey(k => k + 1);
@@ -395,6 +397,12 @@ export default function App() {
     if (isLoggedIn) {
       const loadInitialData = async () => {
         try {
+          const periodosData = await api.get<any[]>('/api/periodos').catch(() => ({ data: [] }));
+          const parsedPeriodos = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+          const activeDbPeriod = parsedPeriodos.find((p: any) => p.estatus === 'Activo');
+          const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
+          const periodoParam = activePeriodId ? `?id_periodo=${activePeriodId}` : '';
+
           const [
             usuariosData,
             estudiantesData,
@@ -404,7 +412,6 @@ export default function App() {
             horariosData,
             calificacionesData,
             auditoriaData,
-            periodosData,
             evaluacionesPlanesResp,
             evaluacionesNotasResp,
             seccionesData,
@@ -424,11 +431,10 @@ export default function App() {
             api.get<any[]>('/api/asignaturas'),
             api.get<any[]>('/api/plan-estudio'),
             api.get<any[]>('/api/horarios'),
-            api.get<any[]>('/api/calificaciones'),
+            api.get<any[]>(`/api/calificaciones${periodoParam}`),
             api.get<any[]>('/api/auditorias').catch(() => []),
-            api.get<any[]>('/api/periodos').catch(() => ({ data: [] })),
-            api.get<any[]>('/api/evaluaciones/planes').catch(() => ({ data: [] })),
-            api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] })),
+            api.get<any[]>(`/api/evaluaciones/planes${periodoParam}`).catch(() => ({ data: [] })),
+            api.get<any[]>(`/api/evaluaciones/notas${periodoParam}`).catch(() => ({ data: [] })),
             api.get<any[]>('/api/secciones').catch(() => []),
             api.get<any[]>('/api/representantes').catch(() => []),
             api.get<any[]>('/api/dias').catch(() => []),
@@ -436,20 +442,16 @@ export default function App() {
             api.get<any[]>('/api/asistencias?limit=200&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/asistencias-estudiantes?limit=500&fecha_desde=' + daysAgo(60)).catch(() => []),
             api.get<any[]>('/api/matriculas').catch(() => ({ data: [] })),
-            // temporarily empty - we filter docentes from usuariosData below
             Promise.resolve([]),
             api.get<any[]>('/api/grados').catch(() => ({ data: [] })),
             api.get<any[]>('/api/tipo-plan-estudio').catch(() => ({ data: [] }))
           ]);
 
-          const seccionesMap = aulasData.reduce((acc, a) => {
-            if (a.secciones) a.secciones.forEach((s: any) => acc[s.id_seccion] = s);
-            return acc;
-          }, {});
-
-          const parsedPeriodos = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
-          const activeDbPeriod = parsedPeriodos.find((p: any) => p.estatus === 'Activo');
-          const activePeriodId = activeDbPeriod ? activeDbPeriod.id_periodo : undefined;
+          const seccionesArr = Array.isArray(seccionesData) ? seccionesData : [];
+          const seccionesMap: Record<number, any> = {};
+          for (const s of seccionesArr) {
+            seccionesMap[s.id_seccion] = s;
+          }
 
           const mappedUsers = usuariosData.map(mapUsuarioToUser);
           setUsers(mappedUsers);
@@ -491,9 +493,9 @@ export default function App() {
           // Use Partial Grades if they exist, fallback to Calificaciones
           const dbNotasParciales = (Array.isArray((evaluacionesNotasResp as any)?.data) ? (evaluacionesNotasResp as any).data : (Array.isArray(evaluacionesNotasResp) ? evaluacionesNotasResp : [])) || [];
           if (dbNotasParciales.length > 0) {
-            setGrades(dbNotasParciales.map((n: any) => mapNotaParcialToGrade(n, String(n.id_matricula))));
+            setGrades(dbNotasParciales.map((n: any) => mapNotaParcialToGrade(n, String(n.matricula?.id_estudiante || n.id_matricula))));
           } else {
-            setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+            setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.matricula?.id_estudiante || c.id_matricula))));
           }
 
           setAuditLogs(auditoriaData.sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
@@ -915,6 +917,24 @@ export default function App() {
     }
   };
 
+  const handleOpenPromocion = (periodoId: string, periodoNombre: string) => {
+    setPromocionModal({ isOpen: true, periodoId, periodoNombre });
+  };
+
+  const handleClosePromocion = () => {
+    setPromocionModal({ isOpen: false, periodoId: '', periodoNombre: '' });
+  };
+
+  const fetchPeriods = async () => {
+    try {
+      const periodosData = await api.get<any[]>('/api/periodos');
+      const periodosList = Array.isArray(periodosData) ? periodosData : (periodosData as any)?.data || [];
+      setPeriods(periodosList.map(mapPeriodoToSchoolPeriod));
+    } catch (e) {
+      console.error('Error fetching periods', e);
+    }
+  };
+
   const handleCreateSection = async (periodId: string, grade: number, letter: string, teacherGuideId: string, homeClassroomId: string) => {
     try {
       const payload = {
@@ -1081,10 +1101,13 @@ export default function App() {
 
   const refreshGrades = useCallback(async () => {
     try {
+      const activePeriodId = periods.find(p => p.status === 'Activo')?.id;
+      const periodoParam = activePeriodId ? `?id_periodo=${activePeriodId}` : '';
+
       const [calificacionesData, planesResp, notasResp, auditoriaData] = await Promise.all([
-        api.get<any[]>('/api/calificaciones'),
-        api.get<any[]>('/api/evaluaciones/planes').catch(() => ({ data: [] })),
-        api.get<any[]>('/api/evaluaciones/notas').catch(() => ({ data: [] })),
+        api.get<any[]>(`/api/calificaciones${periodoParam}`),
+        api.get<any[]>(`/api/evaluaciones/planes${periodoParam}`).catch(() => ({ data: [] })),
+        api.get<any[]>(`/api/evaluaciones/notas${periodoParam}`).catch(() => ({ data: [] })),
         api.get<any[]>('/api/auditorias').catch(() => []),
       ]);
 
@@ -1098,16 +1121,16 @@ export default function App() {
 
       const dbNotasParciales = (Array.isArray((notasResp as any)?.data) ? (notasResp as any).data : (Array.isArray(notasResp) ? notasResp : [])) || [];
       if (dbNotasParciales.length > 0) {
-        setGrades(dbNotasParciales.map((n: any) => mapNotaParcialToGrade(n, String(n.id_matricula))));
+        setGrades(dbNotasParciales.map((n: any) => mapNotaParcialToGrade(n, String(n.matricula?.id_estudiante || n.id_matricula))));
       } else {
-        setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.id_matricula))));
+        setGrades(calificacionesData.map((c: any) => mapCalificacionToGrade(c, String(c.matricula?.id_estudiante || c.id_matricula))));
       }
 
       setAuditLogs(auditoriaData.sort((a: any, b: any) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime()));
     } catch (e) {
       console.error('Error al refrescar calificaciones:', e);
     }
-  }, [sections, studyPlans]);
+  }, [sections, studyPlans, periods]);
 
   const refreshSchedule = useCallback(async () => {
     try {
@@ -1817,10 +1840,20 @@ export default function App() {
     () => isDocente ? sectionsForSchedule.filter(s => teacherScheduleKeys.sectionKeys.has(`${s.grade}-${s.letter}`)) : sectionsForSchedule,
     [isDocente, sectionsForSchedule, teacherScheduleKeys.sectionKeys]
   );
-  const gradeStudents = useMemo(
-    () => isDocente ? students.filter(s => teacherScheduleKeys.sectionKeys.has(`${s.academicYear}-${s.section}`)) : students,
-    [isDocente, students, teacherScheduleKeys.sectionKeys]
-  );
+  const gradeStudents = useMemo(() => {
+    if (!isDocente) return students;
+    const baseStudents = students.filter(s => teacherScheduleKeys.sectionKeys.has(`${s.academicYear}-${s.section}`));
+    const baseIds = new Set(baseStudents.map(s => s.id));
+    const pendingStudentIds = new Set<string>();
+    for (const mp of materiasPendientes) {
+      if (mp.estatus === 'Cursando' && teacherScheduleKeys.subjectIds.has(String(mp.id_asignatura))) {
+        pendingStudentIds.add(String(mp.id_estudiante));
+      }
+    }
+    if (pendingStudentIds.size === 0) return baseStudents;
+    const extraStudents = students.filter(s => pendingStudentIds.has(s.id) && !baseIds.has(s.id));
+    return [...baseStudents, ...extraStudents];
+  }, [isDocente, students, teacherScheduleKeys.sectionKeys, teacherScheduleKeys.subjectIds, materiasPendientes]);
   const gradeEvaluationPlans = useMemo(
     () => isDocente ? evaluationPlans.filter(p => teacherScheduleKeys.subjectIds.has(String(p.subjectId))) : evaluationPlans,
     [isDocente, evaluationPlans, teacherScheduleKeys.subjectIds]
@@ -1844,6 +1877,16 @@ export default function App() {
     });
     return map;
   }, [isDocente, teacherId, scheduleEvents]);
+
+  // Load materias pendientes for the active period
+  useEffect(() => {
+    if (isLoggedIn && activePeriod?.id) {
+      api.get<any[]>('/api/materias-pendientes').then(data => {
+        const parsed = Array.isArray(data) ? data : (data as any)?.data || [];
+        setMateriasPendientes(parsed);
+      }).catch(() => {});
+    }
+  }, [isLoggedIn, activePeriod?.id]);
 
   if (!isLoggedIn) {
     return <LoginScreen users={users} onLogin={handleLogin} />;
@@ -2116,7 +2159,11 @@ export default function App() {
                   students={students}
                   users={users}
                   attendance={attendance}
-                  grades={grades}
+                  grades={grades.filter(g => {
+                    const activeId = periods.find(p => p.status === 'Activo')?.id;
+                    if (!activeId) return true;
+                    return g.periodId != null && String(g.periodId) === activeId;
+                  })}
                   subjects={subjects}
                   evaluationPlans={evaluationPlans}
                   onNavigateToTab={setActiveTab}
@@ -2128,6 +2175,7 @@ export default function App() {
                 <StudentManager
                   students={students}
                   sections={sections}
+                  activePeriodId={activePeriod?.id}
                   classrooms={classrooms}
                   currentUserRole={currentUserRole}
                   representatives={representatives}
@@ -2182,6 +2230,7 @@ export default function App() {
                   onUpdateMomentoStatus={handleUpdateMomentoStatus}
                   onEditPeriod={handleEditPeriod}
                   onCierreAnual={handleCierreAnual}
+                  onOpenPromocion={handleOpenPromocion}
                 />
               )}
 
@@ -2197,6 +2246,7 @@ export default function App() {
                   periods={periods}
                   sections={gradeSections}
                   teacherSubjectsBySection={teacherSubjectsBySection}
+                  materiasPendientes={materiasPendientes}
                   onUpdateGrade={handleUpdateGrade}
                   onSaveGrades={handleSaveGrades}
                   onUpdateEvaluationPlan={handleUpdateEvaluationPlan}
@@ -2320,6 +2370,17 @@ export default function App() {
           onClose={() => setIsProfileOpen(false)}
           currentUser={currentUser}
           onLogout={handleLogout}
+        />
+
+        <PromocionManager
+          isOpen={promocionModal.isOpen}
+          periodoId={promocionModal.periodoId}
+          periodoNombre={promocionModal.periodoNombre}
+          onClose={handleClosePromocion}
+          onComplete={() => {
+            fetchPeriods();
+          }}
+          onRefreshPeriods={fetchPeriods}
         />
 
       </div>

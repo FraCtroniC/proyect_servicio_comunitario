@@ -53,8 +53,10 @@ export const EstudianteController = {
     const activePeriod = await PeriodoEscolar.findOne({ where: { estatus: 'Activo' } });
     const activePeriodId = activePeriod?.get('id_periodo');
 
+    const showAllPeriods = req.query.allPeriods === 'true';
+
     const matriculaWhere: any = {};
-    if (activePeriodId) matriculaWhere.id_periodo = activePeriodId;
+    if (activePeriodId && !showAllPeriods) matriculaWhere.id_periodo = activePeriodId;
 
     const seccionWhere: any = {};
     if (hasSectionFilter) seccionWhere.letra = String(section).trim();
@@ -64,10 +66,10 @@ export const EstudianteController = {
 
     let matchingEstudianteIds: number[] | null = null;
 
-    if (hasAnyFilter) {
-      // Consultamos desde Matricula para obtener IDs
+    // Always filter by active period students unless showAllPeriods is true
+    if (!showAllPeriods && activePeriodId) {
       const mats = await Matricula.findAll({
-        where: Object.keys(matriculaWhere).length ? matriculaWhere : undefined,
+        where: { id_periodo: activePeriodId },
         include: [{
           model: Seccion,
           as: 'seccion',
@@ -82,7 +84,26 @@ export const EstudianteController = {
         }],
       });
       matchingEstudianteIds = mats.map((m: any) => m.id_estudiante);
+    } else if (hasAnyFilter) {
+      // Consultamos desde Matricula para obtener IDs
+      const mats = await Matricula.findAll({
+        include: [{
+          model: Seccion,
+          as: 'seccion',
+          required: true,
+          where: Object.keys(seccionWhere).length ? seccionWhere : undefined,
+          include: [{
+            model: GradoAno,
+            as: 'grado',
+            required: true,
+            where: Object.keys(gradoWhere).length ? gradoWhere : undefined,
+          }],
+        }],
+      });
+      matchingEstudianteIds = mats.map((m: any) => m.id_estudiante);
+    }
 
+    if (matchingEstudianteIds) {
       if (matchingEstudianteIds.length === 0) {
         res.json({
           data: [],
@@ -90,9 +111,6 @@ export const EstudianteController = {
         });
         return;
       }
-    }
-
-    if (matchingEstudianteIds) {
       where.id_estudiante = { [Op.in]: matchingEstudianteIds };
     }
 

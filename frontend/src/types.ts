@@ -152,6 +152,7 @@ export interface Grade {
   lapso: 1 | 2 | 3;
   evaluationId: string; // Refs EvaluationItem.id
   score: number;        // Scale: 1 to 20
+  periodId?: number;    // ID del periodo escolar al que pertenece
 }
 
 export interface Attendance {

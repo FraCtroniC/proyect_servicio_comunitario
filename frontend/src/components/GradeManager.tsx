@@ -27,6 +27,7 @@ interface GradeManagerProps {
   periods: SchoolPeriod[];
   sections: Section[];
   teacherSubjectsBySection?: Record<string, string[]>;
+  materiasPendientes?: any[];
   onUpdateGrade: (stdId: string, subId: string, lap: 1|2|3, evId: string, score: number) => void;
   onSaveGrades: (gradesToSave: Grade[], subjectName: string, year: number, section: string, lapso: number, detalles?: any[], planEvaluaciones?: any[]) => Promise<void>;
   onUpdateEvaluationPlan: (subId: string, year: AcademicYear, section: string, lap: 1|2|3, evaluations: any[]) => void;
@@ -44,6 +45,7 @@ export default function GradeManager({
   periods,
   sections,
   teacherSubjectsBySection,
+  materiasPendientes,
   onUpdateGrade,
   onSaveGrades,
   onUpdateEvaluationPlan,
@@ -470,7 +472,20 @@ export default function GradeManager({
   const activePlan = evaluationPlans.find(p => p.subjectId === selectedSubjectId && p.year === selectedYear && p.section === selectedSection && p.lapso === selectedLapso);
   const activeSubject = subjects.find(s => s.id === selectedSubjectId);
 
-  const activeSectionStudents = students.filter(s => s.academicYear === selectedYear && s.section === selectedSection && s.status === 'Activo');
+  const activeSectionStudents = useMemo(() => {
+    const baseStudents = students.filter(s => s.academicYear === selectedYear && s.section === selectedSection && s.status === 'Activo');
+    if (!selectedSubjectId || !materiasPendientes?.length) return baseStudents;
+    const baseIds = new Set(baseStudents.map(s => s.id));
+    const pendingStudents = students.filter(s => {
+      if (baseIds.has(s.id) || s.status !== 'Activo') return false;
+      return materiasPendientes.some(mp =>
+        mp.estatus === 'Cursando' &&
+        String(mp.id_asignatura) === selectedSubjectId &&
+        String(mp.id_estudiante) === s.id
+      );
+    });
+    return [...baseStudents, ...pendingStudents];
+  }, [students, selectedYear, selectedSection, selectedSubjectId, materiasPendientes]);
 
   const gradeTotalPages = Math.ceil(activeSectionStudents.length / GRADE_PAGE_LIMIT);
   const gradeOffset = (gradePage - 1) * GRADE_PAGE_LIMIT;
@@ -618,6 +633,7 @@ export default function GradeManager({
     setSaveSuccess(false);
     try {
       await onSaveGrades(gradesToSave, subjectName, selectedYear, selectedSection, selectedLapso, detalles, activePlan?.evaluations || []);
+      if (onRefreshData) await onRefreshData();
       setLastSavedPayload(currentPayload);
       setSaveSuccess(true);
       setUnsavedChanges({});
