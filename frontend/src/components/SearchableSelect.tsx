@@ -19,7 +19,7 @@ interface SearchableSelectProps {
 
 const DEFAULT_PAGE_SIZE = 4;
 
-export function SearchableSelect({ options, value, onChange, placeholder = 'Seleccionar...', disabled = false, pageSize = DEFAULT_PAGE_SIZE }: SearchableSelectProps) {
+export function SearchableSelect({ options = [], value, onChange, placeholder = 'Seleccionar...', disabled = false, pageSize = DEFAULT_PAGE_SIZE }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
